@@ -1,57 +1,56 @@
-cat > /usr/local/bin/setup-zivpn.sh << 'EOF'
 #!/bin/bash
+# ============================================
+# ZIVPN AUTO INSTALLER - PONDOK VPN
+# Simple Install Without License Check
+# Telegram: @bendakerep
+# ============================================
 
+# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
-BLUE='\033[0;34m'
 NC='\033[0m'
 
 clear
 echo -e "${CYAN}"
 echo "╔════════════════════════════════════╗"
-echo "║        ZIVPN SETUP SCRIPT          ║"
-echo "║      PONDOK VPN - udp-zi           ║"
+echo "║        ZIVPN AUTO INSTALLER        ║"
+echo "║        PONDOK VPN - udp-zi         ║"
 echo "╚════════════════════════════════════╝${NC}"
 echo ""
 
+# Check root
 [ "$EUID" -ne 0 ] && echo -e "${RED}Run as root: sudo bash $0${NC}" && exit 1
 
-# CHECK LICENSE
-echo -e "${YELLOW}[1] Checking license...${NC}"
+# Get server IP
 SERVER_IP=$(curl -s ifconfig.me)
-echo -e "  Server IP: ${CYAN}$SERVER_IP${NC}"
+echo -e "${YELLOW}Server IP:${NC} ${CYAN}$SERVER_IP${NC}"
+echo ""
 
-# License check (sesuaikan URL Anda)
-LICENSE_URL="https://raw.githubusercontent.com/Pondok-Vpn/pondokvip/main/DAFTAR"
-if curl -s "$LICENSE_URL" | grep -q "$SERVER_IP"; then
-    echo -e "${GREEN}✅ License verified${NC}"
-else
-    echo -e "${RED}❌ IP not in license list${NC}"
-    echo -e "${YELLOW}Continue anyway? (y/n): ${NC}"
-    read -r continue_install
-    [[ "$continue_install" != "y" ]] && exit 1
-fi
-
-# INSTALL DEPS
-echo -e "${YELLOW}[2] Installing dependencies...${NC}"
+# ============================================
+# 1. INSTALL DEPENDENCIES
+# ============================================
+echo -e "${YELLOW}[1] Installing dependencies...${NC}"
 apt update -y > /dev/null 2>&1
-apt install -y curl wget jq sqlite3 openssl zip unzip > /dev/null 2>&1
+apt install -y curl wget jq sqlite3 openssl > /dev/null 2>&1
 echo -e "${GREEN}✅ Dependencies installed${NC}"
 
-# GET ZIVPN BINARY
-echo -e "${YELLOW}[3] Getting ZiVPN binary...${NC}"
+# ============================================
+# 2. DOWNLOAD ZIVPN BINARY
+# ============================================
+echo -e "${YELLOW}[2] Downloading ZiVPN...${NC}"
 cd /tmp
 ZIVPN_URL="https://github.com/zivpn/zivpn/releases/latest/download/zivpn-linux-amd64"
 if wget -q -O zivpn "$ZIVPN_URL"; then
-    echo -e "  ${GREEN}✅ Downloaded binary${NC}"
+    echo -e "  ${GREEN}✅ ZiVPN downloaded${NC}"
 else
-    echo -e "  ${YELLOW}⚠️ Download failed, trying alternative...${NC}"
-    # Fallback ke build dari source
+    echo -e "  ${YELLOW}⚠️ Download failed, trying source...${NC}"
     apt install -y golang git > /dev/null 2>&1
     git clone https://github.com/lord-alfredo/udp-custom.git > /dev/null 2>&1
-    cd udp-custom && go build -o zivpn && cd /tmp
+    cd udp-custom
+    go build -o zivpn
+    cd /tmp
     cp udp-custom/zivpn .
 fi
 
@@ -59,11 +58,13 @@ mv zivpn /usr/local/bin/
 chmod +x /usr/local/bin/zivpn
 echo -e "${GREEN}✅ ZiVPN installed${NC}"
 
-# SETUP CONFIG DIR
-echo -e "${YELLOW}[4] Creating configuration...${NC}"
+# ============================================
+# 3. CREATE CONFIGURATION
+# ============================================
+echo -e "${YELLOW}[3] Creating configuration...${NC}"
 mkdir -p /etc/zivpn
 
-# SSL CERTS
+# SSL certificates
 if [ ! -f /etc/zivpn/zivpn.crt ]; then
     openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
         -keyout /etc/zivpn/zivpn.key \
@@ -72,8 +73,8 @@ if [ ! -f /etc/zivpn/zivpn.crt ]; then
     echo -e "  ${GREEN}✅ SSL certificates created${NC}"
 fi
 
-# CONFIG.JSON (MODE DB - SEPERTI DISKUSI KITA)
-cat > /etc/zivpn/config.json << 'CFGEOF'
+# config.json
+cat > /etc/zivpn/config.json << 'EOF'
 {
   "listen": ":5667",
   "cert": "/etc/zivpn/zivpn.crt",
@@ -84,10 +85,10 @@ cat > /etc/zivpn/config.json << 'CFGEOF'
     "config": "/etc/zivpn/users.db"
   }
 }
-CFGEOF
+EOF
 echo -e "  ${GREEN}✅ Config file created${NC}"
 
-# DATABASE
+# Database
 sqlite3 /etc/zivpn/users.db "
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -100,29 +101,42 @@ CREATE TABLE IF NOT EXISTS users (
 );" 2>/dev/null
 echo -e "  ${GREEN}✅ Database created${NC}"
 
-# COPY HELPER SCRIPT (DARI LOKAL JIKA ADA)
-echo -e "${YELLOW}[5] Installing helper scripts...${NC}"
-if [ -f "$(dirname "$0")/ziv-helper.sh" ]; then
-    cp "$(dirname "$0")/ziv-helper.sh" /usr/local/bin/
+# Add IP to local DAFTAR file
+echo "$SERVER_IP" > /etc/zivpn/DAFTAR
+echo -e "  ${GREEN}✅ IP added to /etc/zivpn/DAFTAR${NC}"
+
+# ============================================
+# 4. INSTALL HELPER SCRIPTS
+# ============================================
+echo -e "${YELLOW}[4] Installing helper scripts...${NC}"
+
+# Copy ziv-helper.sh if exists locally
+if [ -f "./ziv-helper.sh" ]; then
+    cp ./ziv-helper.sh /usr/local/bin/
     chmod +x /usr/local/bin/ziv-helper.sh
     echo -e "  ${GREEN}✅ Helper script installed${NC}"
 else
-    echo -e "  ${YELLOW}⚠️ ziv-helper.sh not found locally${NC}"
-    echo -e "  ${CYAN}Download manually after install${NC}"
+    echo -e "  ${YELLOW}⚠️ ziv-helper.sh not found${NC}"
 fi
 
-# COPY USER MANAGER (DARI LOKAL JIKA ADA)
-if [ -f "$(dirname "$0")/zi.sh" ]; then
-    cp "$(dirname "$0")/zi.sh" /usr/local/bin/zivpn-user.sh
+# Copy zi.sh if exists locally
+if [ -f "./zi.sh" ]; then
+    cp ./zi.sh /usr/local/bin/zivpn-user.sh
+    chmod +x /usr/local/bin/zivpn-user.sh
+    echo -e "  ${GREEN}✅ User manager installed${NC}"
+elif [ -f "./zivpn-user.sh" ]; then
+    cp ./zivpn-user.sh /usr/local/bin/
     chmod +x /usr/local/bin/zivpn-user.sh
     echo -e "  ${GREEN}✅ User manager installed${NC}"
 else
-    echo -e "  ${YELLOW}⚠️ zi.sh not found locally${NC}"
+    echo -e "  ${YELLOW}⚠️ User manager not found${NC}"
 fi
 
-# SYSTEMD SERVICE
-echo -e "${YELLOW}[6] Creating service...${NC}"
-cat > /etc/systemd/system/zivpn.service << 'SVCEOF'
+# ============================================
+# 5. CREATE SYSTEMD SERVICE
+# ============================================
+echo -e "${YELLOW}[5] Creating service...${NC}"
+cat > /etc/systemd/system/zivpn.service << 'EOF'
 [Unit]
 Description=ZiVPN UDP Service
 After=network.target
@@ -136,7 +150,7 @@ User=root
 
 [Install]
 WantedBy=multi-user.target
-SVCEOF
+EOF
 
 systemctl daemon-reload
 systemctl enable zivpn > /dev/null 2>&1
@@ -146,12 +160,14 @@ sleep 2
 if systemctl is-active --quiet zivpn; then
     echo -e "  ${GREEN}✅ Service started successfully${NC}"
 else
-    echo -e "  ${RED}⚠️ Service failed to start${NC}"
-    echo -e "  ${YELLOW}Check: systemctl status zivpn${NC}"
+    echo -e "  ${YELLOW}⚠️ Checking service status...${NC}"
+    systemctl status zivpn --no-pager -l
 fi
 
-# FIREWALL
-echo -e "${YELLOW}[7] Configuring firewall...${NC}"
+# ============================================
+# 6. FIREWALL CONFIGURATION
+# ============================================
+echo -e "${YELLOW}[6] Configuring firewall...${NC}"
 if command -v ufw > /dev/null 2>&1; then
     ufw allow 5667/udp > /dev/null 2>&1
     echo -e "  ${GREEN}✅ UFW: Port 5667/udp allowed${NC}"
@@ -162,11 +178,13 @@ else
     echo -e "  ${YELLOW}⚠️ No firewall manager found${NC}"
 fi
 
-# FINAL OUTPUT
+# ============================================
+# 7. FINAL OUTPUT
+# ============================================
 clear
 echo -e "${CYAN}"
 echo "╔════════════════════════════════════╗"
-echo "║       SETUP COMPLETE!              ║"
+echo "║       INSTALLATION COMPLETE!       ║"
 echo "╠════════════════════════════════════╣"
 echo "║                                    ║"
 echo -e "║  ${GREEN}✅${NC} ZiVPN Installed                 ║"
@@ -178,17 +196,14 @@ echo "╠═══════════════════════�
 echo "║         QUICK COMMANDS             ║"
 echo "╠════════════════════════════════════╣"
 echo "║                                    ║"
-echo -e "║  ${YELLOW}Add User:${NC}                         ║"
-echo -e "║  ${CYAN}zivpn-user.sh add username password${NC} ║"
-echo "║                                    ║"
-echo -e "║  ${YELLOW}Setup Telegram:${NC}                   ║"
-echo -e "║  ${CYAN}ziv-helper.sh setup-telegram${NC}        ║"
-echo "║                                    ║"
-echo -e "║  ${YELLOW}Backup:${NC}                           ║"
-echo -e "║  ${CYAN}ziv-helper.sh backup${NC}                ║"
+echo -e "║  ${YELLOW}Add User (CLI):${NC}                    ║"
+echo -e "║  ${CYAN}sqlite3 /etc/zivpn/users.db${NC}         ║"
+echo -e "║  ${CYAN}\"INSERT INTO users (username, password)\"${NC} ║"
+echo -e "║  ${CYAN}\"VALUES ('user1', 'pass1');\"${NC}       ║"
 echo "║                                    ║"
 echo -e "║  ${YELLOW}Check Status:${NC}                     ║"
 echo -e "║  ${CYAN}systemctl status zivpn${NC}              ║"
+echo -e "║  ${CYAN}ss -tulpn | grep 5667${NC}               ║"
 echo "║                                    ║"
 echo "╠════════════════════════════════════╣"
 echo "║         SERVER INFO                ║"
@@ -199,12 +214,9 @@ echo -e "║  ${YELLOW}Port:${NC} ${CYAN}5667 UDP${NC}                     ║"
 echo -e "║  ${YELLOW}Config:${NC} ${CYAN}/etc/zivpn/${NC}                ║"
 echo "║                                    ║"
 echo "╠════════════════════════════════════╣"
-echo "║  Telegram: @bendakerep             ║"
-echo "║  Repo: Pondok-Vpn/udp-ziv          ║"
+echo "║  Support: @bendakerep              ║"
+echo "║  GitHub: Pondok-Vpn/udp-ziv        ║"
 echo "╚════════════════════════════════════╝${NC}"
 echo ""
-echo -e "${GREEN}Setup complete! Use commands above to manage.${NC}"
+echo -e "${GREEN}ZiVPN is ready to use!${NC}"
 echo ""
-EOF
-
-chmod +x /usr/local/bin/setup-zivpn.sh
