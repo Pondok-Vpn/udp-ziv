@@ -1,4 +1,4 @@
-cat > uninstall-zivpn.sh << 'EOF'
+cat > uninstall_zivpn.sh << 'EOF'
 #!/bin/bash
 # ZIVPN UNINSTALLER
 
