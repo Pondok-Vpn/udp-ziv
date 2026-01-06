@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================
-# ZIVPN INSTALLER - PONDOK VPN
+# ZIVPN INSTALLER - PONDOKVPN
 # Telegram: @bendakerep
 # ============================================
 
