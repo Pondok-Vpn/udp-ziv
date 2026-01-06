@@ -5,6 +5,6 @@
   "obfs": "zivpn",
   "auth": {
     "mode": "db",
-    "config": "/etc/zivpn/users.db"  // HANYA PATH KE DATABASE
+    "config": "/etc/zivpn/users.db"  
   }
 }
