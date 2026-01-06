@@ -84,18 +84,6 @@ function _create_account_logic() {
     local expiry_date
     expiry_date=$(date -d "+$days days" +%s)
     echo "${password}:${expiry_date}" >> "$db_file"
-    
-    jq --arg pass "$password" '.auth.config += [$pass]' /etc/zivpn/config.json > /etc/zivpn/config.json.tmp && mv /etc/zivpn/config.json.tmp /etc/zivpn/config.json
-    
-    if [ $? -eq 0 ]; then
-        echo "Success: Account '${password}' created, expires in ${days} days."
-        restart_zivpn
-        return 0
-    else
-        sed -i "/^${password}:/d" "$db_file"
-        echo "Error: Failed to update config.json."
-        return 1
-    fi
 }
 
 # --- Core Logic Functions ---
