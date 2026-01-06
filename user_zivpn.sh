@@ -234,7 +234,7 @@ function _display_accounts() {
     echo -e "${PURPLE}╚══════════════════════════════════════════╝${NC}"    echo ""
     echo ""
     USER_FILE="/etc/zivpn/users.db"
-    if [ ! -f "$USER_FILE" ] || [ ! -s "$USER_FILE" ]; then
+if [ ! -f "$USER_FILE" ] || [ ! -s "$USER_FILE" ]; then
         echo -e "${YELLOW}Tidak ada akun ditemukan.${NC}"
         echo ""
         read -p "Tekan Enter untuk kembali..."
