@@ -16,3 +16,7 @@ Complete management tools for ZiVPN UDP server with Telegram integration.
 ### Installation
 ```bash
 curl -sL https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/install-zivpn.sh | bash
+
+### Unistall
+'''bash
+curl -sL https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/uninstall-zivpn.sh | bash
