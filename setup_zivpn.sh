@@ -1,7 +1,6 @@
 #!/bin/bash
 # ============================================
 # ZIVPN AUTO INSTALLER - PONDOK VPN
-# Simple Install Without License Check
 # Telegram: @bendakerep
 # ============================================
 
