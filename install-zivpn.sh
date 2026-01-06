@@ -15,7 +15,7 @@ clear
 echo -e "${CYAN}"
 echo "╔════════════════════════════════════════╗"
 echo "║        ZIVPN UDP INSTALLER             ║"
-echo "║      PONDOK VPN - udp-zi               ║"
+echo "║      PONDOK VPN - UDP ZIVPN             ║"
 echo "╚════════════════════════════════════════╝${NC}"
 echo ""
 
