@@ -231,10 +231,11 @@ function _display_accounts() {
     clear
     echo -e "${PURPLE}╔══════════════════════════════════════════╗${NC}"
     echo -e "${PURPLE}║ ${LIGHT_CYAN}一═⌊✦⌉ 𝗗𝗔𝗙𝗧𝗔𝗥 𝗔𝗞𝗨𝗡 𝗔𝗞𝗧𝗜𝗙 ⌊✦⌉═一${PURPLE} ║${NC}"
-    echo -e "${PURPLE}╚══════════════════════════════════════════╝${NC}"    echo ""
+    echo -e "${PURPLE}╚══════════════════════════════════════════╝${NC}"
+    echo ""
     echo ""
     USER_FILE="/etc/zivpn/users.db"
-if [ ! -f "$USER_FILE" ] || [ ! -s "$USER_FILE" ]; then
+    if [ ! -f "$USER_FILE" ] || [ ! -s "$USER_FILE" ]; then
         echo -e "${YELLOW}Tidak ada akun ditemukan.${NC}"
         echo ""
         read -p "Tekan Enter untuk kembali..."
@@ -277,7 +278,8 @@ function renew_account() {
     echo -e "${PURPLE}╔════════════════════════════════════════════════════╗${NC}"
     echo -e "${PURPLE}║   ${LIGHT_CYAN}一═⌊✦⌉ 𝗥𝗘𝗡𝗘𝗪 𝗔𝗖𝗖𝗢𝗨𝗡𝗧 ⌊✦⌉═一${PURPLE}      ║${NC}"
     echo -e "${PURPLE}╚════════════════════════════════════════════════════╝${NC}"
-USER_FILE="/etc/zivpn/users.db"    if [ ! -f "$USER_FILE" ] || [ ! -s "$USER_FILE" ]; then
+    USER_FILE="/etc/zivpn/users.db"
+    if [ ! -f "$USER_FILE" ] || [ ! -s "$USER_FILE" ]; then
         echo -e "${YELLOW}Tidak ada akun ditemukan.${NC}"
         echo ""
         read -p "Tekan Enter untuk kembali ke menu..."
