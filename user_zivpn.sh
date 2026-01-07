@@ -382,8 +382,8 @@ function create_account() {
     echo -e "${LIGHT_BLUE}╔══════════════════════════════════════════╗${NC}"
     echo -e "${LIGHT_BLUE}║                                          ║${NC}"
     echo -e "${LIGHT_BLUE}║   ${WHITE}1) ${CYAN}BUAT AKUN ZIVPN${LIGHT_BLUE}                  ║${NC}"
-    echo -e "${LIGHT_BLUE}║   ${WHITE}2) ${CYAN}BUAT AKUN TRIAL${LIGHT_BLUE}                    ║${NC}"
-    echo -e "${LIGHT_BLUE}║   ${WHITE}0) ${CYAN}KEMBALI KE MENU${LIGHT_BLUE}             ║${NC}"
+    echo -e "${LIGHT_BLUE}║   ${WHITE}2) ${CYAN}BUAT AKUN TRIAL${LIGHT_BLUE}                  ║${NC}"
+    echo -e "${LIGHT_BLUE}║   ${WHITE}0) ${CYAN}KEMBALI KE MENU${LIGHT_BLUE}                  ║${NC}"
     echo -e "${LIGHT_BLUE}║                                          ║${NC}"
     echo -e "${LIGHT_BLUE}╚══════════════════════════════════════════╝${NC}"
     
@@ -422,9 +422,9 @@ function delete_account() {
             local remaining_seconds=$((expiry_date - $(date +%s)))
             local remaining_days=$((remaining_seconds / 86400))
             if [ $remaining_days -gt 0 ]; then
-                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $count). ${client_name:0:15} ${password:0:18}${LIGHT_BLUE}"
+                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $count). ${client_name:0:15} ${password:0:18}${LIGHT_BLUE} ║${NC}"
             else
-                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $count). ${client_name:0:15} ${password:0:18} ${RED}Expired${WHITE}${LIGHT_BLUE}"
+                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $count). ${client_name:0:15} ${password:0:18} ${RED}Expired${WHITE}${LIGHT_BLUE} ║${NC}"
             fi
         fi
     done < "$USER_DB"
@@ -469,7 +469,7 @@ function delete_account() {
     echo -e "${WHITE}$selected_password${NC}"
     read -p "Konfirmasi (y/n): " confirm
     
-    if [[ "$confirm" != "y" && "$confirm" != "Y" ]; then
+    if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
         echo -e "${YELLOW}Penghapusan dibatalkan.${NC}"
         sleep 1
         return
@@ -498,14 +498,14 @@ function renew_account() {
         echo ""
         
         echo -e "${LIGHT_BLUE}╔══════════════════════════════════════════╗${NC}"
-        echo -e "${LIGHT_BLUE}║  ${WHITE}No.  Password           Alasan${LIGHT_BLUE}║${NC}"
+        echo -e "${LIGHT_BLUE}║  ${WHITE}No.  Password           Alasan${LIGHT_BLUE}     ║${NC}"
         echo -e "${LIGHT_BLUE}╠══════════════════════════════════════════╣${NC}"
         
         local locked_count=0
         while IFS=':' read -r password timestamp reason; do
             if [[ -n "$password" ]]; then
                 locked_count=$((locked_count + 1))
-                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $locked_count). ${password:0:18} ${reason:0:15}${LIGHT_BLUE}"
+                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $locked_count). ${password:0:18} ${reason:0:15}${LIGHT_BLUE} ║${NC}"
             fi
         done < "$LOCKED_DB"
         
@@ -540,9 +540,9 @@ function renew_account() {
             local remaining_seconds=$((expiry_date - $(date +%s)))
             local remaining_days=$((remaining_seconds / 86400))
             if [ $remaining_days -gt 0 ]; then
-                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $count). ${client_name:0:15} ${password:0:18}${LIGHT_BLUE}"
+                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $count). ${client_name:0:15} ${password:0:18}${LIGHT_BLUE} ║${NC}"
             else
-                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $count). ${client_name:0:15} ${password:0:18} ${RED}Expired${WHITE}${LIGHT_BLUE}"
+                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $count). ${client_name:0:15} ${password:0:18} ${RED}Expired${WHITE}${LIGHT_BLUE} ║${NC}"
             fi
         fi
     done < "$USER_DB"
@@ -692,7 +692,7 @@ function _display_accounts() {
     current_date=$(date +%s)
     
     echo -e "${LIGHT_BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${LIGHT_BLUE}║  ${WHITE}No.  Nama              Password           IP Limit   Expire${LIGHT_BLUE$} ║${NC}"
+    echo -e "${LIGHT_BLUE}║  ${WHITE}No.  Nama              Password           IP Limit   Expire${LIGHT_BLUE} ║${NC}"
     echo -e "${LIGHT_BLUE}╠══════════════════════════════════════════════════════════════╣${NC}"
     
     local count=0
@@ -702,9 +702,9 @@ function _display_accounts() {
             local remaining_seconds=$((expiry_date - current_date))
             if [ $remaining_seconds -gt 0 ]; then
                 local remaining_days=$((remaining_seconds / 86400))
-                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $count). ${client_name:0:15} ${password:0:15} $(printf "%8s" $max_devices) $(printf "%10s" "${remaining_days} days")${LIGHT_BLUE}"
+                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $count). ${client_name:0:15} ${password:0:15} $(printf "%8s" $max_devices) $(printf "%10s" "${remaining_days} days")${LIGHT_BLUE} ║${NC}"
             else
-                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $count). ${client_name:0:15} ${password:0:15} $(printf "%8s" $max_devices) ${RED}Expired${WHITE}${LIGHT_BLUE}"
+                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $count). ${client_name:0:15} ${password:0:15} $(printf "%8s" $max_devices) ${RED}Expired${WHITE}${LIGHT_BLUE}    ║${NC}"
             fi
         fi
     done < "$USER_DB"
@@ -735,13 +735,12 @@ function backup_restart() {
     echo -e "${LIGHT_BLUE}║                                          ║${NC}"
     echo -e "${LIGHT_BLUE}║   ${WHITE}1) ${CYAN}Backup Data${LIGHT_BLUE}                         ║${NC}"
     echo -e "${LIGHT_BLUE}║   ${WHITE}2) ${CYAN}Restore Data${LIGHT_BLUE}                        ║${NC}"
-    echo -e "${LIGHT_BLUE}║   ${WHITE}3) ${CYAN}Restart Service${LIGHT_BLUE}                     ║${NC}"
     echo -e "${LIGHT_BLUE}║   ${WHITE}0) ${CYAN}Kembali ke Menu${LIGHT_BLUE}                    ║${NC}"
     echo -e "${LIGHT_BLUE}║                                          ║${NC}"
     echo -e "${LIGHT_BLUE}╚══════════════════════════════════════════╝${NC}"
     echo ""
     
-    read -p "Pilih menu [0-3]: " choice
+    read -p "Pilih menu [0-2]: " choice
     
     case $choice in
         1)
@@ -755,10 +754,6 @@ function backup_restart() {
         2)
             echo "Restore data..."
             echo -e "${YELLOW}Fitur restore dalam pengembangan${NC}"
-            sleep 2
-            ;;
-        3)
-            restart_zivpn
             sleep 2
             ;;
         0)
@@ -823,5 +818,5 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     touch "$DEVICE_DB"
     touch "$LOCKED_DB"
     
-    zivpn_menu
+    show_menu
 fi
