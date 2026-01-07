@@ -966,20 +966,32 @@ function display_info_panel() {
     
     # Try to get bandwidth if vnstat is installed
     if command -v vnstat &> /dev/null; then
-        local today_kib=$(vnstat --oneline | cut -d';' -f11 2>/dev/null || echo "0")
-        local month_kib=$(vnstat --oneline | cut -d';' -f10 2>/dev/null || echo "0")
+        # Get bandwidth in KiB (raw numbers)
+        local vnstat_output=$(vnstat --oneline 2>/dev/null)
         
-        # Convert KiB to MiB/GiB
-        if [ "$today_kib" -gt 1048576 ]; then
-            today_bw=$(awk -v kib="$today_kib" 'BEGIN { printf "%.2f GiB", kib/1048576 }')
-        else
-            today_bw=$(awk -v kib="$today_kib" 'BEGIN { printf "%.2f MiB", kib/1024 }')
-        fi
-        
-        if [ "$month_kib" -gt 1048576 ]; then
-            month_bw=$(awk -v kib="$month_kib" 'BEGIN { printf "%.2f GiB", kib/1048576 }')
-        else
-            month_bw=$(awk -v kib="$month_kib" 'BEGIN { printf "%.2f MiB", kib/1024 }')
+        if [ -n "$vnstat_output" ]; then
+            # Parse today's bandwidth (field 11 for today in KiB)
+            local today_kib=$(echo "$vnstat_output" | cut -d';' -f11 2>/dev/null)
+            # Parse month's bandwidth (field 10 for month in KiB)
+            local month_kib=$(echo "$vnstat_output" | cut -d';' -f10 2>/dev/null)
+            
+            # Convert today's bandwidth
+            if [[ "$today_kib" =~ ^[0-9]+$ ]] && [ "$today_kib" -gt 0 ]; then
+                if [ "$today_kib" -gt 1048576 ]; then
+                    today_bw=$(awk -v kib="$today_kib" 'BEGIN { printf "%.2f GiB", kib/1048576 }')
+                else
+                    today_bw=$(awk -v kib="$today_kib" 'BEGIN { printf "%.2f MiB", kib/1024 }')
+                fi
+            fi
+            
+            # Convert month's bandwidth
+            if [[ "$month_kib" =~ ^[0-9]+$ ]] && [ "$month_kib" -gt 0 ]; then
+                if [ "$month_kib" -gt 1048576 ]; then
+                    month_bw=$(awk -v kib="$month_kib" 'BEGIN { printf "%.2f GiB", kib/1048576 }')
+                else
+                    month_bw=$(awk -v kib="$month_kib" 'BEGIN { printf "%.2f MiB", kib/1024 }')
+                fi
+            fi
         fi
     fi
     
@@ -1004,8 +1016,13 @@ function display_info_panel() {
         client_info="${client_info:0:10}..."
     fi
     
+    # Format expiry info (singkatkan jika terlalu panjang)
+    if [ ${#expiry_info} -gt 10 ]; then
+        expiry_info="${expiry_info:0:10}..."
+    fi
+    
     # Display Info Panel dengan format yang sama persis
-    echo -e "${BLUE}╔══════════════════✦ UDP ZIVPN ✦════════════════════╗${NC}"
+    echo -e "${BLUE}╔════════════════════${GOLD}✦ UDP ZIVPN ✦${BLUE}══════════════════════╗${NC}"
     # Baris 1: OS dan ISP
     printf "  ${GOLD}%-5s${WHITE}%-20s ${GOLD}%-5s${WHITE}%-23s\n" "OS:" "$os_info" "ISP:" "$isp_info"
     # Baris 2: IP dan Host
@@ -1014,7 +1031,7 @@ function display_info_panel() {
     printf "  ${GOLD}%-5s${WHITE}%-20s ${GOLD}%-5s${WHITE}%-23s\n" "Client:" "$client_info" "EXP:" "$expiry_info"
     # Baris 4: Today dan Month bandwidth
     printf "  ${GOLD}%-5s${WHITE}%-20s ${GOLD}%-5s${WHITE}%-23s\n" "Today:" "$today_bw" "Month:" "$month_bw"
-    echo -e "${BLUE}╚════════════════════════════════════════════════════╝${NC}"
+    echo -e "${BLUE}╚══════════════════════════════════════════════════════╝${NC}"
 }
 
 # --- Display Figlet Banner ---
@@ -1046,19 +1063,19 @@ function show_menu() {
         echo ""
         
         # Main Menu dengan 2 kolom dan spacing presisi - PANJANG SAMA DENGAN INFO PANEL
-        echo -e "${BLUE}╔══════════════════✦ UDP ZIVPN ✦════════════════════╗${NC}"
-        echo -e "${BLUE}║                   ${WHITE}ZIVPN MANAGER MENU${BLUE}                ║${NC}"
-        echo -e "${BLUE}╠════════════════════════════════════════════════════╣${NC}"
+        echo -e "${BLUE}╔═══════════════════${GOLD}✦ UDP ZIVPN ✦${BLUE}═══════════════════════╗${NC}"
+        echo -e "${BLUE}║                   ${GILD}ZIVPN MANAGER MENU${BLUE}                ║${NC}"
+        echo -e "${BLUE}╠══════════════════════════════════════════════════════╣${NC}"
         echo -e "${BLUE}║                                                    ║${NC}"
-        echo -e "${BLUE}║   ${WHITE}1) ${CYAN}CREATE ACCOUNT${BLUE}                     ${WHITE}6) ${CYAN}TELEGRAM BOT${BLUE}        ║${NC}"
-        echo -e "${BLUE}║   ${WHITE}2) ${CYAN}RENEW ACCOUNT${BLUE}                      ${WHITE}7) ${CYAN}BACKUP/RESTART${BLUE}      ║${NC}"
-        echo -e "${BLUE}║   ${WHITE}3) ${CYAN}DELETE ACCOUNT${BLUE}                     ${WHITE}8) ${CYAN}RESTART SERVIS${BLUE}      ║${NC}"
-        echo -e "${BLUE}║   ${WHITE}4) ${CYAN}CHANGE DOMAIN${BLUE}                      ${WHITE}9) ${CYAN}LIST ACCOUNT${BLUE}        ║${NC}"
-        echo -e "${BLUE}║   ${WHITE}5) ${CYAN}Buat Trial${BLUE}                         ${WHITE}0) ${CYAN}EXIT${BLUE}                ║${NC}"
+        echo -e "${BLUE}║   ${WHITE}1) ${CYAN}CREATE ACCOUNT${BLUE}                  ${WHITE}6) ${CYAN}TELEGRAM BOT${BLUE}        ║${NC}"
+        echo -e "${BLUE}║   ${WHITE}2) ${CYAN}RENEW ACCOUNT${BLUE}                   ${WHITE}7) ${CYAN}BACKUP/RESTART${BLUE}      ║${NC}"
+        echo -e "${BLUE}║   ${WHITE}3) ${CYAN}DELETE ACCOUNT${BLUE}                  ${WHITE}8) ${CYAN}RESTART SERVIS${BLUE}      ║${NC}"
+        echo -e "${BLUE}║   ${WHITE}4) ${CYAN}CHANGE DOMAIN${BLUE}                   ${WHITE}9) ${CYAN}LIST ACCOUNT${BLUE}        ║${NC}"
+        echo -e "${BLUE}║   ${WHITE}5) ${CYAN}Buat Trial${BLUE}                      ${WHITE}0) ${CYAN}EXIT${BLUE}                ║${NC}"
         echo -e "${BLUE}║                                                    ║${NC}"
-        echo -e "${BLUE}╠════════════════════════════════════════════════════╣${NC}"
+        echo -e "${BLUE}╠══════════════════════════════════════════════════════╣${NC}"
         echo -e "${BLUE}║                   ${YELLOW}PONDOK VPN - @bendakerep${BLUE}                ║${NC}"
-        echo -e "${BLUE}╚════════════════════════════════════════════════════╝${NC}"
+        echo -e "${BLUE}╚══════════════════════════════════════════════════════╝${NC}"
         echo ""
         
         read -p "Pilih menu [0-9]: " choice
