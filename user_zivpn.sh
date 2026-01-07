@@ -189,7 +189,7 @@ function delete_expired_accounts() {
     local temp_file=$(mktemp)
     
     while IFS=':' read -r password expiry_date client_name; do
-        if [[ -n "$password" ]]; then
+        if [ -n "$password" ]; then
             if [ $expiry_date -gt $current_timestamp ]; then
                 # Akun masih aktif, simpan ke temp file
                 echo "${password}:${expiry_date}:${client_name}" >> "$temp_file"
@@ -398,7 +398,7 @@ function renew_account() {
     
     local count=0
     while IFS=':' read -r password expiry_date client_name; do
-        if [[ -n "$password" ]]; then
+        if [ -n "$password" ]; then
             count=$((count + 1))
             local remaining_seconds=$((expiry_date - $(date +%s)))
             local remaining_days=$((remaining_seconds / 86400))
@@ -433,7 +433,7 @@ function renew_account() {
     local current_client_name=""
     local current=0
     while IFS=':' read -r password expiry_date client_name; do
-        if [[ -n "$password" ]]; then
+        if [ -n "$password" ]; then
             current=$((current + 1))
             if [ $current -eq $account_number ]; then
                 selected_password=$password
@@ -544,7 +544,7 @@ function delete_account() {
     
     local count=0
     while IFS=':' read -r password expiry_date client_name; do
-        if [[ -n "$password" ]; then
+        if [ -n "$password" ]; then
             count=$((count + 1))
             local remaining_seconds=$((expiry_date - $(date +%s)))
             local remaining_days=$((remaining_seconds / 86400))
@@ -578,7 +578,7 @@ function delete_account() {
     local current_client_name=""
     local current=0
     while IFS=':' read -r password expiry_date client_name; do
-        if [[ -n "$password" ]]; then
+        if [ -n "$password" ]; then
             current=$((current + 1))
             if [ $current -eq $account_number ]; then
                 selected_password=$password
@@ -600,7 +600,7 @@ function delete_account() {
     echo -e "${WHITE}Password: ${selected_password}${NC}"
     read -p "Konfirmasi (y/n): " confirm
     
-    if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+    if [[ "$confirm" != "y" && "$confirm" != "Y" ]; then
         echo -e "${YELLOW}Penghapusan dibatalkan.${NC}"
         sleep 1
         return
