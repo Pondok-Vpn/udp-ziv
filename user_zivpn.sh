@@ -109,7 +109,7 @@ function register_device() {
 function change_domain() {
     clear
     echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║             ${WHITE}GANTI DOMAIN${BLUE}                ║${NC}"
+    echo -e "${BLUE}║              ${WHITE}GANTI DOMAIN${BLUE}                ║${NC}"
     echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
     echo ""
     
@@ -185,7 +185,7 @@ function change_domain() {
 function telegram_bot_menu() {
     clear
     echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║            ${WHITE}TELEGRAM BOT MANAGER${BLUE}         ║${NC}"
+    echo -e "${BLUE}║            ${WHITE}TELEGRAM BOT MANAGER${BLUE}          ║${NC}"
     echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
     echo ""
     
@@ -389,7 +389,7 @@ function telegram_backup_restart() {
 function create_regular_account() {
     clear
     echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║       ${WHITE}BUAT AKUN PREMIUM${BLUE}             ║${NC}"
+    echo -e "${BLUE}║       ${WHITE}BUAT AKUN UDP PREMIUM${BLUE}             ║${NC}"
     echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
     echo ""
     
@@ -507,21 +507,21 @@ function create_trial_account() {
     EXPIRE_FORMATTED=$(date -d "@$expiry_date" +"%d %B %Y %H:%M:%S")
     
     clear
-    echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║    ${WHITE}✅ AKUN TRIAL BERHASIL${BLUE}       ║${NC}"
-    echo -e "${BLUE}╠══════════════════════════════════════════╣${NC}"
-    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Nama: ${WHITE}$client_name${BLUE}               ║${NC}"
-    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Host: ${WHITE}$HOST${BLUE}                    ║${NC}"
-    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Password: ${WHITE}$password${BLUE}            ║${NC}"
-    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Expire: ${WHITE}$EXPIRE_FORMATTED${BLUE}      ║${NC}"
-    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Limit IP/Device: ${WHITE}$max_devices${BLUE}       ║${NC}"
-    echo -e "${BLUE}╠══════════════════════════════════════════╣${NC}"
-    echo -e "${BLUE}║   ${YELLOW}⚠️  AKUN TRIAL:${BLUE}                            ║${NC}"
-    echo -e "${BLUE}║   ${WHITE}Hanya 1 device yang diperbolehkan${BLUE}        ║${NC}"
-    echo -e "${BLUE}╠══════════════════════════════════════════╣${NC}"
-    echo -e "${BLUE}║   ${LIGHT_CYAN}Terima kasih sudah mencoba!${BLUE}          ║${NC}"
-    echo -e "${BLUE}║   ${YELLOW}PONDOK VPN${BLUE}                            ║${NC}"
-    echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
+    echo -e "${BLUE}╔════════════════════════════╗${NC}"
+    echo -e "${BLUE}║    ${WHITE}✅ AKUN TRIAL BERHASIL${BLUE}       '${NC}"
+    echo -e "${BLUE}╠════════════════════════════╣${NC}"
+    echo -e "${BLUE}║ ${LIGHT_CYAN}🔹Nama: ${WHITE}$client_name${BLUE}             '${NC}"
+    echo -e "${BLUE}║ ${LIGHT_CYAN}🔹Host: ${WHITE}$HOST${BLUE}                    '${NC}"
+    echo -e "${BLUE}║ ${LIGHT_CYAN}🔹Password: ${WHITE}$password${BLUE}            '${NC}"
+    echo -e "${BLUE}║ ${LIGHT_CYAN}🔹Expire: ${WHITE}$EXPIRE_FORMATTED${BLUE}      '${NC}"
+    echo -e "${BLUE}║ ${LIGHT_CYAN}🔹Limit IP/Device: ${WHITE}$max_devices${BLUE} '${NC}"
+    echo -e "${BLUE}╠════════════════════════════╣${NC}"
+    echo -e "${BLUE}║  ${YELLOW}Hanya 1 Device${BLUE}       '${NC}"
+    echo -e "${BLUE}║  ${WHITE}yang diperbolehkan${BLUE}   '${NC}"
+    echo -e "${BLUE}╠════════════════════════════╣${NC}"
+    echo -e "${BLUE}║  ${LIGHT_CYAN}Terima kasih sudah mencoba!${BLUE} '${NC}"
+    echo -e "${BLUE}║  ${YELLOW}PONDOK VPN${BLUE}                    '${NC}"
+    echo -e "${BLUE}╚════════════════════════════╝${NC}"
     
     restart_zivpn
     read -p "Tekan Enter untuk kembali ke menu..."
@@ -531,15 +531,15 @@ function create_trial_account() {
 function create_account() {
     clear
     echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║             ${WHITE}BUAT AKUN ZIVPN${BLUE}             ║${NC}"
+    echo -e "${BLUE}║              ${WHITE}BUAT AKUN ZIVPN${BLUE}             ║${NC}"
     echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
     echo ""
     
     echo -e "${LIGHT_BLUE}╔══════════════════════════════════════════╗${NC}"
     echo -e "${LIGHT_BLUE}║                                          ║${NC}"
-    echo -e "${LIGHT_BLUE}║     ${WHITE}1) ${CYAN}BUAT AKUN ZIVPN${LIGHT_BLUE}                  ║${NC}"
-    echo -e "${LIGHT_BLUE}║     ${WHITE}2) ${CYAN}BUAT AKUN TRIAL${LIGHT_BLUE}                  ║${NC}"
-    echo -e "${LIGHT_BLUE}║     ${WHITE}0) ${CYAN}KEMBALI KE MENU${LIGHT_BLUE}                  ║${NC}"
+    echo -e "${LIGHT_BLUE}║      ${WHITE}1) ${CYAN}BUAT AKUN ZIVPN${LIGHT_BLUE}                  ║${NC}"
+    echo -e "${LIGHT_BLUE}║      ${WHITE}2) ${CYAN}BUAT AKUN TRIAL${LIGHT_BLUE}                  ║${NC}"
+    echo -e "${LIGHT_BLUE}║      ${WHITE}0) ${CYAN}KEMBALI KE MENU${LIGHT_BLUE}                  ║${NC}"
     echo -e "${LIGHT_BLUE}║                                          ║${NC}"
     echo -e "${LIGHT_BLUE}╚══════════════════════════════════════════╝${NC}"
     
@@ -563,7 +563,7 @@ function delete_account() {
     fi
     
     echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║           ${WHITE}HAPUS AKUN ZIVPN${BLUE}              ║${NC}"
+    echo -e "${BLUE}║           ${WHITE}HAPUS AKUN ZIVPN${BLUE}               ║${NC}"
     echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
     echo ""
     
@@ -655,9 +655,9 @@ function renew_account() {
         echo ""
         
         # Header tanpa penutup kanan
-        echo -e "${LIGHT_BLUE}╔════════════════════════════════════════════════════════${NC}"
+        echo -e "${LIGHT_BLUE}════════════════════════════════════════════════════════${NC}"
         echo -e "${LIGHT_BLUE}  ${WHITE}No.  Password           Alasan Lock${NC}"
-        echo -e "${LIGHT_BLUE}═════════════════════════════════════════════════════════${NC}"
+        echo -e "${LIGHT_BLUE}════════════════════════════════════════════════════════${NC}"
         
         local locked_count=0
         while IFS=':' read -r password timestamp reason; do
@@ -667,7 +667,7 @@ function renew_account() {
             fi
         done < "$LOCKED_DB"
         
-        echo -e "${LIGHT_BLUE}═════════════════════════════════════════════════════════${NC}"
+        echo -e "${LIGHT_BLUE}════════════════════════════════════════════════════════${NC}"
         echo ""
         
         if [ $locked_count -gt 0 ]; then
@@ -1022,16 +1022,16 @@ function display_info_panel() {
     fi
     
     # Display Info Panel dengan format yang sama persis
-    echo -e "${BLUE}╔═══════════════════ ${GOLD}✦ UDP ZIVPN ✦ ${BLUE}════════════════════╗${NC}"
+    echo -e "${BLUE}╔═════════════════ ${GOLD}✦ UDP ZIVPN ✦ ${BLUE}══════════════════╗${NC}"
     # Baris 1: OS dan ISP
-    printf "  ${RED}%-5s${GOLD}%-20s ${GOLD}%-5s${RED}%-23s\n" "OS:" "$os_info" "ISP:" "$isp_info"
+    printf "  ${RED}%-5s${GOLD}%-20s ${RED}%-5s${GOLD}%-23s\n" "OS:" "$os_info" "ISP:" "$isp_info"
     # Baris 2: IP dan Host
-    printf "  ${RED}%-5s${GOLD}%-20s ${GOLD}%-5s${RED}%-23s\n" "IP:" "$ip_info" "Host:" "$host_info"
+    printf "  ${RED}%-5s${GOLD}%-20s ${RED}%-5s${GOLD}%-23s\n" "IP:" "$ip_info" "Host:" "$host_info"
     # Baris 3: Client dan Expiry
-    printf "  ${RED}%-5s${GOLD}%-20s ${GOLD}%-5s${RED}%-23s\n" "Client:" "$client_info" "EXP:" "$expiry_info"
+    printf "  ${RED}%-5s${GOLD}%-20s ${RED}%-5s${GOLD}%-23s\n" "Client:" "$client_info" "EXP:" "$expiry_info"
     # Baris 4: Today dan Month bandwidth
-    printf "  ${RED}%-5s${GOLD}%-20s ${GOLD}%-5s${RED}%-23s\n" "Today:" "$today_bw" "Month:" "$month_bw"
-    echo -e "${BLUE}╚══════════════════════════════════════════════════════╝${NC}"
+    printf "  ${RED}%-5s${GOLD}%-20s ${RED}%-5s${GOLD}%-23s\n" "Today:" "$today_bw" "Month:" "$month_bw"
+    echo -e "${BLUE}╚══════════════════════════════════════════════════╝${NC}"
 }
 
 # --- Display Figlet Banner ---
@@ -1063,19 +1063,19 @@ function show_menu() {
         echo ""
         
         # Main Menu dengan 2 kolom dan spacing presisi - PANJANG SAMA DENGAN INFO PANEL
-        echo -e "${BLUE}╔══════════════════════════════════════════════════════╗${NC}"
-        echo -e "${BLUE}║                  ${GOLD} ZIVPN MANAGER MENU ${BLUE}               ║${NC}"
-        echo -e "${BLUE}╠══════════════════════════════════════════════════════╣${NC}"
-        echo -e "${BLUE}║                                                      ║${NC}"
-        echo -e "${BLUE}║ ${WHITE}1) ${CYAN}CREATE ACCOUNT${BLUE}  ${WHITE}6) ${CYAN}TELEGRAM BOT${BLUE}  ║${NC}"
-        echo -e "${BLUE}║ ${WHITE}2) ${CYAN}RENEW ACCOUNT${BLUE}   ${WHITE}7) ${CYAN}BACKUP/RESTART${BLUE}║${NC}"
-        echo -e "${BLUE}║ ${WHITE}3) ${CYAN}DELETE ACCOUNT${BLUE}  ${WHITE}8) ${CYAN}RESTART SERVIS${BLUE}║${NC}"
-        echo -e "${BLUE}║ ${WHITE}4) ${CYAN}CHANGE DOMAIN${BLUE}   ${WHITE}9) ${CYAN}LIST ACCOUNT${BLUE}  ║${NC}"
-        echo -e "${BLUE}║ ${WHITE}5) ${CYAN}TRIAL ACCOUNT${BLUE}   ${WHITE}0) ${CYAN}EXIT${BLUE}       ║${NC}"
-        echo -e "${BLUE}║                                                      ║${NC}"
-        echo -e "${BLUE}╠══════════════════════════════════════════════════════╣${NC}"
-        echo -e "${BLUE}║               ${YELLOW}CREATED BY : PONDOK VPN ${BLUE}              ║${NC}"
-        echo -e "${BLUE}╚══════════════════════════════════════════════════════╝${NC}"
+        echo -e "${BLUE}╔══════════════════════════════════════════════════╗${NC}"
+        echo -e "${BLUE}║             ${GOLD} ZIVPN MANAGER MENU ${BLUE}              ║${NC}"
+        echo -e "${BLUE}╠══════════════════════════════════════════════════╣${NC}"
+        echo -e "${BLUE}║                                                           ║${NC}"
+        echo -e "${BLUE}║   ${WHITE}1) ${CYAN}CREATE ACCOUNT${BLUE}     ${WHITE}6) ${CYAN}TELEGRAM BOT${BLUE}  ║${NC}"
+        echo -e "${BLUE}║   ${WHITE}2) ${CYAN}RENEW ACCOUNT${BLUE}      ${WHITE}7) ${CYAN}BACKUP/RESTART${BLUE}║${NC}"
+        echo -e "${BLUE}║   ${WHITE}3) ${CYAN}DELETE ACCOUNT${BLUE}     ${WHITE}8) ${CYAN}RESTART SERVIS${BLUE}║${NC}"
+        echo -e "${BLUE}║   ${WHITE}4) ${CYAN}CHANGE DOMAIN${BLUE}      ${WHITE}9) ${CYAN}LIST ACCOUNT${BLUE}  ║${NC}"
+        echo -e "${BLUE}║   ${WHITE}5) ${CYAN}TRIAL ACCOUNT${BLUE}      ${WHITE}0) ${CYAN}EXIT${BLUE}       ║${NC}"
+        echo -e "${BLUE}║                                                           ║${NC}"
+        echo -e "${BLUE}╠══════════════════════════════════════════════════╣${NC}"
+        echo -e "${BLUE}║             ${YELLOW}CREATED BY : PONDOK VPN ${BLUE}            ║${NC}"
+        echo -e "${BLUE}╚══════════════════════════════════════════════════╝${NC}"
         echo ""
         
         read -p "Pilih menu [0-9]: " choice
