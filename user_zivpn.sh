@@ -1,870 +1,827 @@
 #!/bin/bash
-# ══════════════════════════════
-# UDP ZIVPN MODULE MANAGER SHELL
-# BY : PONDOK VPN (C) 2026-01-04
-# TELEGRAM : @bendakerep
-# EMAIL : redzall55@gmail.com
-# ══════════════════════════════
+# =============================
+# UDP ZIVPN MODULE MANAGER
+# BY: PONDOK VPN
+# Telegram: @bendakerep
+# =============================
 
-# ════ VALIDASI WARNA ════
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-BOLD_WHITE='\033[1;37m'
-CYAN='\033[0;36m'
-GREEN='\033[0;32m'
-LIGHT_GREEN='\033[1;32m'
-NC='\033[0m' 
-WHITE='\033[1;97m'
-LIGHT_BLUE='\033[1;94m'
-LIGHT_CYAN='\033[1;96m'
-PURPLE='\033[1;95m'
+# WARNA BIRU TELOR ASIN
+BLUE='\033[0;94m'      # Biru utama
+LIGHT_BLUE='\033[1;94m' # Biru terang
+CYAN='\033[0;96m'      # Cyan
+LIGHT_CYAN='\033[1;96m' # Cyan terang
+WHITE='\033[1;97m'     # Putih
+GREEN='\033[0;92m'     # Hijau
+LIGHT_GREEN='\033[1;92m' # Hijau terang
+YELLOW='\033[0;93m'    # Kuning
+LIGHT_YELLOW='\033[1;93m' # Kuning terang
+RED='\033[0;91m'       # Merah
+LIGHT_RED='\033[1;91m' # Merah terang
+NC='\033[0m'           # No Color
 
+# VARIABEL
+USER_DB="/etc/zivpn/users.db"
+DEVICE_DB="/etc/zivpn/devices.db"
+CONFIG_FILE="/etc/zivpn/config.json"
+LOCKED_DB="/etc/zivpn/locked.db"
 
-# ════ Fungsi Utilitas ════
-function backup_config() {
-    local timestamp=$(date +%Y%m%d_%H%M%S)
-    mkdir -p /etc/zivpn/backups
-    cp /etc/zivpn/config.json "/etc/zivpn/backups/config_${timestamp}.json" 2>/dev/null
-    cp /etc/zivpn/users.db "/etc/zivpn/backups/users_${timestamp}.db" 2>/dev/null
-    echo "Backup created: config_${timestamp}.json"
-}
-
+# ================================================
+# --- Utility Functions ---
 function restart_zivpn() {
     echo "Restarting ZIVPN service..."
     systemctl restart zivpn.service
     echo "Service restarted."
 }
 
-function _create_account_logic() {
-   backup_config
+# --- Check if Account is Locked ---
+function is_account_locked() {
     local password="$1"
-    local days="$2"
-    local db_file="/etc/zivpn/users.db"
-    if [ -z "$password" ] || [ -z "$days" ]; then
-        echo "Error: Password and days are required."
-        return 1
+    if [ -f "$LOCKED_DB" ] && grep -q "^${password}:" "$LOCKED_DB"; then
+        return 0  # Account is locked
     fi
-    if ! [[ "$days" =~ ^[0-9]+$ ]]; then
-        echo "Error: Invalid number of days."
-        return 1
-    fi
-    if grep -q "^${password}:" "$db_file"; then
-        echo "Error: Password '${password}' already exists."
-        return 1
-    fi
-    local expiry_date
-    expiry_date=$(date -d "+$days days" +%s)
-    echo "${password}:${expiry_date}" >> "$db_file"
-    jq --arg pass "$password" '.auth.config += [$pass]' /etc/zivpn/config.json > /etc/zivpn/config.json.tmp && mv /etc/zivpn/config.json.tmp /etc/zivpn/config.json
-    if [ $? -eq 0 ]; then
-        echo "Success: Account '${password}' created, expires in ${days} days."
-        restart_zivpn
-        return 0
-    else
-        sed -i "/^${password}:/d" "$db_file"
-        echo "Error: Failed to update config.json."
-        return 1
-    fi
+    return 1  # Account is not locked
 }
 
-# ════ Fungsi buat akun & Format akun ════
-function create_manual_account() {
-    echo "一═⌊✦⌉ 𝗕𝗨𝗔𝗧 𝗔𝗞𝗨𝗡 𝗭𝗜𝗩𝗣𝗡 ⌊✦⌉═一"
-    read -p "Buat password: " password
-    if [ -z "$password" ]; then
-    echo -e "${RED}Password tidak boleh kosong.${NC}"
-    return
-    fi
-    if [ ${#password} -lt 4 ]; then
-    echo -e "${RED}Password minimal 4 karakter.${NC}"
-    return
-    fi
-    read -p "Enter active period (in days): " days
-    if ! [[ "$days" =~ ^[0-9]+$ ]]; then
-        echo "Invalid number of days."
-        return
-    fi
-    local result
-    result=$(_create_account_logic "$password" "$days")
-    if [[ "$result" == "Success"* ]]; then
-        local db_file="/etc/zivpn/users.db"
-        local user_line
-        user_line=$(grep "^${password}:" "$db_file")
-        if [ -n "$user_line" ]; then
-            local expiry_date
-            expiry_date=$(echo "$user_line" | cut -d: -f2)
-            local CERT_CN
-            CERT_CN=$(openssl x509 -in /etc/zivpn/zivpn.crt -noout -subject | sed -n 's/.*CN = \([^,]*\).*/\1/p')
-            local HOST
-            if [ "$CERT_CN" == "zivpn" ]; then
-                HOST=$(curl -s ifconfig.me)
-            else
-                HOST=$CERT_CN
-            fi
-            local EXPIRE_FORMATTED
-            EXPIRE_FORMATTED=$(date -d "@$expiry_date" +"%d %B %Y") # BY : PONDOK VPN
-            
-            clear
-    echo -e "${LIGHT_GREEN}╔══════════════════════════════════════════╗${NC}"
-    echo -e "${LIGHT_GREEN}║     ${WHITE}✅ AKUN BERHASIL DIBUAT${LIGHT_GREEN}      ║${NC}"
-    echo -e "${LIGHT_GREEN}╠══════════════════════════════════════════╣${NC}"
-    echo -e "${LIGHT_GREEN}║                                          ║${NC}"
-    echo -e "${LIGHT_GREEN}║  ${LIGHT_BLUE}🔹 Host: ${WHITE}$HOST${LIGHT_GREEN}                   ║${NC}"
-    echo -e "${LIGHT_GREEN}║  ${LIGHT_BLUE}🔹 Password: ${WHITE}$password${LIGHT_GREEN}           ║${NC}"
-    echo -e "${LIGHT_GREEN}║  ${LIGHT_BLUE}🔹 Expire: ${WHITE}$EXPIRE_FORMATTED${LIGHT_GREEN}     ║${NC}"
-    echo -e "${LIGHT_GREEN}║                                          ║${NC}"
-    echo -e "${LIGHT_GREEN}╠══════════════════════════════════════════╣${NC}"
-    echo -e "${LIGHT_GREEN}║   ${LIGHT_CYAN}Terima kasih sudah order!${LIGHT_GREEN}            ║${NC}"
-    echo -e "${LIGHT_GREEN}╚══════════════════════════════════════════╝${NC}"
-        fi
-    else
-        echo "$result"
-    fi
-    read -p "Tekan Enter untuk kembali ke menu..."
-}
-
-# ════ Fungsi trial akun & Format akun ════
-function _create_trial_account_logic() {
-    local minutes="$1"
-    local db_file="/etc/zivpn/users.db"
-    if ! [[ "$minutes" =~ ^[0-9]+$ ]]; then
-        echo "Error: Invalid number of minutes."
-        return 1
-    fi
-    local password="trial$(shuf -i 10000-99999 -n 1)"
-    local expiry_date
-    expiry_date=$(date -d "+$minutes minutes" +%s)
-    echo "${password}:${expiry_date}" >> "$db_file"
-    jq --arg pass "$password" '.auth.config += [$pass]' /etc/zivpn/config.json > /etc/zivpn/config.json.tmp && mv /etc/zivpn/config.json.tmp /etc/zivpn/config.json
-    if [ $? -eq 0 ]; then
-        echo "Success: Trial account '${password}' created, expires in ${minutes} minutes."
-        restart_zivpn
-        return 0
-    else
-        sed -i "/^${password}:/d" "$db_file"
-        echo "Error: Failed to update config.json."
-        return 1
-    fi
-}
-
-function create_trial_account() {
-    echo "一═⌊✦⌉ 𝗕𝗨𝗔𝗧 𝗧𝗥𝗜𝗔𝗟 𝗔𝗞𝗨𝗡 𝗭𝗜𝗩𝗣𝗡 ⌊✦⌉═一"
-    read -p "Enter active period (in minutes): " minutes
-    if ! [[ "$minutes" =~ ^[0-9]+$ ]]; then
-        echo "Invalid number of minutes."
-        return
-    fi
-    local result
-    result=$(_create_trial_account_logic "$minutes")
-    if [[ "$result" == "Success"* ]]; then
-        local password
-        password=$(echo "$result" | sed -n "s/Success: Trial account '\([^']*\)'.*/\1/p")
-        local db_file="/etc/zivpn/users.db"
-        local user_line
-        user_line=$(grep "^${password}:" "$db_file")
-        if [ -n "$user_line" ]; then
-            local expiry_date
-            expiry_date=$(echo "$user_line" | cut -d: -f2)
-            local CERT_CN
-            CERT_CN=$(openssl x509 -in /etc/zivpn/zivpn.crt -noout -subject | sed -n 's/.*CN = \([^,]*\).*/\1/p')
-            local HOST
-            if [ "$CERT_CN" == "zivpn" ]; then
-                HOST=$(curl -s ifconfig.me)
-            else
-                HOST=$CERT_CN
-            fi
-            local EXPIRE_FORMATTED
-            EXPIRE_FORMATTED=$(date -d "@$expiry_date" +"%d %B %Y %H:%M:%S")
-            clear
-    echo -e "${LIGHT_GREEN}╔══════════════════════════════════════════╗${NC}"
-    echo -e "${LIGHT_GREEN}║     ${WHITE}✅ AKUN TRIAL BERHASIL DIBUAT${LIGHT_GREEN}  ║${NC}"
-    echo -e "${LIGHT_GREEN}╠══════════════════════════════════════════╣${NC}"
-    echo -e "${LIGHT_GREEN}║                                          ║${NC}"
-    echo -e "${LIGHT_GREEN}║  ${LIGHT_BLUE}🔹 Host: ${WHITE}$HOST${LIGHT_GREEN}                   ║${NC}"
-    echo -e "${LIGHT_GREEN}║  ${LIGHT_BLUE}🔹 Password: ${WHITE}$password${LIGHT_GREEN}           ║${NC}"
-    echo -e "${LIGHT_GREEN}║  ${LIGHT_BLUE}🔹 Expire: ${WHITE}$EXPIRE_FORMATTED${LIGHT_GREEN}     ║${NC}"
-    echo -e "${LIGHT_GREEN}║                                          ║${NC}"
-    echo -e "${LIGHT_GREEN}╠══════════════════════════════════════════╣${NC}"
-    echo -e "${LIGHT_GREEN}║   ${LIGHT_CYAN}Terima kasih sudah order!${LIGHT_GREEN}            ║${NC}"
-    echo -e "${LIGHT_GREEN}╚══════════════════════════════════════════╝${NC}"
-        fi
-    else
-        echo "$result"
-    fi
-    read -p "Tekan Enter untuk kembali ke menu..."
-}
-
-# ════ Fungsi perbaruan akun ════
-function _renew_account_logic() {
+# --- Lock Account ---
+function lock_account() {
     local password="$1"
-    local days="$2"
-    local db_file="/etc/zivpn/users.db"
-    if [ -z "$password" ] || [ -z "$days" ]; then
-        echo "Error: Password and days are required."
-        return 1
-    fi
-    if ! [[ "$days" =~ ^[1-9][0-9]*$ ]]; then
-        echo "Error: Invalid number of days."
-        return 1
-    fi
-    local user_line
-    user_line=$(grep "^${password}:" "$db_file")
-    if [ -z "$user_line" ]; then
-        echo "Error: Account '${password}' not found."
-        return 1
-    fi
-    local current_expiry_date
-    current_expiry_date=$(echo "$user_line" | cut -d: -f2)
+    local reason="$2"
+    local timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+    
+    # Remove from main users.db
+    sed -i "/^${password}:/d" "$USER_DB"
+    
+    # Add to locked database
+    echo "${password}:${timestamp}:${reason}" >> "$LOCKED_DB"
+    
+    # Remove from config.json
+    jq --arg pass "$password" 'del(.auth.config[] | select(. == $pass))' "$CONFIG_FILE" > /tmp/config.json.tmp && mv /tmp/config.json.tmp "$CONFIG_FILE"
+    
+    # Remove from device DB
+    sed -i "/^${password}:/d" "$DEVICE_DB" 2>/dev/null
+}
 
-    if ! [[ "$current_expiry_date" =~ ^[0-9]+$ ]]; then
-        echo "Error: Corrupted database entry for user '$password'."
-        return 1
+# --- Unlock Account (via renew) ---
+function unlock_account() {
+    local password="$1"
+    if [ -f "$LOCKED_DB" ]; then
+        sed -i "/^${password}:/d" "$LOCKED_DB"
     fi
-    local seconds_to_add=$((days * 86400))
-    local new_expiry_date=$((current_expiry_date + seconds_to_add))
-    sed -i "s/^${password}:.*/${password}:${new_expiry_date}/" "$db_file"
-    echo "Success: Account '${password}' has been renewed for ${days} days."
+}
+
+# --- Device Limit Management Functions ---
+function check_device_limit() {
+    local username="$1"
+    local max_devices="$2"
+    local current_ip="$3"
+    
+    if [ ! -f "$DEVICE_DB" ]; then
+        touch "$DEVICE_DB"
+    fi
+    
+    local device_count=$(grep -c "^${username}:" "$DEVICE_DB" 2>/dev/null || echo "0")
+    
+    if [ "$device_count" -ge "$max_devices" ]; then
+        if ! grep -q "^${username}:${current_ip}" "$DEVICE_DB"; then
+            # Account exceeded limit, lock it
+            lock_account "$username" "Melebihi limit IP/device (max: $max_devices)"
+            return 1
+        fi
+    fi
+    
     return 0
 }
 
-function _display_accounts() {
+function register_device() {
+    local username="$1"
+    local ip_address="$2"
+    
+    sed -i "/^${username}:${ip_address}/d" "$DEVICE_DB" 2>/dev/null
+    
+    local timestamp=$(date +%s)
+    echo "${username}:${ip_address}:${timestamp}" >> "$DEVICE_DB"
+}
+
+# --- Domain Management Functions ---
+function change_domain() {
     clear
-    echo -e "${PURPLE}╔══════════════════════════════════════════╗${NC}"
-    echo -e "${PURPLE}║ ${LIGHT_CYAN}一═⌊✦⌉ 𝗗𝗔𝗙𝗧𝗔𝗥 𝗔𝗞𝗨𝗡 𝗔𝗞𝗧𝗜𝗙 ⌊✦⌉═一${PURPLE} ║${NC}"
-    echo -e "${PURPLE}╚══════════════════════════════════════════╝${NC}"
+    echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║         ${WHITE}GANTI DOMAIN${BLUE}                ║${NC}"
+    echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
     echo ""
-    echo ""
-    USER_FILE="/etc/zivpn/users.db"
-    if [ ! -f "$USER_FILE" ] || [ ! -s "$USER_FILE" ]; then
-        echo -e "${YELLOW}Tidak ada akun ditemukan.${NC}"
+    
+    local current_domain=""
+    if [ -f "/etc/zivpn/zivpn.crt" ]; then
+        current_domain=$(openssl x509 -in /etc/zivpn/zivpn.crt -noout -subject | sed -n 's/.*CN = \([^,]*\).*/\1/p')
+    fi
+    
+    if [ -n "$current_domain" ]; then
+        echo -e "${LIGHT_BLUE}Domain saat ini: ${WHITE}${current_domain}${NC}"
         echo ""
+    fi
+    
+    read -p "Masukkan domain baru (contoh: vpn.pondok.com): " domain
+    if [ -z "$domain" ]; then
+        echo -e "${RED}Domain tidak boleh kosong!${NC}"
+        sleep 2
+        return
+    fi
+    
+    if [[ ! "$domain" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+        echo -e "${RED}Format domain tidak valid!${NC}"
+        sleep 2
+        return
+    fi
+    
+    echo ""
+    echo -e "${LIGHT_BLUE}Membuat sertifikat SSL untuk domain: ${WHITE}${domain}${NC}"
+    echo -e "${YELLOW}Proses ini mungkin memakan waktu beberapa detik...${NC}"
+    
+    openssl req -new -newkey rsa:2048 -days 365 -nodes -x509 \
+        -subj "/C=ID/ST=Jakarta/L=Jakarta/O=PONDOK VPN/OU=VPN Service/CN=${domain}" \
+        -keyout "/etc/zivpn/zivpn.key" -out "/etc/zivpn/zivpn.crt" 2>/dev/null
+    
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}Sertifikat SSL berhasil dibuat untuk ${domain}${NC}"
+        
+        if [ -f "/etc/zivpn/config.json" ]; then
+            cp /etc/zivpn/config.json /etc/zivpn/config.json.backup
+            
+            jq --arg domain "$domain" '.tls.sni = $domain' /etc/zivpn/config.json > /tmp/config.json.tmp
+            if [ $? -eq 0 ]; then
+                mv /tmp/config.json.tmp /etc/zivpn/config.json
+                
+                echo -e "${LIGHT_GREEN}Domain berhasil diganti ke ${domain}${NC}"
+                restart_zivpn
+                
+                echo ""
+                echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
+                echo -e "${BLUE}║        ${WHITE}✅ DOMAIN BERHASIL DIGANTI${BLUE}      ║${NC}"
+                echo -e "${BLUE}╠══════════════════════════════════════════╣${NC}"
+                echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Domain Lama: ${WHITE}${current_domain:-"Tidak ada"}${BLUE}  ║${NC}"
+                echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Domain Baru: ${WHITE}${domain}${BLUE}               ║${NC}"
+                echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Status: ${WHITE}Aktif${BLUE}                       ║${NC}"
+                echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 SSL: ${WHITE}Valid (365 hari)${BLUE}              ║${NC}"
+                echo -e "${BLUE}╠══════════════════════════════════════════╣${NC}"
+                echo -e "${BLUE}║   ${YELLOW}Service ZIVPN telah di-restart${BLUE}     ║${NC}"
+                echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
+            else
+                echo -e "${RED}Gagal update config.json!${NC}"
+                cp /etc/zivpn/config.json.backup /etc/zivpn/config.json
+            fi
+        fi
+    else
+        echo -e "${RED}Gagal membuat sertifikat SSL!${NC}"
+    fi
+    
+    echo ""
+    read -p "Tekan Enter untuk kembali ke menu..."
+}
+
+# --- Telegram Bot Functions ---
+function setup_telegram_bot() {
+    clear
+    echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║        ${WHITE}TELEGRAM BOT SETUP${BLUE}           ║${NC}"
+    echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
+    echo ""
+    
+    read -p "Masukkan Bot Token Telegram: " bot_token
+    read -p "Masukkan Chat ID Telegram: " chat_id
+    
+    if [ -z "$bot_token" ] || [ -z "$chat_id" ]; then
+        echo -e "${RED}Token dan Chat ID tidak boleh kosong!${NC}"
+        sleep 2
+        return
+    fi
+    
+    echo "TELEGRAM_BOT_TOKEN=${bot_token}" > /etc/zivpn/telegram.conf
+    echo "TELEGRAM_CHAT_ID=${chat_id}" >> /etc/zivpn/telegram.conf
+    echo "TELEGRAM_ENABLED=true" >> /etc/zivpn/telegram.conf
+    
+    echo -e "${GREEN}Bot Telegram berhasil diatur!${NC}"
+    echo -e "${LIGHT_BLUE}Token: ${WHITE}${bot_token:0:10}...${NC}"
+    echo -e "${LIGHT_BLUE}Chat ID: ${WHITE}${chat_id}${NC}"
+    sleep 3
+}
+
+function change_bot_token() {
+    clear
+    if [ ! -f "/etc/zivpn/telegram.conf" ]; then
+        echo -e "${RED}Bot Telegram belum diatur!${NC}"
+        sleep 2
+        return
+    fi
+    
+    source /etc/zivpn/telegram.conf
+    echo -e "${LIGHT_BLUE}Token saat ini: ${WHITE}${TELEGRAM_BOT_TOKEN:0:10}...${NC}"
+    echo -e "${LIGHT_BLUE}Chat ID saat ini: ${WHITE}${TELEGRAM_CHAT_ID}${NC}"
+    echo ""
+    
+    read -p "Masukkan Bot Token baru: " new_token
+    read -p "Masukkan Chat ID baru: " new_chat_id
+    
+    echo "TELEGRAM_BOT_TOKEN=${new_token}" > /etc/zivpn/telegram.conf
+    echo "TELEGRAM_CHAT_ID=${new_chat_id}" >> /etc/zivpn/telegram.conf
+    echo "TELEGRAM_ENABLED=true" >> /etc/zivpn/telegram.conf
+    
+    echo -e "${GREEN}Token berhasil diubah!${NC}"
+    sleep 2
+}
+
+# --- Create Account (Regular) ---
+function create_regular_account() {
+    clear
+    echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║       ${WHITE}BUAT AKUN PREMIUM${BLUE}             ║${NC}"
+    echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
+    echo ""
+    
+    read -p "Masukkan nama anda: " client_name
+    if [ -z "$client_name" ]; then
+        echo -e "${RED}Nama tidak boleh kosong.${NC}"
+        return
+    fi
+
+    read -p "Masukkan password: " password
+    if [ -z "$password" ]; then
+        echo -e "${RED}Password tidak boleh kosong.${NC}"
+        return
+    fi
+
+    read -p "Masukkan masa aktif (hari): " days
+    if ! [[ "$days" =~ ^[0-9]+$ ]]; then
+        echo -e "${RED}Jumlah hari tidak valid.${NC}"
+        return
+    fi
+
+    read -p "Masukkan limit IP/device (default: 2): " max_devices
+    if [ -z "$max_devices" ]; then
+        max_devices=2
+    elif ! [[ "$max_devices" =~ ^[0-9]+$ ]]; then
+        echo -e "${RED}Jumlah device tidak valid, menggunakan default: 2${NC}"
+        max_devices=2
+    fi
+
+    if grep -q "^${password}:" "$USER_DB"; then
+        echo -e "${YELLOW}Password '${password}' sudah ada.${NC}"
+        return
+    fi
+
+    local expiry_date
+    expiry_date=$(date -d "+$days days" +%s)
+    echo "${password}:${expiry_date}:${max_devices}:${client_name}" >> "$USER_DB"
+    
+    jq --arg pass "$password" '.auth.config += [$pass]' /etc/zivpn/config.json > /etc/zivpn/config.json.tmp && mv /etc/zivpn/config.json.tmp /etc/zivpn/config.json
+    
+    local CERT_CN
+    CERT_CN=$(openssl x509 -in /etc/zivpn/zivpn.crt -noout -subject | sed -n 's/.*CN = \([^,]*\).*/\1/p')
+    local HOST
+    if [ "$CERT_CN" == "zivpn" ]; then
+        HOST=$(curl -s ifconfig.me)
+    else
+        HOST=$CERT_CN
+    fi
+
+    local EXPIRE_FORMATTED
+    EXPIRE_FORMATTED=$(date -d "@$expiry_date" +"%d %B %Y")
+    
+    clear
+    echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║     ${WHITE}✅ AKUN BERHASIL DIBUAT${BLUE}      ║${NC}"
+    echo -e "${BLUE}╠══════════════════════════════════════════╣${NC}"
+    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Nama: ${WHITE}$client_name${BLUE}               ║${NC}"
+    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Host: ${WHITE}$HOST${BLUE}                    ║${NC}"
+    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Password: ${WHITE}$password${BLUE}            ║${NC}"
+    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Expire: ${WHITE}$EXPIRE_FORMATTED${BLUE}      ║${NC}"
+    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Masa Aktif: ${WHITE}$days hari${BLUE}         ║${NC}"
+    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Limit IP/Device: ${WHITE}$max_devices${BLUE}       ║${NC}"
+    echo -e "${BLUE}╠══════════════════════════════════════════╣${NC}"
+    echo -e "${BLUE}║   ${YELLOW}⚠️  PERHATIAN:${BLUE}                            ║${NC}"
+    echo -e "${BLUE}║   ${WHITE}Akun akan di-lock jika melebihi${BLUE}            ║${NC}"
+    echo -e "${BLUE}║   ${WHITE}$max_devices IP/Device yang terdaftar${BLUE}         ║${NC}"
+    echo -e "${BLUE}╠══════════════════════════════════════════╣${NC}"
+    echo -e "${BLUE}║   ${LIGHT_CYAN}Terima kasih sudah order!${BLUE}             ║${NC}"
+    echo -e "${BLUE}║   ${YELLOW}PONDOK VPN${BLUE}                            ║${NC}"
+    echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
+    
+    restart_zivpn
+    read -p "Tekan Enter untuk kembali ke menu..."
+}
+
+# --- Create Trial Account ---
+function create_trial_account() {
+    clear
+    echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║        ${WHITE}BUAT AKUN TRIAL${BLUE}              ║${NC}"
+    echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
+    echo ""
+    
+    read -p "Masukkan nama anda: " client_name
+    if [ -z "$client_name" ]; then
+        echo -e "${RED}Nama tidak boleh kosong.${NC}"
+        return
+    fi
+
+    read -p "Masukkan masa aktif (menit): " minutes
+    if ! [[ "$minutes" =~ ^[0-9]+$ ]]; then
+        echo -e "${RED}Jumlah menit tidak valid.${NC}"
+        return
+    fi
+
+    local password="trial$(shuf -i 10000-99999 -n 1)"
+    local max_devices=1  # Trial hanya 1 device
+
+    local expiry_date
+    expiry_date=$(date -d "+$minutes minutes" +%s)
+    echo "${password}:${expiry_date}:${max_devices}:${client_name}" >> "$USER_DB"
+    
+    jq --arg pass "$password" '.auth.config += [$pass]' /etc/zivpn/config.json > /etc/zivpn/config.json.tmp && mv /etc/zivpn/config.json.tmp /etc/zivpn/config.json
+    
+    local CERT_CN
+    CERT_CN=$(openssl x509 -in /etc/zivpn/zivpn.crt -noout -subject | sed -n 's/.*CN = \([^,]*\).*/\1/p')
+    local HOST
+    if [ "$CERT_CN" == "zivpn" ]; then
+        HOST=$(curl -s ifconfig.me)
+    else
+        HOST=$CERT_CN
+    fi
+
+    local EXPIRE_FORMATTED
+    EXPIRE_FORMATTED=$(date -d "@$expiry_date" +"%d %B %Y %H:%M:%S")
+    
+    clear
+    echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║    ${WHITE}✅ AKUN TRIAL BERHASIL${BLUE}       ║${NC}"
+    echo -e "${BLUE}╠══════════════════════════════════════════╣${NC}"
+    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Nama: ${WHITE}$client_name${BLUE}               ║${NC}"
+    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Host: ${WHITE}$HOST${BLUE}                    ║${NC}"
+    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Password: ${WHITE}$password${BLUE}            ║${NC}"
+    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Expire: ${WHITE}$EXPIRE_FORMATTED${BLUE}      ║${NC}"
+    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Limit IP/Device: ${WHITE}$max_devices${BLUE}       ║${NC}"
+    echo -e "${BLUE}╠══════════════════════════════════════════╣${NC}"
+    echo -e "${BLUE}║   ${YELLOW}⚠️  AKUN TRIAL:${BLUE}                            ║${NC}"
+    echo -e "${BLUE}║   ${WHITE}Hanya 1 device yang diperbolehkan${BLUE}        ║${NC}"
+    echo -e "${BLUE}╠══════════════════════════════════════════╣${NC}"
+    echo -e "${BLUE}║   ${LIGHT_CYAN}Terima kasih sudah mencoba!${BLUE}          ║${NC}"
+    echo -e "${BLUE}║   ${YELLOW}PONDOK VPN${BLUE}                            ║${NC}"
+    echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
+    
+    restart_zivpn
+    read -p "Tekan Enter untuk kembali ke menu..."
+}
+
+# --- Create Account Menu ---
+function create_account() {
+    clear
+    echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║        ${WHITE}BUAT AKUN ZIVPN${BLUE}             ║${NC}"
+    echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
+    echo ""
+    
+    echo -e "${LIGHT_BLUE}╔══════════════════════════════════════════╗${NC}"
+    echo -e "${LIGHT_BLUE}║                                          ║${NC}"
+    echo -e "${LIGHT_BLUE}║   ${WHITE}1) ${CYAN}BUAT AKUN ZIVPN${LIGHT_BLUE}                  ║${NC}"
+    echo -e "${LIGHT_BLUE}║   ${WHITE}2) ${CYAN}BUAT AKUN TRIAL${LIGHT_BLUE}                    ║${NC}"
+    echo -e "${LIGHT_BLUE}║   ${WHITE}0) ${CYAN}KEMBALI KE MENU${LIGHT_BLUE}             ║${NC}"
+    echo -e "${LIGHT_BLUE}║                                          ║${NC}"
+    echo -e "${LIGHT_BLUE}╚══════════════════════════════════════════╝${NC}"
+    
+    read -p "Pilih menu [0-2]: " choice
+
+    case $choice in
+        1) create_regular_account ;;
+        2) create_trial_account ;;
+        0) return ;;
+        *) echo -e "${RED}Pilihan tidak valid!${NC}"; sleep 1 ;;
+    esac
+}
+
+# --- Delete Account ---
+function delete_account() {
+    clear
+    if [ ! -f "$USER_DB" ] || [ ! -s "$USER_DB" ]; then
+        echo -e "${YELLOW}Tidak ada akun yang ditemukan.${NC}"
         read -p "Tekan Enter untuk kembali..."
         return
     fi
-    local current_date
-    current_date=$(date +%s)
+    
+    echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║       ${WHITE}HAPUS AKUN ZIVPN${BLUE}              ║${NC}"
+    echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
+    echo ""
+    
+    echo -e "${LIGHT_BLUE}╔══════════════════════════════════════════╗${NC}"
+    echo -e "${LIGHT_BLUE}║  ${WHITE}No.  Nama              Password${LIGHT_BLUE}  ║${NC}"
+    echo -e "${LIGHT_BLUE}╠══════════════════════════════════════════╣${NC}"
+    
     local count=0
-    echo -e "${LIGHT_BLUE}╔════════════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${LIGHT_BLUE}║ ${WHITE}No.  Password                              Expired${LIGHT_BLUE}       ║${NC}"
-    echo -e "${LIGHT_BLUE}╠════════════════════════════════════════════════════════════════════╣${NC}"
-    while IFS=':' read -r password expiry_date; do
-        if [[ -n "$password" && -n "$expiry_date" ]]; then
+    while IFS=':' read -r password expiry_date max_devices client_name; do
+        if [[ -n "$password" ]]; then
             count=$((count + 1))
-            local remaining_seconds=$((expiry_date - current_date))
-            if [ "$remaining_seconds" -gt 0 ]; then
-                local remaining_days=$((remaining_seconds / 86400))
-                local expired_str
-                expired_str=$(date -d "@$expiry_date" +"%d-%m-%Y")
-                if [ "$remaining_days" -lt 1 ]; then
-                    expired_str="<1 hari"
-                fi
-                printf "${LIGHT_BLUE}║ ${WHITE}%2d. %-35s %-15s${LIGHT_BLUE} ║${NC}\n" \
-                    "$count" "$password" "$expired_str"
+            local remaining_seconds=$((expiry_date - $(date +%s)))
+            local remaining_days=$((remaining_seconds / 86400))
+            if [ $remaining_days -gt 0 ]; then
+                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $count). ${client_name:0:15} ${password:0:18}${LIGHT_BLUE}"
             else
-                printf "${LIGHT_BLUE}║ ${WHITE}%2d. %-35s ${RED}EXPIRED${WHITE}         ${LIGHT_BLUE} ║${NC}\n" \
-                    "$count" "$password"
+                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $count). ${client_name:0:15} ${password:0:18} ${RED}Expired${WHITE}${LIGHT_BLUE}"
             fi
         fi
-    done < "$USER_FILE"
-    echo -e "${LIGHT_BLUE}╚════════════════════════════════════════════════════════════════════╝${NC}"
+    done < "$USER_DB"
+    
+    echo -e "${LIGHT_BLUE}╚══════════════════════════════════════════╝${NC}"
     echo ""
-    echo -e "${LIGHT_GREEN}Total akun: $count${NC}"
-    echo ""
-    read -p "Tekan Enter untuk kembali ke menu..."
-}
-
-function renew_account() {
-    clear
-    echo -e "${PURPLE}╔════════════════════════════════════════════════════╗${NC}"
-    echo -e "${PURPLE}║   ${LIGHT_CYAN}一═⌊✦⌉ 𝗥𝗘𝗡𝗘𝗪 𝗔𝗖𝗖𝗢𝗨𝗡𝗧 ⌊✦⌉═一${PURPLE}      ║${NC}"
-    echo -e "${PURPLE}╚════════════════════════════════════════════════════╝${NC}"
-    USER_FILE="/etc/zivpn/users.db"
-    if [ ! -f "$USER_FILE" ] || [ ! -s "$USER_FILE" ]; then
-        echo -e "${YELLOW}Tidak ada akun ditemukan.${NC}"
-        echo ""
-        read -p "Tekan Enter untuk kembali ke menu..."
+    
+    if [ $count -eq 0 ]; then
+        echo -e "${YELLOW}Tidak ada akun yang ditemukan.${NC}"
+        read -p "Tekan Enter untuk kembali..."
         return
-    fi
-    local current_date
-    current_date=$(date +%s)
-    local count=0
-    declare -a account_list
-    declare -a password_list
-    echo -e "${LIGHT_BLUE}╔════════════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${LIGHT_BLUE}║ ${WHITE}No.  Password                              Expired${LIGHT_BLUE}       ║${NC}"
-    echo -e "${LIGHT_BLUE}╠════════════════════════════════════════════════════════════════════╣${NC}"
-    while IFS=':' read -r password expiry_date; do
-        if [[ -n "$password" && -n "$expiry_date" ]]; then
-            count=$((count + 1))
-            password_list[$count]=$password
-            local remaining_seconds=$((expiry_date - current_date))
-            if [ "$remaining_seconds" -gt 0 ]; then
-                local remaining_days=$((remaining_seconds / 86400))
-                local expired_str
-                expired_str=$(date -d "@$expiry_date" +"%d-%m-%Y")
-                if [ "$remaining_days" -lt 1 ]; then
-                    expired_str="<1 hari"
-                fi
-                printf "${LIGHT_BLUE}║ ${WHITE}%2d. %-35s %-15s${LIGHT_BLUE} ║${NC}\n" \
-                    "$count" "$password" "$expired_str"
-            else
-                printf "${LIGHT_BLUE}║ ${WHITE}%2d. %-35s ${RED}EXPIRED${WHITE}         ${LIGHT_BLUE} ║${NC}\n" \
-                    "$count" "$password"
-            fi
-        fi
-    done < "$USER_FILE"
-    echo -e "${LIGHT_BLUE}╚════════════════════════════════════════════════════════════════════╝${NC}"
-    echo ""
-    echo -e "${LIGHT_GREEN}Total akun: $count${NC}"
-    echo ""
-    read -p "Masukkan nomor akun yang akan diperpanjang (0 untuk batal): " account_number
-    if [ -z "$account_number" ] || [ "$account_number" -eq 0 ]; then
-        echo -e "${YELLOW}Batal memperpanjang akun.${NC}"
-        read -p "Tekan Enter untuk kembali ke menu..."
-        return
-    fi
-    if ! [[ "$account_number" =~ ^[0-9]+$ ]] || [ "$account_number" -lt 1 ] || [ "$account_number" -gt "$count" ]; then
-        echo -e "${RED}Nomor akun tidak valid.${NC}"
-        read -p "Tekan Enter untuk kembali ke menu..."
-        return
-    fi
-    local password="${password_list[$account_number]}"
-    if [ -z "$password" ]; then
-        echo -e "${RED}Gagal mendapatkan password dari nomor akun.${NC}"
-        read -p "Tekan Enter untuk kembali ke menu..."
-        return
-    fi
-    echo -e "${CYAN}Akun terpilih: ${WHITE}$password${NC}"
-    read -p "Masukkan jumlah hari untuk memperpanjang: " days
-    if ! [[ "$days" =~ ^[1-9][0-9]*$ ]]; then
-        echo -e "${RED}Jumlah hari tidak valid. Harus angka positif.${NC}"
-        read -p "Tekan Enter untuk kembali ke menu..."
-        return
-    fi
-    local result
-    result=$(_renew_account_logic "$password" "$days")
-    if [[ "$result" == "Success"* ]]; then
-        local db_file="/etc/zivpn/users.db"
-        local user_line
-        user_line=$(grep "^${password}:" "$db_file")
-        local new_expiry_date
-        new_expiry_date=$(echo "$user_line" | cut -d: -f2)
-        local new_expiry_formatted
-        new_expiry_formatted=$(date -d "@$new_expiry_date" +"%d %B %Y")
-        echo ""
-        echo -e "${LIGHT_GREEN}╔══════════════════════════════════════════╗${NC}"
-        echo -e "${LIGHT_GREEN}║     ${WHITE}✅ AKUN BERHASIL DIPERPANJANG${LIGHT_GREEN}    ║${NC}"
-        echo -e "${LIGHT_GREEN}╠══════════════════════════════════════════╣${NC}"
-        echo -e "${LIGHT_GREEN}║                                          ║${NC}"
-        echo -e "${LIGHT_GREEN}║  ${LIGHT_BLUE}🔹 Password: ${WHITE}$password${LIGHT_GREEN}           ║${NC}"
-        echo -e "${LIGHT_GREEN}║  ${LIGHT_BLUE}🔹 Expire Baru: ${WHITE}$new_expiry_formatted${LIGHT_GREEN}  ║${NC}"
-        echo -e "${LIGHT_GREEN}║                                          ║${NC}"
-        echo -e "${LIGHT_GREEN}╠══════════════════════════════════════════╣${NC}"
-        echo -e "${LIGHT_GREEN}║   ${LIGHT_CYAN}Terima kasih sudah order!${LIGHT_GREEN}            ║${NC}"
-        echo -e "${LIGHT_GREEN}╚══════════════════════════════════════════╝${NC}"
-    else
-        echo ""
-        echo -e "${RED}Gagal memperpanjang akun: $result${NC}"
     fi
     
-    read -p "Tekan Enter untuk kembali ke menu..."
-}
-
-# ════ Fungsi hapus akun ════
-function _delete_account_logic() {
-    local password="$1"
-    local db_file="/etc/zivpn/users.db"
-    local config_file="/etc/zivpn/config.json"
-    local tmp_config_file="${config_file}.tmp"
-    if [ -z "$password" ]; then
-        echo "Error: Password is required."
-        return 1
+    read -p "Masukkan nomor akun yang akan dihapus [1-$count]: " account_number
+    
+    if ! [[ "$account_number" =~ ^[0-9]+$ ]] || [ "$account_number" -lt 1 ] || [ "$account_number" -gt "$count" ]; then
+        echo -e "${RED}Nomor akun tidak valid!${NC}"
+        sleep 2
+        return
     fi
-    if [ ! -f "$db_file" ] || ! grep -q "^${password}:" "$db_file"; then
-        echo "Error: Password '${password}' not found." # BY : @bendakerep
-        return 1
+    
+    local selected_password=""
+    local current=0
+    while IFS=':' read -r password expiry_date max_devices client_name; do
+        if [[ -n "$password" ]]; then
+            current=$((current + 1))
+            if [ $current -eq $account_number ]; then
+                selected_password=$password
+                break
+            fi
+        fi
+    done < "$USER_DB"
+    
+    if [ -z "$selected_password" ]; then
+        echo -e "${RED}Akun tidak ditemukan!${NC}"
+        sleep 2
+        return
     fi
-    jq --arg pass "$password" 'del(.auth.config[] | select(. == $pass))' "$config_file" > "$tmp_config_file"
-    if [ $? -eq 0 ]; then
-        sed -i "/^${password}:/d" "$db_file"
-        mv "$tmp_config_file" "$config_file"
-        echo "Success: Account '${password}' deleted."
-        restart_zivpn
-        return 0
-    else
-        rm -f "$tmp_config_file"
-        echo "Error: Failed to update config.json. No changes were made."
-        return 1
-    fi
-}
-
-function delete_account() {
-    clear
-    echo "一═⌊✦⌉ 𝗛𝗔𝗣𝗨𝗦 𝗔𝗞𝗨𝗡 𝗭𝗜𝗩𝗣𝗡 ⌊✦⌉═一"
-    _display_accounts
+    
     echo ""
-    read -p "Enter password to delete: " password
-    if [ -z "$password" ]; then
-        echo "Password cannot be empty."
+    echo -e "${YELLOW}Apakah Anda yakin ingin menghapus akun:${NC}"
+    echo -e "${WHITE}$selected_password${NC}"
+    read -p "Konfirmasi (y/n): " confirm
+    
+    if [[ "$confirm" != "y" && "$confirm" != "Y" ]; then
+        echo -e "${YELLOW}Penghapusan dibatalkan.${NC}"
+        sleep 1
         return
     fi
-    local result
-    result=$(_delete_account_logic "$password")
-    echo "$result"
-    read -p "Tekan Enter untuk kembali ke menu..."
+    
+    sed -i "/^${selected_password}:/d" "$USER_DB"
+    sed -i "/^${selected_password}:/d" "$DEVICE_DB" 2>/dev/null
+    
+    echo -e "${GREEN}Akun '${selected_password}' berhasil dihapus.${NC}"
+    
+    jq --arg pass "$selected_password" 'del(.auth.config[] | select(. == $pass))' /etc/zivpn/config.json > /etc/zivpn/config.json.tmp && mv /etc/zivpn/config.json.tmp /etc/zivpn/config.json
+    restart_zivpn
+    
+    sleep 2
 }
 
-# ════ Fungsi ganti domain ════
-function change_domain() {
-    echo "一═⌊✦⌉ 𝗚𝗔𝗡𝗧𝗜 𝗗𝗢𝗠𝗔𝗜𝗡 ⌊✦⌉═一"
-    read -p "Enter the new domain name for the SSL certificate: " domain
-    if [ -z "$domain" ]; then
-        echo "Domain name cannot be empty."
+# --- Renew Account (with unlock capability) ---
+function renew_account() {
+    clear
+    
+    # Check for locked accounts
+    if [ -f "$LOCKED_DB" ] && [ -s "$LOCKED_DB" ]; then
+        echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
+        echo -e "${BLUE}║       ${WHITE}AKUN TERKUNCI${BLUE}                 ║${NC}"
+        echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
+        echo ""
+        
+        echo -e "${LIGHT_BLUE}╔══════════════════════════════════════════╗${NC}"
+        echo -e "${LIGHT_BLUE}║  ${WHITE}No.  Password           Alasan${LIGHT_BLUE}║${NC}"
+        echo -e "${LIGHT_BLUE}╠══════════════════════════════════════════╣${NC}"
+        
+        local locked_count=0
+        while IFS=':' read -r password timestamp reason; do
+            if [[ -n "$password" ]]; then
+                locked_count=$((locked_count + 1))
+                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $locked_count). ${password:0:18} ${reason:0:15}${LIGHT_BLUE}"
+            fi
+        done < "$LOCKED_DB"
+        
+        echo -e "${LIGHT_BLUE}╚══════════════════════════════════════════╝${NC}"
+        echo ""
+        
+        if [ $locked_count -gt 0 ]; then
+            echo -e "${YELLOW}Ada akun yang terkunci. Renew akan membuka kunci.${NC}"
+            echo ""
+        fi
+    fi
+    
+    if [ ! -f "$USER_DB" ] || [ ! -s "$USER_DB" ]; then
+        echo -e "${YELLOW}Tidak ada akun yang ditemukan.${NC}"
+        read -p "Tekan Enter untuk kembali..."
         return
     fi
-    echo "Generating new certificate for domain '${domain}'..."
-    openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 \
-        -subj "/C=US/ST=California/L=Los Angeles/O=Example Corp/OU=IT Department/CN=${domain}" \
-        -keyout "/etc/zivpn/zivpn.key" -out "/etc/zivpn/zivpn.crt"
-    echo "New certificate generated."
+    
+    echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║       ${WHITE}RENEW AKUN ZIVPN${BLUE}              ║${NC}"
+    echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
+    echo ""
+    
+    echo -e "${LIGHT_BLUE}╔══════════════════════════════════════════╗${NC}"
+    echo -e "${LIGHT_BLUE}║  ${WHITE}No.  Nama              Password${LIGHT_BLUE}  ║${NC}"
+    echo -e "${LIGHT_BLUE}╠══════════════════════════════════════════╣${NC}"
+    
+    local count=0
+    while IFS=':' read -r password expiry_date max_devices client_name; do
+        if [[ -n "$password" ]]; then
+            count=$((count + 1))
+            local remaining_seconds=$((expiry_date - $(date +%s)))
+            local remaining_days=$((remaining_seconds / 86400))
+            if [ $remaining_days -gt 0 ]; then
+                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $count). ${client_name:0:15} ${password:0:18}${LIGHT_BLUE}"
+            else
+                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $count). ${client_name:0:15} ${password:0:18} ${RED}Expired${WHITE}${LIGHT_BLUE}"
+            fi
+        fi
+    done < "$USER_DB"
+    
+    echo -e "${LIGHT_BLUE}╚══════════════════════════════════════════╝${NC}"
+    echo ""
+    
+    read -p "Masukkan nomor akun yang akan di-renew [1-$count]: " account_number
+    
+    if ! [[ "$account_number" =~ ^[0-9]+$ ]] || [ "$account_number" -lt 1 ] || [ "$account_number" -gt "$count" ]; then
+        echo -e "${RED}Nomor akun tidak valid!${NC}"
+        sleep 2
+        return
+    fi
+    
+    local selected_password=""
+    local current_expiry_date=0
+    local current_max_devices=0
+    local current_client_name=""
+    local current=0
+    while IFS=':' read -r password expiry_date max_devices client_name; do
+        if [[ -n "$password" ]]; then
+            current=$((current + 1))
+            if [ $current -eq $account_number ]; then
+                selected_password=$password
+                current_expiry_date=$expiry_date
+                current_max_devices=$max_devices
+                current_client_name=$client_name
+                break
+            fi
+        fi
+    done < "$USER_DB"
+    
+    if [ -z "$selected_password" ]; then
+        echo -e "${RED}Akun tidak ditemukan!${NC}"
+        sleep 2
+        return
+    fi
+    
+    echo ""
+    echo -e "${LIGHT_GREEN}Akun yang dipilih:${NC}"
+    echo -e "${WHITE}Nama: ${current_client_name}${NC}"
+    echo -e "${WHITE}Password: ${selected_password}${NC}"
+    echo ""
+    
+    echo -e "${LIGHT_BLUE}1) ${WHITE}Tambah masa aktif${NC}"
+    echo -e "${LIGHT_BLUE}2) ${WHITE}Ganti password${NC}"
+    echo -e "${LIGHT_BLUE}3) ${WHITE}Ubah limit IP/device${NC}"
+    echo ""
+    read -p "Pilih opsi [1-3]: " renew_option
+    
+    case $renew_option in
+        1)
+            read -p "Masukkan jumlah hari untuk ditambahkan: " days
+            if ! [[ "$days" =~ ^[1-9][0-9]*$ ]]; then
+                echo -e "${RED}Jumlah hari tidak valid!${NC}"
+                sleep 2
+                return
+            fi
+            
+            local seconds_to_add=$((days * 86400))
+            local new_expiry_date=$((current_expiry_date + seconds_to_add))
+            
+            sed -i "s/^${selected_password}:.*/${selected_password}:${new_expiry_date}:${current_max_devices}:${current_client_name}/" "$USER_DB"
+            
+            local new_expiry_formatted
+            new_expiry_formatted=$(date -d "@$new_expiry_date" +"%d %B %Y")
+            echo -e "${GREEN}Masa aktif akun '${selected_password}' ditambah ${days} hari.${NC}"
+            echo -e "${LIGHT_BLUE}Expire baru: ${WHITE}${new_expiry_formatted}${NC}"
+            
+            # Unlock account if it was locked
+            unlock_account "$selected_password"
+            
+            sed -i "/^${selected_password}:/d" "$DEVICE_DB" 2>/dev/null
+            echo -e "${LIGHT_GREEN}Device tracking telah di-reset!${NC}"
+            ;;
+        2)
+            read -p "Masukkan password baru: " new_password
+            if [ -z "$new_password" ]; then
+                echo -e "${RED}Password tidak boleh kosong!${NC}"
+                sleep 2
+                return
+            fi
+            
+            if grep -q "^${new_password}:" "$USER_DB"; then
+                echo -e "${RED}Password '${new_password}' sudah ada!${NC}"
+                sleep 2
+                return
+            fi
+            
+            sed -i "s/^${selected_password}:.*/${new_password}:${current_expiry_date}:${current_max_devices}:${current_client_name}/" "$USER_DB"
+            
+            sed -i "s/^${selected_password}:/${new_password}:/" "$DEVICE_DB" 2>/dev/null
+            
+            jq --arg old "$selected_password" --arg new "$new_password" '.auth.config |= map(if . == $old then $new else . end)' /etc/zivpn/config.json > /etc/zivpn/config.json.tmp && mv /etc/zivpn/config.json.tmp /etc/zivpn/config.json
+            
+            # Unlock account if it was locked
+            unlock_account "$selected_password"
+            
+            echo -e "${GREEN}Password akun berhasil diganti!${NC}"
+            echo -e "${LIGHT_BLUE}Password lama: ${WHITE}${selected_password}${NC}"
+            echo -e "${LIGHT_BLUE}Password baru: ${WHITE}${new_password}${NC}"
+            ;;
+        3)
+            echo -e "${LIGHT_BLUE}Limit IP/device saat ini: ${WHITE}${current_max_devices}${NC}"
+            read -p "Masukkan limit IP/device baru: " new_max_devices
+            
+            if ! [[ "$new_max_devices" =~ ^[0-9]+$ ]] || [ "$new_max_devices" -lt 1 ]; then
+                echo -e "${RED}Limit device tidak valid!${NC}"
+                sleep 2
+                return
+            fi
+            
+            sed -i "s/^${selected_password}:.*/${selected_password}:${current_expiry_date}:${new_max_devices}:${current_client_name}/" "$USER_DB"
+            
+            # Unlock account if it was locked
+            unlock_account "$selected_password"
+            
+            echo -e "${GREEN}Limit IP/device berhasil diubah!${NC}"
+            echo -e "${LIGHT_BLUE}Limit lama: ${WHITE}${current_max_devices} device${NC}"
+            echo -e "${LIGHT_BLUE}Limit baru: ${WHITE}${new_max_devices} device${NC}"
+            
+            if [ "$new_max_devices" -lt "$current_max_devices" ]; then
+                sed -i "/^${selected_password}:/d" "$DEVICE_DB" 2>/dev/null
+                echo -e "${LIGHT_GREEN}Device tracking telah di-reset!${NC}"
+            fi
+            ;;
+        *)
+            echo -e "${RED}Pilihan tidak valid!${NC}"
+            sleep 2
+            return
+            ;;
+    esac
+    
     restart_zivpn
+    sleep 2
+}
+
+# --- List Accounts ---
+function _display_accounts() {
+    if [ ! -f "$USER_DB" ] || [ ! -s "$USER_DB" ]; then
+        echo "No accounts found."
+        return
+    fi
+
+    local current_date
+    current_date=$(date +%s)
+    
+    echo -e "${LIGHT_BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${LIGHT_BLUE}║  ${WHITE}No.  Nama              Password           IP Limit   Expire${LIGHT_BLUE$} ║${NC}"
+    echo -e "${LIGHT_BLUE}╠══════════════════════════════════════════════════════════════╣${NC}"
+    
+    local count=0
+    while IFS=':' read -r password expiry_date max_devices client_name; do
+        if [[ -n "$password" ]]; then
+            count=$((count + 1))
+            local remaining_seconds=$((expiry_date - current_date))
+            if [ $remaining_seconds -gt 0 ]; then
+                local remaining_days=$((remaining_seconds / 86400))
+                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $count). ${client_name:0:15} ${password:0:15} $(printf "%8s" $max_devices) $(printf "%10s" "${remaining_days} days")${LIGHT_BLUE}"
+            else
+                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $count). ${client_name:0:15} ${password:0:15} $(printf "%8s" $max_devices) ${RED}Expired${WHITE}${LIGHT_BLUE}"
+            fi
+        fi
+    done < "$USER_DB"
+    
+    echo -e "${LIGHT_BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
 }
 
 function list_accounts() {
-    _display_accounts
-}
-
-# ════ Fungsi format daftar akun ════
-function _list_accounts() {
-    echo -e "${PURPLE}╔══════════════════════════════════════════╗${NC}"
-    echo -e "${PURPLE}║ ${LIGHT_CYAN}一═⌊✦⌉ 𝗗𝗔𝗙𝗧𝗔𝗥 𝗔𝗞𝗨𝗡 𝗔𝗞𝗧𝗜𝗙 ⌊✦⌉═一${PURPLE} ║${NC}"
-    echo -e "${PURPLE}╚══════════════════════════════════════════╝${NC}"    echo ""
-        USER_FILE="/etc/zivpn/users.db"
-    if [ ! -f "$USER_FILE" ] || [ ! -s "$USER_FILE" ]; then
-        echo -e "${YELLOW}Tidak ada akun ditemukan.${NC}"
-        echo ""
-        read -p "Tekan Enter untuk kembali..."
-        return
-    fi
-    local current_date
-    current_date=$(date +%s)
-    local count=0
-    echo -e "${LIGHT_BLUE}╔════════════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${LIGHT_BLUE}║ ${WHITE}No.  Password                              Expired${LIGHT_BLUE}       ║${NC}"
-    echo -e "${LIGHT_BLUE}╠════════════════════════════════════════════════════════════════════╣${NC}"
-    while IFS=':' read -r password expiry_date; do
-        if [[ -n "$password" && -n "$expiry_date" ]]; then
-            count=$((count + 1))
-            local remaining_seconds=$((expiry_date - current_date))
-            if [ "$remaining_seconds" -gt 0 ]; then
-                local remaining_days=$((remaining_seconds / 86400))
-                local expired_str
-                expired_str=$(date -d "@$expiry_date" +"%d-%m-%Y")
-                if [ "$remaining_days" -lt 1 ]; then
-                    expired_str="<1 hari"
-                fi
-                printf "${LIGHT_BLUE}║ ${WHITE}%2d. %-35s %-15s${LIGHT_BLUE} ║${NC}\n" \
-                    "$count" "$password" "$expired_str"
-            else
-                printf "${LIGHT_BLUE}║ ${WHITE}%2d. %-35s ${RED}EXPIRED${WHITE}         ${LIGHT_BLUE} ║${NC}\n" \
-                    "$count" "$password"
-            fi
-        fi
-    done < "$USER_FILE"
-    echo -e "${LIGHT_BLUE}╚════════════════════════════════════════════════════════════════════╝${NC}"
+    clear
+    echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║       ${WHITE}DAFTAR AKUN AKTIF${BLUE}             ║${NC}"
+    echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
     echo ""
-    echo -e "${LIGHT_GREEN}Total akun: $count${NC}"
+    _display_accounts
     echo ""
     read -p "Tekan Enter untuk kembali ke menu..."
 }
 
-function format_kib_to_human() {
-    local kib=$1
-    if ! [[ "$kib" =~ ^[0-9]+$ ]] || [ -z "$kib" ]; then
-        kib=0
-    fi
-    if [ "$kib" -lt 1048576 ]; then
-        awk -v val="$kib" 'BEGIN { printf "%.2f MiB", val / 1024 }'
-    else
-        awk -v val="$kib" 'BEGIN { printf "%.2f GiB", val / 1048576 }'
-    fi
-}
-
-function get_main_interface() {
-    ip -o -4 route show to default | awk '{print $5}' | head -n 1
-}
-
-# ════ Fungsi informasi panel ════
-function _draw_info_panel() {
-    local os_info isp_info ip_info host_info bw_today bw_month client_name license_exp
-    os_info=$( (hostnamectl 2>/dev/null | grep "Operating System" | cut -d: -f2 | sed 's/^[ \t]*//') || echo "N/A" )
-    os_info=${os_info:-"N/A"}
-    local ip_data
-    ip_data=$(curl -s ipinfo.io)
-    ip_info=$(echo "$ip_data" | jq -r '.ip // "N/A"')
-    isp_info=$(echo "$ip_data" | jq -r '.org // "N/A"')
-    ip_info=${ip_info:-"N/A"}
-    isp_info=${isp_info:-"N/A"}
-    local CERT_CN
-    CERT_CN=$(openssl x509 -in /etc/zivpn/zivpn.crt -noout -subject | sed -n 's/.*CN = \([^,]*\).*/\1/p' 2>/dev/null || echo "")
-    if [ "$CERT_CN" == "zivpn" ] || [ -z "$CERT_CN" ]; then
-        host_info=$ip_info
-    else
-        host_info=$CERT_CN
-    fi
-    host_info=${host_info:-"N/A"}
-    if command -v vnstat &> /dev/null; then
-        local iface
-        iface=$(get_main_interface)
-        local current_year current_month current_day
-        current_year=$(date +%Y)
-        current_month=$(date +%-m) 
-        current_day=$(date +%-d)
-        local today_total_kib=0
-        local vnstat_daily_json
-        vnstat_daily_json=$(vnstat --json d 2>/dev/null)
-        if [[ -n "$vnstat_daily_json" && "$vnstat_daily_json" == "{"* ]]; then
-            today_total_kib=$(echo "$vnstat_daily_json" | jq --arg iface "$iface" --argjson year "$current_year" --argjson month "$current_month" --argjson day "$current_day" '((.interfaces[] | select(.name == $iface) | .traffic.days // [])[] | select(.date.year == $year and .date.month == $month and .date.day == $day) | .total) // 0' | head -n 1)
-        fi
-        today_total_kib=${today_total_kib:-0}
-        bw_today=$(format_kib_to_human "$today_total_kib")
-        local month_total_kib=0
-        local vnstat_monthly_json
-        vnstat_monthly_json=$(vnstat --json m 2>/dev/null)
-        if [[ -n "$vnstat_monthly_json" && "$vnstat_monthly_json" == "{"* ]]; then
-            month_total_kib=$(echo "$vnstat_monthly_json" | jq --arg iface "$iface" --argjson year "$current_year" --argjson month "$current_month" '((.interfaces[] | select(.name == $iface) | .traffic.months // [])[] | select(.date.year == $year and .date.month == $month) | .total) // 0' | head -n 1)
-        fi
-        month_total_kib=${month_total_kib:-0}
-        bw_month=$(format_kib_to_human "$month_total_kib")
-    else
-        bw_today="N/A"
-        bw_month="N/A"
-    fi
-    if [ -f "$LICENSE_INFO_FILE" ]; then
-        source "$LICENSE_INFO_FILE"
-        client_name=${CLIENT_NAME:-"Registered"}
-    else
-        client_name="Registered"
-    fi
-    printf "  ${RED}%-7s${BOLD_WHITE}%-18s ${RED}%-6s${BOLD_WHITE}%-19s${NC}\n" "OS:" "${os_info}" "ISP:" "${isp_info}"
-    printf "  ${RED}%-7s${BOLD_WHITE}%-18s ${RED}%-6s${BOLD_WHITE}%-19s${NC}\n" "IP:" "${ip_info}" "Host:" "${host_info}"
-    printf "  ${RED}%-7s${BOLD_WHITE}%-18s ${RED}%-6s${BOLD_WHITE}%-19s${NC}\n" "Client:" "${client_name}" "Status:" "Active"
-    printf "  ${RED}%-7s${BOLD_WHITE}%-18s ${RED}%-6s${BOLD_WHITE}%-19s${NC}\n" "Today:" "${bw_today}" "Month:" "${bw_month}"
-}
-
-function _draw_service_status() {
-    local status_text status_color status_output
-    local service_status
-    service_status=$(systemctl is-active zivpn.service 2>/dev/null)
-    if [ "$service_status" = "active" ]; then
-        status_text="Running"
-        status_color="${LIGHT_GREEN}"
-    elif [ "$service_status" = "inactive" ]; then
-        status_text="Stopped"
-        status_color="${RED}"
-    elif [ "$service_status" = "failed" ]; then
-        status_text="Error"
-        status_color="${RED}"
-    else
-        status_text="Unknown"
-        status_color="${RED}"
-    fi
-    status_output="${CYAN}Service: ${status_color}${status_text}${NC}"
-    local menu_width=55
-    local text_len_visible
-    text_len_visible=$(echo -e "$status_output" | sed 's/\x1b\[[0-9;]*m//g' | wc -c)
-    text_len_visible=$((text_len_visible - 1))
-    local padding_total=$((menu_width - text_len_visible))
-    local padding_left=$((padding_total / 2))
-    local padding_right=$((padding_total - padding_left))
-    echo -e "${YELLOW}╠════════════════════════════════════════════════════╣${NC}"
-    echo -e "$(printf '%*s' $padding_left)${status_output}$(printf '%*s' $padding_right)"
-    echo -e "${YELLOW}╠════════════════════════════════════════════════════╣${NC}"
-}
-
-# ════ Template menu zivpn ════
-function create_account() {
+# --- Backup/Restart ---
+function backup_restart() {
     clear
-    echo -e "${PURPLE}╔════════════════════════════════════════════════════╗${NC}"
-    echo -e "${PURPLE}║     ${LIGHT_CYAN}一═⌊✦⌉ 𝗖𝗥𝗘𝗔𝗧𝗘 𝗔𝗖𝗖𝗢𝗨𝗡𝗧 ⌊✦⌉═一${PURPLE}       ║${NC}"
-    echo -e "${PURPLE}╚════════════════════════════════════════════════════╝${NC}"
-    echo -e "${YELLOW}╔════════════════════════════════════════════════════╗${NC}"
-    echo -e "${YELLOW}║                                                    ║${NC}"
-    echo -e "${YELLOW}║     ${RED}1)${NC} ${BOLD_WHITE}Create Zivpn                                 ${YELLOW}║${NC}"
-    echo -e "${YELLOW}║     ${RED}2)${NC} ${BOLD_WHITE}Trial Zivpn                                  ${YELLOW}║${NC}"
-    echo -e "${YELLOW}║     ${RED}0)${NC} ${BOLD_WHITE}Back to Menu                                ${YELLOW}║${NC}"
-    echo -e "${YELLOW}║                                                    ║${NC}"
-    echo -e "${YELLOW}╚════════════════════════════════════════════════════╝${NC}"    read -p "Pilih option [0-2]: " choice
+    echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║       ${WHITE}BACKUP / RESTART${BLUE}              ║${NC}"
+    echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
+    echo ""
+    
+    echo -e "${LIGHT_BLUE}╔══════════════════════════════════════════╗${NC}"
+    echo -e "${LIGHT_BLUE}║                                          ║${NC}"
+    echo -e "${LIGHT_BLUE}║   ${WHITE}1) ${CYAN}Backup Data${LIGHT_BLUE}                         ║${NC}"
+    echo -e "${LIGHT_BLUE}║   ${WHITE}2) ${CYAN}Restore Data${LIGHT_BLUE}                        ║${NC}"
+    echo -e "${LIGHT_BLUE}║   ${WHITE}3) ${CYAN}Restart Service${LIGHT_BLUE}                     ║${NC}"
+    echo -e "${LIGHT_BLUE}║   ${WHITE}0) ${CYAN}Kembali ke Menu${LIGHT_BLUE}                    ║${NC}"
+    echo -e "${LIGHT_BLUE}║                                          ║${NC}"
+    echo -e "${LIGHT_BLUE}╚══════════════════════════════════════════╝${NC}"
+    echo ""
+    
+    read -p "Pilih menu [0-3]: " choice
+    
     case $choice in
-        1) create_manual_account ;;
-        2) create_trial_account ;;
-        0) return ;;
-        *) echo "Invalid option" ;;
+        1)
+            echo "Membuat backup..."
+            mkdir -p /backup/zivpn
+            cp -r /etc/zivpn /backup/zivpn/
+            tar -czf /backup/zivpn-backup-$(date +%Y%m%d-%H%M%S).tar.gz /backup/zivpn
+            echo -e "${GREEN}Backup berhasil dibuat!${NC}"
+            sleep 2
+            ;;
+        2)
+            echo "Restore data..."
+            echo -e "${YELLOW}Fitur restore dalam pengembangan${NC}"
+            sleep 2
+            ;;
+        3)
+            restart_zivpn
+            sleep 2
+            ;;
+        0)
+            return
+            ;;
+        *)
+            echo -e "${RED}Pilihan tidak valid!${NC}"
+            sleep 1
+            ;;
     esac
 }
 
+# --- Main Menu (2 Column Layout) ---
 function show_menu() {
-    clear
-    figlet "PONDOK VPN" | lolcat
-    echo -e "${PURPLE}╔════════════════════════════════════════════════════╗${NC}"
-    echo -e "${PURPLE}║     ${LIGHT_CYAN}一═⌊✦⌉ 𝗨𝗗𝗣 𝗭𝗜𝗩𝗣𝗡 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 ⌊✦⌉═一${PURPLE}      ║${NC}"
-    echo -e "${PURPLE}╚════════════════════════════════════════════════════╝${NC}"    _draw_info_panel
-        _draw_info_panel
-    _draw_service_status
-    echo -e "${YELLOW}║                                                    ║${NC}"
-    echo -e "${YELLOW}║   ${RED}1)${NC} ${BOLD_WHITE}Create Account                                ${YELLOW}║${NC}"
-    echo -e "${YELLOW}║   ${RED}2)${NC} ${BOLD_WHITE}Renew Account                                 ${YELLOW}║${NC}"
-    echo -e "${YELLOW}║   ${RED}3)${NC} ${BOLD_WHITE}Delete Account                                ${YELLOW}║${NC}"
-    echo -e "${YELLOW}║   ${RED}4)${NC} ${BOLD_WHITE}Change Domain                                 ${YELLOW}║${NC}"
-    echo -e "${YELLOW}║   ${RED}5)${NC} ${BOLD_WHITE}List Accounts                                 ${YELLOW}║${NC}"
-    echo -e "${YELLOW}║   ${RED}0)${NC} ${BOLD_WHITE}Exit                                          ${YELLOW}║${NC}"
-    echo -e "${YELLOW}║                                                    ║${NC}"
-    echo -e "${YELLOW}╚════════════════════════════════════════════════════╝${NC}"
-    read -p "pilih option [0-5]: " choice
-    case $choice in
-        1) create_account ;;
-        2) renew_account ;;
-        3) delete_account ;;
-        4) change_domain ;;
-        5) list_accounts ;;
-        0) exit 0 ;;
-        *) echo "Invalid option. silahkan pilih ulang." ;;
-    esac
-}
+    while true; do
+        clear
+        
+        # Display header with box
+        echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
+        echo -e "${BLUE}║                   ${WHITE}ZIVPN MANAGER${BLUE}                     ║${NC}"
+        echo -e "${BLUE}╠══════════════════════════════════════════════════════════════╣${NC}"
+        echo -e "${BLUE}║                                                              ║${NC}"
+        echo -e "${BLUE}║   ${WHITE}1) ${CYAN}CREATE ACCOUNT${BLUE}                             ${WHITE}6) ${CYAN}ADD BOTTOKEN${BLUE}         ║${NC}"
+        echo -e "${BLUE}║   ${WHITE}2) ${CYAN}RENEW ACCOUNT${BLUE}                              ${WHITE}7) ${CYAN}CHANGE BOTTOKEN${BLUE}      ║${NC}"
+        echo -e "${BLUE}║   ${WHITE}3) ${CYAN}DELETE ACCOUNT${BLUE}                             ${WHITE}8) ${CYAN}BACKUP/RESTART${BLUE}       ║${NC}"
+        echo -e "${BLUE}║   ${WHITE}4) ${CYAN}CHANGE DOMAIN${BLUE}                              ${WHITE}9) ${CYAN}RESTART SERVIS${BLUE}       ║${NC}"
+        echo -e "${BLUE}║   ${WHITE}5) ${CYAN}LIST ACCOUNT${BLUE}                               ${WHITE}0) ${CYAN}EXIT${BLUE}                   ║${NC}"
+        echo -e "${BLUE}║                                                              ║${NC}"
+        echo -e "${BLUE}╠══════════════════════════════════════════════════════════════╣${NC}"
+        echo -e "${BLUE}║                   ${YELLOW}PONDOK VPN - @bendakerep${BLUE}                ║${NC}"
+        echo -e "${BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
+        echo ""
+        
+        read -p "Pilih menu [0-9]: " choice
 
-# ════ Fungsi inti ════
-function run_setup() {
-    verify_license
-    echo "═[ Starting Base Installation ]═"
-    wget -O zi.sh https://raw.githubusercontent.com/Pondok-Vpn/pondokvip/main/zi.sh
-    if [ $? -ne 0 ]; then echo "Failed to download base installer. Aborting."; exit 1; fi
-    chmod +x zi.sh
-    ./zi.sh
-    if [ $? -ne 0 ]; then echo "Base installation script failed. Aborting."; exit 1; fi
-    rm zi.sh
-    echo "═[ Base Installation Complete ]═"
-    echo "--- Setting up Advanced Management ---"
-    if ! command -v jq &> /dev/null || ! command -v curl &> /dev/null || ! command -v zip &> /dev/null || ! command -v figlet &> /dev/null || ! command -v lolcat &> /dev/null || ! command -v vnstat &> /dev/null; then
-        echo "Installing dependencies (jq, curl, zip, figlet, lolcat, vnstat)..."
-        apt-get update && apt-get install -y jq curl zip figlet lolcat vnstat
-    fi
-    echo "Configuring vnstat for bandwidth monitoring..."
-    local net_interface
-    net_interface=$(ip -o -4 route show to default | awk '{print $5}' | head -n 1)
-    if [ -n "$net_interface" ]; then
-        echo "Detected network interface: $net_interface"
-        sleep 2
-        systemctl stop vnstat
-        vnstat -u -i "$net_interface" --force
-        systemctl enable vnstat
-        systemctl start vnstat
-        echo "vnstat setup complete for interface $net_interface."
-    else
-        echo "Warning: Could not automatically detect network interface for vnstat."
-    fi
-    echo "Clearing initial password(s) set during base installation..."
-    jq '.auth.config = []' /etc/zivpn/config.json > /etc/zivpn/config.json.tmp && mv /etc/zivpn/config.json.tmp /etc/zivpn/config.json
-    touch /etc/zivpn/users.db
-    RANDOM_PASS="zivpn$(shuf -i 10000-99999 -n 1)"
-    EXPIRY_DATE=$(date -d "+1 day" +%s)
-    echo "Creating a temporary initial account..."
-    echo "${RANDOM_PASS}:${EXPIRY_DATE}" >> /etc/zivpn/users.db
-    jq --arg pass "$RANDOM_PASS" '.auth.config += [$pass]' /etc/zivpn/config.json > /etc/zivpn/config.json.tmp && mv /etc/zivpn/config.json.tmp /etc/zivpn/config.json
-    echo "Setting up expiry check cron job..."
-    cat <<'EOF' > /etc/zivpn/expire_check.sh
-    
-    #!/bin/bash
-DB_FILE="/etc/zivpn/users.db"
-CONFIG_FILE="/etc/zivpn/config.json"
-TMP_DB_FILE="${DB_FILE}.tmp"
-CURRENT_DATE=$(date +%s)
-SERVICE_RESTART_NEEDED=false
-
-if [ ! -f "$DB_FILE" ]; then exit 0; fi
-> "$TMP_DB_FILE"
-
-while IFS=':' read -r password expiry_date; do
-    if [[ -z "$password" ]]; then continue; fi
-
-    if [ "$expiry_date" -le "$CURRENT_DATE" ]; then
-        echo "User '${password}' has expired. Deleting permanently."
-        jq --arg pass "$password" 'del(.auth.config[] | select(. == $pass))' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
-        SERVICE_RESTART_NEEDED=true
-    else
-        echo "${password}:${expiry_date}" >> "$TMP_DB_FILE"
-    fi
-done < "$DB_FILE"
-
-mv "$TMP_DB_FILE" "$DB_FILE"
-
-if [ "$SERVICE_RESTART_NEEDED" = true ]; then
-    echo "Restarting zivpn service due to user removal."
-    systemctl restart zivpn.service
-fi
-exit 0
-EOF
-    chmod +x /etc/zivpn/expire_check.sh
-    CRON_JOB_EXPIRY="* * * * * /etc/zivpn/expire_check.sh # zivpn-expiry-check"
-    (crontab -l 2>/dev/null | grep -v "# zivpn-expiry-check") | crontab -
-    (crontab -l 2>/dev/null; echo "$CRON_JOB_EXPIRY") | crontab -
-    echo "Skipping license checker setup (expiry check disabled)."
-    restart_zivpn
-    echo "--- Setting Up REST API Service ---"
-    if ! command -v node &> /dev/null; then
-        echo "Node.js not found. Installing Node.js v18..."
-        curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-        sudo apt-get install -y nodejs
-    else
-        echo "Node.js is already installed."
-    fi
-    mkdir -p /etc/zivpn/api
-    cat <<'EOF' > /etc/zivpn/api/package.json
-{
-  "name": "zivpn-api",
-  "version": "1.0.0",
-  "description": "API for managing ZIVPN",
-  "main": "api.js",
-  "scripts": { "start": "node api.js" },
-  "dependencies": { "express": "^4.17.1" }
-}
-EOF
-
-    cat <<'EOF' > /etc/zivpn/api/api.js
-const express = require('express');
-const { execFile } = require('child_process');
-const fs = require('fs');
-const app = express();
-const PORT = 5888;
-const AUTH_KEY_PATH = '/etc/zivpn/api_auth.key';
-const ZIVPN_MANAGER_SCRIPT = '/usr/local/bin/zivpn-manager';
-
-const authenticate = (req, res, next) => {
-    const providedAuthKey = req.query.auth;
-    if (!providedAuthKey) return res.status(401).json({ status: 'error', message: 'Authentication key is required.' });
-
-    fs.readFile(AUTH_KEY_PATH, 'utf8', (err, storedKey) => {
-        if (err) return res.status(500).json({ status: 'error', message: 'Could not read authentication key.' });
-        if (providedAuthKey.trim() !== storedKey.trim()) return res.status(403).json({ status: 'error', message: 'Invalid authentication key.' });
-        next();
-    });
-};
-app.use(authenticate);
-
-const executeZivpnManager = (command, args, res) => {
-    execFile('sudo', [ZIVPN_MANAGER_SCRIPT, command, ...args], (error, stdout, stderr) => {
-        if (error) {
-            const errorMessage = stderr.includes('Error:') ? stderr : 'An internal server error occurred.';
-            return res.status(500).json({ status: 'error', message: errorMessage.trim() });
-        }
-        if (stdout.toLowerCase().includes('success')) {
-            res.json({ status: 'success', message: stdout.trim() });
-        else {
-            res.status(400).json({ status: 'error', message: stdout.trim() });
-        }
-    });
-};
-
-app.all('/create/zivpn', (req, res) => {
-    const { password, exp } = req.query;
-    if (!password || !exp) return res.status(400).json({ status: 'error', message: 'Parameters password and exp are required.' });
-    executeZivpnManager('create_account', [password, exp], res);
-});
-app.all('/delete/zivpn', (req, res) => {
-    const { password } = req.query;
-    if (!password) return res.status(400).json({ status: 'error', message: 'Parameter password is required.' });
-    executeZivpnManager('delete_account', [password], res);
-});
-app.all('/renew/zivpn', (req, res) => {
-    const { password, exp } = req.query;
-    if (!password || !exp) return res.status(400).json({ status: 'error', message: 'Parameters password and exp are required.' });
-    executeZivpnManager('renew_account', [password, exp], res);
-});
-app.all('/trial/zivpn', (req, res) => {
-    const { exp } = req.query;
-    if (!exp) return res.status(400).json({ status: 'error', message: 'Parameter exp is required.' });
-    executeZivpnManager('trial_account', [exp], res);
-});
-
-app.listen(PORT, () => console.log('ZIVPN API server running on port ' + PORT));
-EOF
-    
-    echo "Installing API dependencies..."
-    npm install --prefix /etc/zivpn/api
-    cat <<'EOF' > /etc/systemd/system/zivpn-api.service
-[Unit]
-Description=ZIVPN REST API Service
-After=network.target
-[Service]
-Type=simple
-User=root
-WorkingDirectory=/etc/zivpn/api
-ExecStart=/usr/bin/node /etc/zivpn/api/api.js
-Restart=on-failure
-[Install]
-WantedBy=multi-user.target
-EOF
-    
-    systemctl daemon-reload
-    systemctl enable zivpn-api.service
-    systemctl start zivpn-api.service
-    echo "Generating initial API key..."
-    local initial_api_key
-    initial_api_key=$(LC_ALL=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 6)
-    echo "$initial_api_key" > /etc/zivpn/api_auth.key
-    chmod 600 /etc/zivpn/api_auth.key
-    echo "Opening firewall port 5888 for API..."
-    iptables -I INPUT -p tcp --dport 5888 -j ACCEPT
-    echo "--- API Setup Complete ---"
-    echo "--- Integrating management script into the system ---" # BY : PONDOKVPN
-    cp "$0" /usr/local/bin/zivpn-manager
-    chmod +x /usr/local/bin/zivpn-manager
-    PROFILE_FILE="/root/.bashrc"
-    if [ -f "/root/.bash_profile" ]; then PROFILE_FILE="/root/.bash_profile"; fi
-    ALIAS_CMD="alias menu='/usr/local/bin/zivpn-manager'"
-    AUTORUN_CMD="/usr/local/bin/zivpn-manager"
-    grep -qF "$ALIAS_CMD" "$PROFILE_FILE" || echo "$ALIAS_CMD" >> "$PROFILE_FILE"
-    grep -qF "$AUTORUN_CMD" "$PROFILE_FILE" || echo "$AUTORUN_CMD" >> "$PROFILE_FILE"
-    echo "The 'menu' command is now available."
-    echo "The management menu will now open automatically on login."
-    echo "-----------------------------------------------------"
-    echo "Advanced management setup complete."
-    echo "Password for temporary account (expires 24h): ${RANDOM_PASS}"
-    echo "-----------------------------------------------------"
-    read -p "Press Enter to continue to the management menu..."
-}
-
-function main() {
-    if [ "$#" -gt 0 ]; then
-        local command="$1"
-        shift
-        case "$command" in
-            create_account)
-                _create_account_logic "$@"
+        case $choice in
+            1) create_account ;;
+            2) renew_account ;;
+            3) delete_account ;;
+            4) change_domain ;;
+            5) list_accounts ;;
+            6) setup_telegram_bot ;;
+            7) change_bot_token ;;
+            8) backup_restart ;;
+            9) restart_zivpn ;;
+            0) 
+                echo -e "${GREEN}Terima kasih!${NC}"
+                exit 0
                 ;;
-            delete_account)
-                _delete_account_logic "$@"
-                ;;
-            renew_account)
-                _renew_account_logic "$@"
-                ;;
-            trial_account)
-                _create_trial_account_logic "$@"
-                ;;
-            *)
-                echo "Error: Unknown command '$command'"
-                exit 1
+            *) 
+                echo -e "${RED}Pilihan tidak valid!${NC}"
+                sleep 1
                 ;;
         esac
-        exit $?
-    fi
-    if [ ! -f "/etc/systemd/system/zivpn.service" ]; then
-        run_setup
-    fi
-    while true; do
-        show_menu
     done
 }
-# 一═✦⌠𝗣𝗢𝗡𝗗𝗢𝗞 𝗩𝗣𝗡⌡✦═一
+
+# --- Main Execution ---
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    main "$@"
+    # Initialize databases if they don't exist
+    touch "$USER_DB"
+    touch "$DEVICE_DB"
+    touch "$LOCKED_DB"
+    
+    zivpn_menu
 fi
