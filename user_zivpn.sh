@@ -443,23 +443,23 @@ function create_regular_account() {
     EXPIRE_FORMATTED=$(date -d "@$expiry_date" +"%d %B %Y")
     
     clear
-    echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║        ${WHITE}✅ AKUN BERHASIL DIBUAT${BLUE}        ║${NC}"
-    echo -e "${BLUE}╠══════════════════════════════════════════╣${NC}"
-    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Nama: ${WHITE}$client_name${BLUE}               '${NC}"
-    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Host: ${WHITE}$HOST${BLUE}                   '${NC}"
-    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Password: ${WHITE}$password${BLUE}            '${NC}"
-    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Expire: ${WHITE}$EXPIRE_FORMATTED${BLUE}      '${NC}"
-    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Masa Aktif: ${WHITE}$days hari${BLUE}         '${NC}"
-    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Limit IP/Device: ${WHITE}$max_devices${BLUE}       '${NC}"
-    echo -e "${BLUE}╠══════════════════════════════════════════╣${NC}"
-    echo -e "${BLUE}║   ${YELLOW}⚠️  PERHATIAN:${BLUE}                        ║${NC}"
-    echo -e "${BLUE}║   ${WHITE}Akun akan di-lock jika melebihi${BLUE}         ║${NC}"
-    echo -e "${BLUE}║   ${WHITE}$max_devices IP/Device yang terdaftar${BLUE}  ║${NC}"
-    echo -e "${BLUE}╠══════════════════════════════════════════╣${NC}"
-    echo -e "${BLUE}║   ${LIGHT_CYAN}Terima kasih sudah order!${BLUE}              ║${NC}"
-    echo -e "${BLUE}║   ${YELLOW}PONDOK VPN${BLUE}                             ║${NC}"
-    echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
+    echo -e "${BLUE}╔══════════════════════════╗${NC}"
+    echo -e "${BLUE}║  ${WHITE}✅ AKUN BERHASIL DIBUAT${NC}"
+    echo -e "${BLUE}╠══════════════════════════╣${NC}"
+    echo -e "${BLUE}║${LIGHT_CYAN}*Nama: ${WHITE}$client_name${NC}"
+    echo -e "${BLUE}║${LIGHT_CYAN}*Host: ${WHITE}$HOST${NC}"
+    echo -e "${BLUE}║${LIGHT_CYAN}*Pass: ${WHITE}$password${NC}"
+    echo -e "${BLUE}║${LIGHT_CYAN}*Expi: ${WHITE}$EXPIRE_FORMATTED${NC}"
+    echo -e "${BLUE}║${LIGHT_CYAN}*Aktif: ${WHITE}$days_hari${NC}"
+    echo -e "${BLUE}║${LIGHT_CYAN}*Limit IP: ${WHITE}$max_devices${NC}"
+    echo -e "${BLUE}╠═════════════════════════╣${NC}"
+    echo -e "${BLUE}║    ${YELLOW}⚠️ PERHATIAN:${NC}"
+    echo -e "${BLUE}║${WHITE}Akun akan dilock jika melebihi${NC}"
+    echo -e "${BLUE}║${WHITE}$max_devices IP/Device yang terdaftar${NC}"
+    echo -e "${BLUE}╠═════════════════════════╣${NC}"
+    echo -e "${BLUE}║   ${LIGHT_CYAN}Terima kasih sudah order!${NC}"
+    echo -e "${BLUE}║   ${YELLOW}PONDOK VPN${NC}"
+    echo -e "${BLUE}╚═════════════════════════╝${NC}"
     
     restart_zivpn
     read -p "Tekan Enter untuk kembali ke menu..."
@@ -507,21 +507,21 @@ function create_trial_account() {
     EXPIRE_FORMATTED=$(date -d "@$expiry_date" +"%d %B %Y %H:%M:%S")
     
     clear
-    echo -e "${BLUE}╔════════════════════════════╗${NC}"
-    echo -e "${BLUE}║    ${WHITE}✅ AKUN TRIAL BERHASIL${BLUE}       '${NC}"
-    echo -e "${BLUE}╠════════════════════════════╣${NC}"
-    echo -e "${BLUE}║ ${LIGHT_CYAN}🔹Nama: ${WHITE}$client_name${BLUE}             '${NC}"
-    echo -e "${BLUE}║ ${LIGHT_CYAN}🔹Host: ${WHITE}$HOST${BLUE}                    '${NC}"
-    echo -e "${BLUE}║ ${LIGHT_CYAN}🔹Password: ${WHITE}$password${BLUE}            '${NC}"
-    echo -e "${BLUE}║ ${LIGHT_CYAN}🔹Expire: ${WHITE}$EXPIRE_FORMATTED${BLUE}      '${NC}"
-    echo -e "${BLUE}║ ${LIGHT_CYAN}🔹Limit IP/Device: ${WHITE}$max_devices${BLUE} '${NC}"
-    echo -e "${BLUE}╠════════════════════════════╣${NC}"
-    echo -e "${BLUE}║  ${YELLOW}Hanya 1 Device${BLUE}       '${NC}"
-    echo -e "${BLUE}║  ${WHITE}yang diperbolehkan${BLUE}   '${NC}"
-    echo -e "${BLUE}╠════════════════════════════╣${NC}"
-    echo -e "${BLUE}║  ${LIGHT_CYAN}Terima kasih sudah mencoba!${BLUE} '${NC}"
-    echo -e "${BLUE}║  ${YELLOW}PONDOK VPN${BLUE}                    '${NC}"
-    echo -e "${BLUE}╚════════════════════════════╝${NC}"
+    echo -e "${BLUE}╔═════════════════════════╗${NC}"
+    echo -e "${BLUE}║ ${WHITE}✅ AKUN TRIAL BERHASIL${NC}"
+    echo -e "${BLUE}╠═════════════════════════╣${NC}"
+    echo -e "${BLUE}║ ${LIGHT_CYAN}*Nama: ${WHITE}$client_name${NC}"
+    echo -e "${BLUE}║ ${LIGHT_CYAN}*Host: ${WHITE}$HOST${BLUE}                    '${NC}"
+    echo -e "${BLUE}║ ${LIGHT_CYAN}*Password: ${WHITE}$password${NC}"
+    echo -e "${BLUE}║ ${LIGHT_CYAN}*Expire: ${WHITE}$EXPIRE_FORMATTED${NC}"
+    echo -e "${BLUE}║ ${LIGHT_CYAN}*Limit IP: ${WHITE}$max_devices${NC}"
+    echo -e "${BLUE}╠═════════════════════════╣${NC}"
+    echo -e "${BLUE}║ ${YELLOW}Hanya 1 Device${NC}"
+    echo -e "${BLUE}║ ${WHITE}yang diperbolehkan${NC}"
+    echo -e "${BLUE}╠═════════════════════════╣${NC}"
+    echo -e "${BLUE}║ ${LIGHT_CYAN}Terima kasih sudah mencoba${NC}"
+    echo -e "${BLUE}║ ${YELLOW}PONDOK VPN${NC}"
+    echo -e "${BLUE}╚═════════════════════════╝${NC}"
     
     restart_zivpn
     read -p "Tekan Enter untuk kembali ke menu..."
@@ -568,9 +568,9 @@ function delete_account() {
     echo ""
     
     # Header tanpa penutup kanan
-    echo -e "${LIGHT_BLUE}╔═══════════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${LIGHT_BLUE}═════════════════════════════════════════════════════════════${NC}"
     echo -e "${LIGHT_BLUE}  ${WHITE}No.  Nama User           Password           Limit   Expired${NC}"
-    echo -e "${LIGHT_BLUE}════════════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${LIGHT_BLUE}═════════════════════════════════════════════════════════════${NC}"
     
     local count=0
     while IFS=':' read -r password expiry_date max_devices client_name; do
@@ -586,7 +586,7 @@ function delete_account() {
         fi
     done < "$USER_DB"
     
-    echo -e "${LIGHT_BLUE}════════════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${LIGHT_BLUE}═════════════════════════════════════════════════════════════${NC}"
     echo ""
     
     if [ $count -eq 0 ]; then
@@ -1064,17 +1064,17 @@ function show_menu() {
         
         # Main Menu dengan 2 kolom dan spacing presisi - PANJANG SAMA DENGAN INFO PANEL
         echo -e "${BLUE}╔══════════════════════════════════════════════════╗${NC}"
-        echo -e "${BLUE}║             ${GOLD} ZIVPN MANAGER MENU ${BLUE}              ║${NC}"
+        echo -e "${BLUE}║             ${GOLD} ZIVPN MANAGER MENU ${NC}"
         echo -e "${BLUE}╠══════════════════════════════════════════════════╣${NC}"
-        echo -e "${BLUE}║                                                           ║${NC}"
-        echo -e "${BLUE}║   ${WHITE}1) ${CYAN}CREATE ACCOUNT${BLUE}     ${WHITE}6) ${CYAN}TELEGRAM BOT${BLUE}  ║${NC}"
-        echo -e "${BLUE}║   ${WHITE}2) ${CYAN}RENEW ACCOUNT${BLUE}      ${WHITE}7) ${CYAN}BACKUP/RESTART${BLUE}║${NC}"
-        echo -e "${BLUE}║   ${WHITE}3) ${CYAN}DELETE ACCOUNT${BLUE}     ${WHITE}8) ${CYAN}RESTART SERVIS${BLUE}║${NC}"
-        echo -e "${BLUE}║   ${WHITE}4) ${CYAN}CHANGE DOMAIN${BLUE}      ${WHITE}9) ${CYAN}LIST ACCOUNT${BLUE}  ║${NC}"
-        echo -e "${BLUE}║   ${WHITE}5) ${CYAN}TRIAL ACCOUNT${BLUE}      ${WHITE}0) ${CYAN}EXIT${BLUE}       ║${NC}"
-        echo -e "${BLUE}║                                                           ║${NC}"
+        echo -e "${BLUE}║                                                           ${NC}"
+        echo -e "${BLUE}║   ${WHITE}1) ${CYAN}CREATE ACCOUNT${BLUE}           ${WHITE}6) ${CYAN}TELEGRAM BOT${NC}"
+        echo -e "${BLUE}║   ${WHITE}2) ${CYAN}RENEW ACCOUNT${BLUE}            ${WHITE}7) ${CYAN}BACKUP/RESTART${NC}"
+        echo -e "${BLUE}║   ${WHITE}3) ${CYAN}DELETE ACCOUNT${BLUE}           ${WHITE}8) ${CYAN}RESTART SERVIS${NC}"
+        echo -e "${BLUE}║   ${WHITE}4) ${CYAN}CHANGE DOMAIN${BLUE}            ${WHITE}9) ${CYAN}LIST ACCOUNT${NC}"
+        echo -e "${BLUE}║   ${WHITE}5) ${CYAN}TRIAL ACCOUNT${BLUE}            ${WHITE}0) ${CYAN}EXIT${NC}"
+        echo -e "${BLUE}║                                                           ${NC}"
         echo -e "${BLUE}╠══════════════════════════════════════════════════╣${NC}"
-        echo -e "${BLUE}║             ${YELLOW}CREATED BY : PONDOK VPN ${BLUE}            ║${NC}"
+        echo -e "${BLUE}║             ${YELLOW}CREATED BY : PONDOK VPN ${NC}"
         echo -e "${BLUE}╚══════════════════════════════════════════════════╝${NC}"
         echo ""
         
