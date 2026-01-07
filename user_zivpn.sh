@@ -17,6 +17,8 @@ YELLOW='\033[0;93m'    # Kuning
 LIGHT_YELLOW='\033[1;93m' # Kuning terang
 RED='\033[0;91m'       # Merah
 LIGHT_RED='\033[1;91m' # Merah terang
+PURPLE='\033[0;95m'    # Ungu
+LIGHT_PURPLE='\033[1;95m' # Ungu terang
 NC='\033[0m'           # No Color
 
 # VARIABEL
@@ -195,13 +197,36 @@ function setup_telegram_bot() {
         return
     fi
     
+    # Validasi format token
+    if [[ ! "$bot_token" =~ ^[0-9]+:[a-zA-Z0-9_-]+$ ]]; then
+        echo -e "${RED}Format Token tidak valid!${NC}"
+        sleep 2
+        return
+    fi
+    
     echo "TELEGRAM_BOT_TOKEN=${bot_token}" > /etc/zivpn/telegram.conf
     echo "TELEGRAM_CHAT_ID=${chat_id}" >> /etc/zivpn/telegram.conf
     echo "TELEGRAM_ENABLED=true" >> /etc/zivpn/telegram.conf
     
     echo -e "${GREEN}Bot Telegram berhasil diatur!${NC}"
-    echo -e "${LIGHT_BLUE}Token: ${WHITE}${bot_token:0:10}...${NC}"
+    echo -e "${LIGHT_BLUE}Token: ${WHITE}${bot_token:0:15}...${NC}"
     echo -e "${LIGHT_BLUE}Chat ID: ${WHITE}${chat_id}${NC}"
+    
+    # Test send message
+    echo ""
+    echo -e "${YELLOW}Menguji pengiriman pesan...${NC}"
+    if command -v curl &> /dev/null; then
+        response=$(curl -s -X POST "https://api.telegram.org/bot${bot_token}/sendMessage" \
+            -d "chat_id=${chat_id}" \
+            -d "text=✅ Bot Telegram ZIVPN berhasil diatur!")
+        
+        if [[ $response == *"ok\":true"* ]]; then
+            echo -e "${GREEN}Pesan test berhasil dikirim!${NC}"
+        else
+            echo -e "${YELLOW}Pesan test gagal dikirim (mungkin Chat ID salah)${NC}"
+        fi
+    fi
+    
     sleep 3
 }
 
@@ -209,23 +234,49 @@ function change_bot_token() {
     clear
     if [ ! -f "/etc/zivpn/telegram.conf" ]; then
         echo -e "${RED}Bot Telegram belum diatur!${NC}"
+        echo -e "${YELLOW}Silakan gunakan menu 'ADD BOTTOKEN' terlebih dahulu${NC}"
         sleep 2
         return
     fi
     
-    source /etc/zivpn/telegram.conf
-    echo -e "${LIGHT_BLUE}Token saat ini: ${WHITE}${TELEGRAM_BOT_TOKEN:0:10}...${NC}"
+    source /etc/zivpn/telegram.conf 2>/dev/null
+    echo -e "${LIGHT_BLUE}Token saat ini: ${WHITE}${TELEGRAM_BOT_TOKEN:0:15}...${NC}"
     echo -e "${LIGHT_BLUE}Chat ID saat ini: ${WHITE}${TELEGRAM_CHAT_ID}${NC}"
     echo ""
     
     read -p "Masukkan Bot Token baru: " new_token
     read -p "Masukkan Chat ID baru: " new_chat_id
     
+    if [ -z "$new_token" ] || [ -z "$new_chat_id" ]; then
+        echo -e "${RED}Token dan Chat ID tidak boleh kosong!${NC}"
+        sleep 2
+        return
+    fi
+    
+    if [[ ! "$new_token" =~ ^[0-9]+:[a-zA-Z0-9_-]+$ ]]; then
+        echo -e "${RED}Format Token tidak valid!${NC}"
+        sleep 2
+        return
+    fi
+    
     echo "TELEGRAM_BOT_TOKEN=${new_token}" > /etc/zivpn/telegram.conf
     echo "TELEGRAM_CHAT_ID=${new_chat_id}" >> /etc/zivpn/telegram.conf
     echo "TELEGRAM_ENABLED=true" >> /etc/zivpn/telegram.conf
     
     echo -e "${GREEN}Token berhasil diubah!${NC}"
+    
+    # Test new token
+    echo ""
+    echo -e "${YELLOW}Menguji token baru...${NC}"
+    if command -v curl &> /dev/null; then
+        response=$(curl -s -X POST "https://api.telegram.org/bot${new_token}/getMe")
+        if [[ $response == *"ok\":true"* ]]; then
+            echo -e "${GREEN}Token valid!${NC}"
+        else
+            echo -e "${YELLOW}Token mungkin tidak valid${NC}"
+        fi
+    fi
+    
     sleep 2
 }
 
@@ -411,9 +462,10 @@ function delete_account() {
     echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
     echo ""
     
-    echo -e "${LIGHT_BLUE}╔══════════════════════════════════════════╗${NC}"
-    echo -e "${LIGHT_BLUE}║  ${WHITE}No.  Nama              Password${LIGHT_BLUE}  ║${NC}"
-    echo -e "${LIGHT_BLUE}╠══════════════════════════════════════════╣${NC}"
+    # Header tanpa penutup kanan
+    echo -e "${LIGHT_BLUE}╔═══════════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${LIGHT_BLUE}  ${WHITE}No.  Nama User           Password           Limit   Expired${NC}"
+    echo -e "${LIGHT_BLUE}════════════════════════════════════════════════════════════════════════${NC}"
     
     local count=0
     while IFS=':' read -r password expiry_date max_devices client_name; do
@@ -422,14 +474,14 @@ function delete_account() {
             local remaining_seconds=$((expiry_date - $(date +%s)))
             local remaining_days=$((remaining_seconds / 86400))
             if [ $remaining_days -gt 0 ]; then
-                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $count). ${client_name:0:15} ${password:0:18}${LIGHT_BLUE} ║${NC}"
+                printf "${LIGHT_BLUE}  ${WHITE}%2d. %-18s %-18s %-7s %s hari${NC}\n" "$count" "$client_name" "$password" "$max_devices" "$remaining_days"
             else
-                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $count). ${client_name:0:15} ${password:0:18} ${RED}Expired${WHITE}${LIGHT_BLUE} ║${NC}"
+                printf "${LIGHT_BLUE}  ${WHITE}%2d. %-18s %-18s %-7s ${RED}Expired${NC}\n" "$count" "$client_name" "$password" "$max_devices"
             fi
         fi
     done < "$USER_DB"
     
-    echo -e "${LIGHT_BLUE}╚══════════════════════════════════════════╝${NC}"
+    echo -e "${LIGHT_BLUE}════════════════════════════════════════════════════════════════════════${NC}"
     echo ""
     
     if [ $count -eq 0 ]; then
@@ -497,19 +549,20 @@ function renew_account() {
         echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
         echo ""
         
-        echo -e "${LIGHT_BLUE}╔══════════════════════════════════════════╗${NC}"
-        echo -e "${LIGHT_BLUE}║  ${WHITE}No.  Password           Alasan${LIGHT_BLUE}     ║${NC}"
-        echo -e "${LIGHT_BLUE}╠══════════════════════════════════════════╣${NC}"
+        # Header tanpa penutup kanan
+        echo -e "${LIGHT_BLUE}╔════════════════════════════════════════════════════════${NC}"
+        echo -e "${LIGHT_BLUE}  ${WHITE}No.  Password           Alasan Lock${NC}"
+        echo -e "${LIGHT_BLUE}═════════════════════════════════════════════════════════${NC}"
         
         local locked_count=0
         while IFS=':' read -r password timestamp reason; do
             if [[ -n "$password" ]]; then
                 locked_count=$((locked_count + 1))
-                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $locked_count). ${password:0:18} ${reason:0:15}${LIGHT_BLUE} ║${NC}"
+                printf "${LIGHT_BLUE}  ${WHITE}%2d. %-18s %s${NC}\n" "$locked_count" "$password" "$reason"
             fi
         done < "$LOCKED_DB"
         
-        echo -e "${LIGHT_BLUE}╚══════════════════════════════════════════╝${NC}"
+        echo -e "${LIGHT_BLUE}═════════════════════════════════════════════════════════${NC}"
         echo ""
         
         if [ $locked_count -gt 0 ]; then
@@ -529,9 +582,10 @@ function renew_account() {
     echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
     echo ""
     
-    echo -e "${LIGHT_BLUE}╔══════════════════════════════════════════╗${NC}"
-    echo -e "${LIGHT_BLUE}║  ${WHITE}No.  Nama              Password${LIGHT_BLUE}  ║${NC}"
-    echo -e "${LIGHT_BLUE}╠══════════════════════════════════════════╣${NC}"
+    # Header tanpa penutup kanan dengan warna berbeda
+    echo -e "${LIGHT_BLUE}╔═══════════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${LIGHT_BLUE}  ${WHITE}No.  ${LIGHT_CYAN}Nama User${WHITE}           ${LIGHT_GREEN}Password${WHITE}           ${YELLOW}Limit${WHITE}   ${LIGHT_PURPLE}Expired${NC}"
+    echo -e "${LIGHT_BLUE}════════════════════════════════════════════════════════════════════════${NC}"
     
     local count=0
     while IFS=':' read -r password expiry_date max_devices client_name; do
@@ -540,14 +594,14 @@ function renew_account() {
             local remaining_seconds=$((expiry_date - $(date +%s)))
             local remaining_days=$((remaining_seconds / 86400))
             if [ $remaining_days -gt 0 ]; then
-                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $count). ${client_name:0:15} ${password:0:18}${LIGHT_BLUE} ║${NC}"
+                printf "${LIGHT_BLUE}  ${WHITE}%2d. ${LIGHT_CYAN}%-18s ${LIGHT_GREEN}%-18s ${YELLOW}%-7s ${LIGHT_PURPLE}%s hari${NC}\n" "$count" "$client_name" "$password" "$max_devices" "$remaining_days"
             else
-                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $count). ${client_name:0:15} ${password:0:18} ${RED}Expired${WHITE}${LIGHT_BLUE} ║${NC}"
+                printf "${LIGHT_BLUE}  ${WHITE}%2d. ${LIGHT_CYAN}%-18s ${LIGHT_GREEN}%-18s ${YELLOW}%-7s ${RED}Expired${NC}\n" "$count" "$client_name" "$password" "$max_devices"
             fi
         fi
     done < "$USER_DB"
     
-    echo -e "${LIGHT_BLUE}╚══════════════════════════════════════════╝${NC}"
+    echo -e "${LIGHT_BLUE}════════════════════════════════════════════════════════════════════════${NC}"
     echo ""
     
     read -p "Masukkan nomor akun yang akan di-renew [1-$count]: " account_number
@@ -684,16 +738,17 @@ function renew_account() {
 # --- List Accounts ---
 function _display_accounts() {
     if [ ! -f "$USER_DB" ] || [ ! -s "$USER_DB" ]; then
-        echo "No accounts found."
+        echo "Tidak ada akun ditemukan."
         return
     fi
 
     local current_date
     current_date=$(date +%s)
     
-    echo -e "${LIGHT_BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${LIGHT_BLUE}║  ${WHITE}No.  Nama              Password           IP Limit   Expire${LIGHT_BLUE} ║${NC}"
-    echo -e "${LIGHT_BLUE}╠══════════════════════════════════════════════════════════════╣${NC}"
+    # Header tanpa penutup kanan dengan warna berbeda
+    echo -e "${LIGHT_BLUE}╔═══════════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${LIGHT_BLUE}  ${WHITE}No.  ${LIGHT_CYAN}Nama User${WHITE}           ${LIGHT_GREEN}Password${WHITE}           ${YELLOW}Limit${WHITE}   ${LIGHT_PURPLE}Sisa Hari${NC}"
+    echo -e "${LIGHT_BLUE}════════════════════════════════════════════════════════════════════════${NC}"
     
     local count=0
     while IFS=':' read -r password expiry_date max_devices client_name; do
@@ -702,14 +757,15 @@ function _display_accounts() {
             local remaining_seconds=$((expiry_date - current_date))
             if [ $remaining_seconds -gt 0 ]; then
                 local remaining_days=$((remaining_seconds / 86400))
-                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $count). ${client_name:0:15} ${password:0:15} $(printf "%8s" $max_devices) $(printf "%10s" "${remaining_days} days")${LIGHT_BLUE} ║${NC}"
+                printf "${LIGHT_BLUE}  ${WHITE}%2d. ${LIGHT_CYAN}%-18s ${LIGHT_GREEN}%-18s ${YELLOW}%-7s ${LIGHT_PURPLE}%s hari${NC}\n" "$count" "$client_name" "$password" "$max_devices" "$remaining_days"
             else
-                echo -e "${LIGHT_BLUE}║  ${WHITE}$(printf "%2d" $count). ${client_name:0:15} ${password:0:15} $(printf "%8s" $max_devices) ${RED}Expired${WHITE}${LIGHT_BLUE}    ║${NC}"
+                printf "${LIGHT_BLUE}  ${WHITE}%2d. ${LIGHT_CYAN}%-18s ${LIGHT_GREEN}%-18s ${YELLOW}%-7s ${RED}Expired${NC}\n" "$count" "$client_name" "$password" "$max_devices"
             fi
         fi
     done < "$USER_DB"
     
-    echo -e "${LIGHT_BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
+    echo -e "${LIGHT_BLUE}════════════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${LIGHT_BLUE}  ${WHITE}Total: ${count} akun${NC}"
 }
 
 function list_accounts() {
@@ -766,14 +822,85 @@ function backup_restart() {
     esac
 }
 
+# --- Info Panel Function ---
+function display_info_panel() {
+    # Get OS info
+    local os_info=$(grep -E '^PRETTY_NAME=' /etc/os-release | cut -d'=' -f2 | tr -d '"' 2>/dev/null || echo "Unknown OS")
+    
+    # Get ISP info
+    local isp_info=$(curl -s ipinfo.io/org 2>/dev/null | head -1 || echo "Unknown ISP")
+    
+    # Get IP Address
+    local ip_info=$(curl -s ifconfig.me 2>/dev/null || echo "Unknown IP")
+    
+    # Get Domain/Host
+    local domain_info=""
+    if [ -f "/etc/zivpn/zivpn.crt" ]; then
+        domain_info=$(openssl x509 -in /etc/zivpn/zivpn.crt -noout -subject | sed -n 's/.*CN = \([^,]*\).*/\1/p' 2>/dev/null || echo "No Domain")
+    else
+        domain_info="No Domain"
+    fi
+    
+    # Get Client Name from file if exists
+    local client_info="Unknown"
+    if [ -f "/etc/zivpn/.client_info" ]; then
+        client_info=$(cat /etc/zivpn/.client_info 2>/dev/null || echo "Unknown")
+    fi
+    
+    # Get Expiry info if exists
+    local expiry_info="Not Set"
+    if [ -f "/etc/zivpn/.expiry_info" ]; then
+        expiry_info=$(cat /etc/zivpn/.expiry_info 2>/dev/null || echo "Not Set")
+    fi
+    
+    # Display Info Panel
+    echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║           ${WHITE}SYSTEM INFORMATION${BLUE}         ║${NC}"
+    echo -e "${BLUE}╠══════════════════════════════════════════╣${NC}"
+    echo -e "${BLUE}║                                          ║${NC}"
+    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 OS:    ${WHITE}${os_info}${BLUE}               ║${NC}"
+    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 ISP:   ${WHITE}${isp_info}${BLUE}     ║${NC}"
+    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 IP:    ${WHITE}${ip_info}${BLUE}                  ║${NC}"
+    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Domain:${WHITE}${domain_info}${BLUE}               ║${NC}"
+    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Client:${WHITE}${client_info}${BLUE}               ║${NC}"
+    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Expiry:${WHITE}${expiry_info}${BLUE}               ║${NC}"
+    echo -e "${BLUE}║                                          ║${NC}"
+    echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
+}
+
+# --- Display Figlet Banner ---
+function display_banner() {
+    # Cek apakah figlet dan lolcat terinstall
+    if command -v figlet &> /dev/null && command -v lolcat &> /dev/null; then
+        clear
+        echo -e "${BLUE}══════════════════════════════════════════${NC}"
+        figlet "PONDOK VPN" | lolcat
+        echo -e "${BLUE}══════════════════════════════════════════${NC}"
+        echo ""
+    else
+        # Jika tidak ada figlet/lolcat, tampilkan banner sederhana
+        clear
+        echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
+        echo -e "${BLUE}║           ${LIGHT_CYAN}PONDOK VPN${BLUE}                 ║${NC}"
+        echo -e "${BLUE}║        ${YELLOW}ZIVPN MANAGER${BLUE}                  ║${NC}"
+        echo -e "${BLUE}║     ${WHITE}Telegram: @bendakerep${BLUE}              ║${NC}"
+        echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
+        echo ""
+    fi
+}
+
 # --- Main Menu (2 Column Layout) ---
 function show_menu() {
     while true; do
-        clear
+        display_banner
         
-        # Display header with box
+        # Display info panel
+        display_info_panel
+        echo ""
+        
+        # Main Menu dengan 2 kolom
         echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
-        echo -e "${BLUE}║                   ${WHITE}ZIVPN MANAGER${BLUE}                     ║${NC}"
+        echo -e "${BLUE}║                   ${WHITE}ZIVPN MANAGER MENU${BLUE}                ║${NC}"
         echo -e "${BLUE}╠══════════════════════════════════════════════════════════════╣${NC}"
         echo -e "${BLUE}║                                                              ║${NC}"
         echo -e "${BLUE}║   ${WHITE}1) ${CYAN}CREATE ACCOUNT${BLUE}                             ${WHITE}6) ${CYAN}ADD BOTTOKEN${BLUE}         ║${NC}"
@@ -811,12 +938,57 @@ function show_menu() {
     done
 }
 
+# --- Auto Install Dependencies ---
+function install_dependencies() {
+    echo -e "${YELLOW}Memeriksa dependencies...${NC}"
+    
+    # Install figlet dan lolcat untuk banner
+    if ! command -v figlet &> /dev/null; then
+        echo -e "${YELLOW}Menginstall figlet...${NC}"
+        apt-get update && apt-get install -y figlet > /dev/null 2>&1
+    fi
+    
+    if ! command -v lolcat &> /dev/null; then
+        echo -e "${YELLOW}Menginstall lolcat...${NC}"
+        apt-get install -y lolcat > /dev/null 2>&1
+    fi
+    
+    # Install jq untuk JSON parsing
+    if ! command -v jq &> /dev/null; then
+        echo -e "${YELLOW}Menginstall jq...${NC}"
+        apt-get install -y jq > /dev/null 2>&1
+    fi
+    
+    # Install curl untuk HTTP requests
+    if ! command -v curl &> /dev/null; then
+        echo -e "${YELLOW}Menginstall curl...${NC}"
+        apt-get install -y curl > /dev/null 2>&1
+    fi
+    
+    echo -e "${GREEN}Dependencies siap!${NC}"
+    sleep 1
+}
+
 # --- Main Execution ---
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    # Install dependencies jika belum ada
+    install_dependencies
+    
     # Initialize databases if they don't exist
     touch "$USER_DB"
     touch "$DEVICE_DB"
     touch "$LOCKED_DB"
+    
+    # Create client info file if not exists
+    if [ ! -f "/etc/zivpn/.client_info" ]; then
+        read -p "Masukkan nama client: " client_name
+        echo "$client_name" > /etc/zivpn/.client_info
+    fi
+    
+    # Create expiry info file if not exists
+    if [ ! -f "/etc/zivpn/.expiry_info" ]; then
+        echo "Tidak ada expiry" > /etc/zivpn/.expiry_info
+    fi
     
     show_menu
 fi
