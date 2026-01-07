@@ -84,6 +84,18 @@ function _create_account_logic() {
     local expiry_date
     expiry_date=$(date -d "+$days days" +%s)
     echo "${password}:${expiry_date}" >> "$db_file"
+    
+    jq --arg pass "$password" '.auth.config += [$pass]' /etc/zivpn/config.json > /etc/zivpn/config.json.tmp && mv /etc/zivpn/config.json.tmp /etc/zivpn/config.json
+    
+    if [ $? -eq 0 ]; then
+        echo "Success: Account '${password}' created, expires in ${days} days."
+        restart_zivpn
+        return 0
+    else
+        sed -i "/^${password}:/d" "$db_file"
+        echo "Error: Failed to update config.json."
+        return 1
+    fi
 }
 
 # --- Core Logic Functions ---
@@ -610,7 +622,7 @@ function show_backup_menu() {
 
 function show_menu() {
     clear
-    figlet "PONDOK VPN" | lolcat
+    figlet "UDP ZIVPN" | lolcat
     
     echo -e "${YELLOW}╔══════════════════// ${CYAN}PONDOK VPN${YELLOW} //═══════════════════╗${NC}"
     _draw_info_panel
@@ -708,8 +720,8 @@ EOF
     
     # Download helper script
     echo "Downloading helper script..."
-    wget -O /usr/local/bin/zivpn_helper.sh https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/zivpn_helper.sh 2>/dev/null || \
-    wget -O /usr/local/bin/zivpn_helper.sh https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/zivpn_helper.sh 2>/dev/null || {
+    wget -O /usr/local/bin/zivpn_helper.sh https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/ziv-helper.sh 2>/dev/null || \
+    wget -O /usr/local/bin/zivpn_helper.sh https://raw.githubusercontent.com/kedaivpn/udp-zivpn/main/zivpn_helper.sh 2>/dev/null || {
         echo "Failed to download helper script. Creating local version..."
         # Create basic helper if download fails
         cat > /usr/local/bin/zivpn_helper.sh << 'HELPER'
