@@ -13,12 +13,13 @@ LIGHT_CYAN='\033[1;96m' # Cyan terang
 WHITE='\033[1;97m'     # Putih
 GREEN='\033[0;92m'     # Hijau
 LIGHT_GREEN='\033[1;92m' # Hijau terang
-YELLOW='\033[0;93m'    # Kuning
+YELLOW='\033[0;93m'    # Kuning (Gold)
 LIGHT_YELLOW='\033[1;93m' # Kuning terang
 RED='\033[0;91m'       # Merah
 LIGHT_RED='\033[1;91m' # Merah terang
 PURPLE='\033[0;95m'    # Ungu
 LIGHT_PURPLE='\033[1;95m' # Ungu terang
+GOLD='\033[0;93m'      # Gold untuk label
 NC='\033[0m'           # No Color
 
 # VARIABEL
@@ -180,11 +181,39 @@ function change_domain() {
     read -p "Tekan Enter untuk kembali ke menu..."
 }
 
-# --- Telegram Bot Functions ---
+# --- Telegram Bot Management Menu ---
+function telegram_bot_menu() {
+    clear
+    echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║        ${WHITE}TELEGRAM BOT MANAGER${BLUE}         ║${NC}"
+    echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
+    echo ""
+    
+    echo -e "${LIGHT_BLUE}╔══════════════════════════════════════════╗${NC}"
+    echo -e "${LIGHT_BLUE}║                                          ║${NC}"
+    echo -e "${LIGHT_BLUE}║   ${WHITE}1) ${CYAN}ADD BOTTOKEN${LIGHT_BLUE}                       ║${NC}"
+    echo -e "${LIGHT_BLUE}║   ${WHITE}2) ${CYAN}CHANGE BOTTOKEN${LIGHT_BLUE}                    ║${NC}"
+    echo -e "${LIGHT_BLUE}║   ${WHITE}3) ${CYAN}BACKUP/RESTART via Telegram${LIGHT_BLUE}        ║${NC}"
+    echo -e "${LIGHT_BLUE}║   ${WHITE}0) ${CYAN}KEMBALI KE MENU${LIGHT_BLUE}                    ║${NC}"
+    echo -e "${LIGHT_BLUE}║                                          ║${NC}"
+    echo -e "${LIGHT_BLUE}╚══════════════════════════════════════════╝${NC}"
+    
+    read -p "Pilih menu [0-3]: " choice
+
+    case $choice in
+        1) setup_telegram_bot ;;
+        2) change_bot_token ;;
+        3) telegram_backup_restart ;;
+        0) return ;;
+        *) echo -e "${RED}Pilihan tidak valid!${NC}"; sleep 1 ;;
+    esac
+}
+
+# --- Setup Telegram Bot ---
 function setup_telegram_bot() {
     clear
     echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║        ${WHITE}TELEGRAM BOT SETUP${BLUE}           ║${NC}"
+    echo -e "${BLUE}║          ${WHITE}ADD BOT TOKEN${BLUE}               ║${NC}"
     echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
     echo ""
     
@@ -230,6 +259,7 @@ function setup_telegram_bot() {
     sleep 3
 }
 
+# --- Change Bot Token ---
 function change_bot_token() {
     clear
     if [ ! -f "/etc/zivpn/telegram.conf" ]; then
@@ -278,6 +308,81 @@ function change_bot_token() {
     fi
     
     sleep 2
+}
+
+# --- Telegram Backup/Restart ---
+function telegram_backup_restart() {
+    clear
+    echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║   ${WHITE}BACKUP/RESTART via Telegram${BLUE}       ║${NC}"
+    echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
+    echo ""
+    
+    if [ ! -f "/etc/zivpn/telegram.conf" ]; then
+        echo -e "${RED}Bot Telegram belum diatur!${NC}"
+        echo -e "${YELLOW}Silakan atur bot token terlebih dahulu${NC}"
+        sleep 2
+        return
+    fi
+    
+    echo -e "${LIGHT_BLUE}╔══════════════════════════════════════════╗${NC}"
+    echo -e "${LIGHT_BLUE}║                                          ║${NC}"
+    echo -e "${LIGHT_BLUE}║   ${WHITE}1) ${CYAN}Backup Data & Kirim ke Telegram${LIGHT_BLUE}    ║${NC}"
+    echo -e "${LIGHT_BLUE}║   ${WHITE}2) ${CYAN}Restart Service & Notifikasi${LIGHT_BLUE}       ║${NC}"
+    echo -e "${LIGHT_BLUE}║   ${WHITE}0) ${CYAN}Kembali ke Menu${LIGHT_BLUE}                    ║${NC}"
+    echo -e "${LIGHT_BLUE}║                                          ║${NC}"
+    echo -e "${LIGHT_BLUE}╚══════════════════════════════════════════╝${NC}"
+    echo ""
+    
+    read -p "Pilih menu [0-2]: " choice
+    
+    case $choice in
+        1)
+            echo "Membuat backup dan mengirim ke Telegram..."
+            mkdir -p /backup/zivpn
+            cp -r /etc/zivpn /backup/zivpn/
+            tar -czf /backup/zivpn-backup-$(date +%Y%m%d-%H%M%S).tar.gz /backup/zivpn
+            
+            source /etc/zivpn/telegram.conf 2>/dev/null
+            if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
+                curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+                    -d "chat_id=${TELEGRAM_CHAT_ID}" \
+                    -d "text=✅ Backup berhasil dibuat! 
+📁 File: zivpn-backup-$(date +%Y%m%d-%H%M%S).tar.gz
+📅 Tanggal: $(date '+%d %B %Y %H:%M:%S')
+📱 PONDOK VPN" \
+                    -d "parse_mode=Markdown"
+            fi
+            
+            echo -e "${GREEN}Backup berhasil dibuat dan notifikasi dikirim!${NC}"
+            sleep 2
+            ;;
+        2)
+            echo "Merestart service dan mengirim notifikasi..."
+            restart_zivpn
+            
+            source /etc/zivpn/telegram.conf 2>/dev/null
+            if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
+                curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+                    -d "chat_id=${TELEGRAM_CHAT_ID}" \
+                    -d "text=🔄 Service ZIVPN telah di-restart!
+✅ Service aktif dan berjalan
+📅 $(date '+%d %B %Y %H:%M:%S')
+📱 PONDOK VPN" \
+                    -d "parse_mode=Markdown"
+            fi
+            
+            echo -e "${GREEN}Service berhasil di-restart dan notifikasi dikirim!${NC}"
+            sleep 2
+            ;;
+        0)
+            return
+            ;;
+        *)
+            echo -e "${RED}Pilihan tidak valid!${NC}"
+            sleep 1
+            ;;
+    esac
 }
 
 # --- Create Account (Regular) ---
@@ -822,7 +927,7 @@ function backup_restart() {
     esac
 }
 
-# --- Info Panel Function ---
+# --- Info Panel Function (3 kiri 3 kanan) ---
 function display_info_panel() {
     # Get OS info
     local os_info=$(grep -E '^PRETTY_NAME=' /etc/os-release | cut -d'=' -f2 | tr -d '"' 2>/dev/null || echo "Unknown OS")
@@ -853,17 +958,17 @@ function display_info_panel() {
         expiry_info=$(cat /etc/zivpn/.expiry_info 2>/dev/null || echo "Not Set")
     fi
     
-    # Display Info Panel
+    # Display Info Panel dengan layout 3 kiri 3 kanan
     echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
     echo -e "${BLUE}║           ${WHITE}SYSTEM INFORMATION${BLUE}         ║${NC}"
     echo -e "${BLUE}╠══════════════════════════════════════════╣${NC}"
     echo -e "${BLUE}║                                          ║${NC}"
-    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 OS:    ${WHITE}${os_info}${BLUE}               ║${NC}"
-    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 ISP:   ${WHITE}${isp_info}${BLUE}     ║${NC}"
-    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 IP:    ${WHITE}${ip_info}${BLUE}                  ║${NC}"
-    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Domain:${WHITE}${domain_info}${BLUE}               ║${NC}"
-    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Client:${WHITE}${client_info}${BLUE}               ║${NC}"
-    echo -e "${BLUE}║  ${LIGHT_CYAN}🔹 Expiry:${WHITE}${expiry_info}${BLUE}               ║${NC}"
+    # Baris 1
+    echo -e "${BLUE}║  ${GOLD}OS:${RED}${os_info}${BLUE}                         ${GOLD}ISP:${RED}${isp_info}${BLUE} ║${NC}"
+    # Baris 2  
+    echo -e "${BLUE}║  ${GOLD}IP:${RED}${ip_info}${BLUE}                     ${GOLD}Domain:${RED}${domain_info}${BLUE} ║${NC}"
+    # Baris 3
+    echo -e "${BLUE}║  ${GOLD}Client:${RED}${client_info}${BLUE}                    ${GOLD}Expiry:${RED}${expiry_info}${BLUE} ║${NC}"
     echo -e "${BLUE}║                                          ║${NC}"
     echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
 }
@@ -873,9 +978,7 @@ function display_banner() {
     # Cek apakah figlet dan lolcat terinstall
     if command -v figlet &> /dev/null && command -v lolcat &> /dev/null; then
         clear
-        echo -e "${BLUE}══════════════════════════════════════════${NC}"
         figlet "PONDOK VPN" | lolcat
-        echo -e "${BLUE}══════════════════════════════════════════${NC}"
         echo ""
     else
         # Jika tidak ada figlet/lolcat, tampilkan banner sederhana
@@ -889,7 +992,7 @@ function display_banner() {
     fi
 }
 
-# --- Main Menu (2 Column Layout) ---
+# --- Main Menu (2 Column Layout dengan spacing presisi) ---
 function show_menu() {
     while true; do
         display_banner
@@ -898,16 +1001,16 @@ function show_menu() {
         display_info_panel
         echo ""
         
-        # Main Menu dengan 2 kolom
+        # Main Menu dengan 2 kolom dan spacing presisi
         echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
         echo -e "${BLUE}║                   ${WHITE}ZIVPN MANAGER MENU${BLUE}                ║${NC}"
         echo -e "${BLUE}╠══════════════════════════════════════════════════════════════╣${NC}"
         echo -e "${BLUE}║                                                              ║${NC}"
-        echo -e "${BLUE}║   ${WHITE}1) ${CYAN}CREATE ACCOUNT${BLUE}                             ${WHITE}6) ${CYAN}ADD BOTTOKEN${BLUE}         ║${NC}"
-        echo -e "${BLUE}║   ${WHITE}2) ${CYAN}RENEW ACCOUNT${BLUE}                              ${WHITE}7) ${CYAN}CHANGE BOTTOKEN${BLUE}      ║${NC}"
-        echo -e "${BLUE}║   ${WHITE}3) ${CYAN}DELETE ACCOUNT${BLUE}                             ${WHITE}8) ${CYAN}BACKUP/RESTART${BLUE}       ║${NC}"
-        echo -e "${BLUE}║   ${WHITE}4) ${CYAN}CHANGE DOMAIN${BLUE}                              ${WHITE}9) ${CYAN}RESTART SERVIS${BLUE}       ║${NC}"
-        echo -e "${BLUE}║   ${WHITE}5) ${CYAN}LIST ACCOUNT${BLUE}                               ${WHITE}0) ${CYAN}EXIT${BLUE}                   ║${NC}"
+        echo -e "${BLUE}║   ${WHITE}1) ${CYAN}CREATE ACCOUNT${BLUE}                          ${WHITE}6) ${CYAN}TELEGRAM BOT${BLUE}        ║${NC}"
+        echo -e "${BLUE}║   ${WHITE}2) ${CYAN}RENEW ACCOUNT${BLUE}                           ${WHITE}7) ${CYAN}BACKUP/RESTART${BLUE}      ║${NC}"
+        echo -e "${BLUE}║   ${WHITE}3) ${CYAN}DELETE ACCOUNT${BLUE}                          ${WHITE}8) ${CYAN}RESTART SERVIS${BLUE}      ║${NC}"
+        echo -e "${BLUE}║   ${WHITE}4) ${CYAN}CHANGE DOMAIN${BLUE}                           ${WHITE}9) ${CYAN}LIST ACCOUNT${BLUE}        ║${NC}"
+        echo -e "${BLUE}║   ${WHITE}5) ${CYAN}Buat Trial${BLUE}                              ${WHITE}0) ${CYAN}EXIT${BLUE}                 ║${NC}"
         echo -e "${BLUE}║                                                              ║${NC}"
         echo -e "${BLUE}╠══════════════════════════════════════════════════════════════╣${NC}"
         echo -e "${BLUE}║                   ${YELLOW}PONDOK VPN - @bendakerep${BLUE}                ║${NC}"
@@ -921,11 +1024,11 @@ function show_menu() {
             2) renew_account ;;
             3) delete_account ;;
             4) change_domain ;;
-            5) list_accounts ;;
-            6) setup_telegram_bot ;;
-            7) change_bot_token ;;
-            8) backup_restart ;;
-            9) restart_zivpn ;;
+            5) create_trial_account ;;
+            6) telegram_bot_menu ;;
+            7) backup_restart ;;
+            8) restart_zivpn ;;
+            9) list_accounts ;;
             0) 
                 echo -e "${GREEN}Terima kasih!${NC}"
                 exit 0
