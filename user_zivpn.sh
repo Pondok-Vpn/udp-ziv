@@ -639,6 +639,8 @@ backup_data() {
 
 # Restore data
 restore_data() {
+# Restore data
+restore_data() {
     echo -e "${YELLOW}Restoring data...${NC}"
     
     # List available backups
@@ -668,7 +670,7 @@ restore_data() {
     
     read -p "Yakin restore dari $(basename $backup_file)? (y/n): " confirm
     
-    if [[ "$confirm" != "y" && "$confirm" != "Y" ]; then
+    if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
         echo -e "${YELLOW}Dibatalkan!${NC}"
         read -p "Tekan Enter untuk kembali..."
         return
