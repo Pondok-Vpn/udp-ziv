@@ -1,590 +1,333 @@
 #!/bin/bash
 # ===========================================
-# ZIVPN HELPER - TELEGRAM BOT & BACKUP SYSTEM
-# Version: 2.0
+# ZIVPN HELPER 
+# Version: 3.0
 # Telegram: @bendakerep
 # ===========================================
 
-# Colors
+# Colors (minimal)
 RED='\033[0;31m'
 GREEN='\033[0;92m'
 YELLOW='\033[0;93m'
-BLUE='\033[0;94m'
-CYAN='\033[0;96m'
 NC='\033[0m'
 
-# Variables
+# Configuration
 CONFIG_DIR="/etc/zivpn"
 TELEGRAM_CONF="${CONFIG_DIR}/telegram.conf"
-BACKUP_DIR="/var/backups/zivpn"
-LOG_FILE="/var/log/zivpn_helper.log"
+BACKUP_FILES=("config.json" "users.db" "devices.db")
 
-# Function untuk garis
-print_line() {
-    echo -e "${BLUE}======================================================${NC}"
-}
-
-print_green_line() {
-    echo -e "${GREEN}======================================================${NC}"
-}
-
-# Logging
-log_message() {
-    local level="$1"
-    local message="$2"
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    
-    echo "[$timestamp] [$level] $message" >> "$LOG_FILE"
-}
-
-# Check dependencies
-check_deps() {
-    if ! command -v curl &> /dev/null; then
-        echo -e "${YELLOW}Installing curl...${NC}"
-        apt-get install -y curl > /dev/null 2>&1
-    fi
-    
-    if ! command -v jq &> /dev/null; then
-        echo -e "${YELLOW}Installing jq...${NC}"
-        apt-get install -y jq > /dev/null 2>&1
-    fi
-}
-
-# Setup Telegram Bot dengan VALIDASI
-setup_telegram() {
-    print_line
-    echo -e "${BLUE}           SETUP TELEGRAM BOT                  ${NC}"
-    print_line
-    echo ""
-    
-    echo -e "${CYAN}Instructions:${NC}"
-    echo "1. Create bot via @BotFather"
-    echo "2. Get your bot token"
-    echo "3. Get your chat ID from @userinfobot"
-    echo ""
-    
-    read -p "Enter Bot Token: " bot_token
-    read -p "Enter Chat ID   : " chat_id
-    
-    if [ -z "$bot_token" ] || [ -z "$chat_id" ]; then
-        echo -e "${RED}❌ Token and Chat ID cannot be empty!${NC}"
-        return 1
-    fi
-    
-    # Validasi format token
-    if [[ ! "$bot_token" =~ ^[0-9]+:[a-zA-Z0-9_-]+$ ]]; then
-        echo -e "${RED}❌ Invalid bot token format!${NC}"
-        echo -e "${YELLOW}Example: 1234567890:ABCdefGHIjklMNopQRSTuvwxyz${NC}"
-        return 1
-    fi
-    
-    # Test the bot token
-    echo -e "${YELLOW}Testing bot token...${NC}"
-    response=$(curl -s "https://api.telegram.org/bot${bot_token}/getMe")
-    
-    if echo "$response" | jq -e '.ok == true' >/dev/null 2>&1; then
-        bot_name=$(echo "$response" | jq -r '.result.username')
-        echo -e "${GREEN}✅ Bot found: @${bot_name}${NC}"
+# Helper Functions
+function get_host() {
+    if [ -f "${CONFIG_DIR}/zivpn.crt" ]; then
+        local CERT_CN
+        CERT_CN=$(openssl x509 -in "${CONFIG_DIR}/zivpn.crt" -noout -subject 2>/dev/null | sed -n 's/.*CN = \([^,]*\).*/\1/p')
+        if [ "$CERT_CN" == "zivpn" ] || [ -z "$CERT_CN" ]; then
+            curl -s ifconfig.me
+        else
+            echo "$CERT_CN"
+        fi
     else
-        echo -e "${RED}❌ Invalid bot token! Please check again.${NC}"
+        curl -s ifconfig.me
+    fi
+}
+
+function send_telegram_notification() {
+    local message="$1"
+    local keyboard="$2"
+
+    if [ ! -f "$TELEGRAM_CONF" ]; then
         return 1
     fi
     
-    # Save configuration
-    mkdir -p "$CONFIG_DIR"
-    echo "TELEGRAM_BOT_TOKEN=${bot_token}" > "$TELEGRAM_CONF"
+    source "$TELEGRAM_CONF" 2>/dev/null
+
+    if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
+        local api_url="https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage"
+        if [ -n "$keyboard" ]; then
+            curl -s -X POST "$api_url" \
+                -d "chat_id=${TELEGRAM_CHAT_ID}" \
+                --data-urlencode "text=${message}" \
+                -d "reply_markup=${keyboard}" > /dev/null
+        else
+            curl -s -X POST "$api_url" \
+                -d "chat_id=${TELEGRAM_CHAT_ID}" \
+                --data-urlencode "text=${message}" \
+                -d "parse_mode=Markdown" > /dev/null
+        fi
+    fi
+}
+
+# Core Functions
+function setup_telegram() {
+    echo "--- Konfigurasi Notifikasi Telegram ---"
+    read -p "Masukkan Bot Token: " api_key
+    read -p "Masukkan Chat ID: " chat_id
+
+    if [ -z "$api_key" ] || [ -z "$chat_id" ]; then
+        echo "Token dan Chat ID tidak boleh kosong."
+        return 1
+    fi
+
+    # Test token
+    echo "Testing bot token..."
+    if curl -s "https://api.telegram.org/bot${api_key}/getMe" | grep -q '"ok":true'; then
+        echo "✓ Token valid"
+    else
+        echo "❌ Token invalid"
+        return 1
+    fi
+
+    echo "TELEGRAM_BOT_TOKEN=${api_key}" > "$TELEGRAM_CONF"
     echo "TELEGRAM_CHAT_ID=${chat_id}" >> "$TELEGRAM_CONF"
     chmod 600 "$TELEGRAM_CONF"
     
-    # Send test message
-    echo -e "${YELLOW}Sending test message...${NC}"
-    send_notification "✅ ZiVPN Telegram Bot Connected!
-📅 $(date '+%Y-%m-%d %H:%M:%S')
-🤖 Bot: @${bot_name}
-📱 Ready to receive notifications!"
-    
-    echo ""
-    print_green_line
-    echo -e "${GREEN}           TELEGRAM BOT SETUP COMPLETE        ${NC}"
-    print_green_line
-    echo ""
-    
-    log_message "INFO" "Telegram bot setup completed for chat ID: $chat_id"
+    # Test message
+    send_telegram_notification "✅ ZiVPN Telegram Connected!"
+    echo "✓ Konfigurasi berhasil"
     return 0
 }
 
-# Send notification
-send_notification() {
-    local message="$1"
-    
-    if [ ! -f "$TELEGRAM_CONF" ]; then
-        echo -e "${RED}❌ Telegram not configured!${NC}"
-        echo -e "${YELLOW}Run: $0 setup${NC}"
-        return 1
-    fi
-    
-    source "$TELEGRAM_CONF" 2>/dev/null
-    
-    if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
-        echo -e "${RED}❌ Invalid Telegram configuration!${NC}"
-        return 1
-    fi
-    
-    local response=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-        -d "chat_id=${TELEGRAM_CHAT_ID}" \
-        --data-urlencode "text=${message}" \
-        -d "parse_mode=Markdown")
-    
-    if echo "$response" | jq -e '.ok == true' >/dev/null 2>&1; then
-        return 0
-    else
-        echo -e "${YELLOW}⚠️  Failed to send notification${NC}"
-        return 1
-    fi
-}
+function handle_backup() {
+    echo "--- Backup Data ---"
 
-# Backup dengan fitur LENGKAP
-backup_zivpn() {
-    print_line
-    echo -e "${BLUE}           BACKUP ZIVPN CONFIGURATION          ${NC}"
-    print_line
-    echo ""
-    
-    check_deps
-    
-    # Cek apakah Telegram sudah diatur
     if [ ! -f "$TELEGRAM_CONF" ]; then
-        echo -e "${YELLOW}⚠️  Telegram not configured${NC}"
-        read -p "Setup Telegram now? (y/n): " choice
-        
-        if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
+        echo "Telegram belum dikonfigurasi."
+        read -p "Setup Telegram sekarang? (y/n): " choice
+        if [[ "$choice" == "y" ]]; then
             setup_telegram
-            if [ $? -ne 0 ]; then
-                echo -e "${YELLOW}Continuing with local backup only...${NC}"
-            fi
+            [ $? -ne 0 ] && exit 1
+        else
+            echo "Backup dibatalkan."
+            exit 1
         fi
     fi
+
+    source "$TELEGRAM_CONF" 2>/dev/null
+
+    local timestamp=$(date +%Y%m%d-%H%M%S)
+    local backup_file="/tmp/zivpn_backup_${timestamp}.zip"
     
-    # Buat backup directory
-    mkdir -p "$BACKUP_DIR"
-    
-    # Backup filename dengan timestamp
-    local timestamp=$(date +%Y%m%d_%H%M%S)
-    local backup_file="${BACKUP_DIR}/zivpn_backup_${timestamp}.tar.gz"
-    local temp_dir="/tmp/zivpn_backup_${timestamp}"
-    
-    print_line
-    echo -e "${CYAN}Creating backup...${NC}"
-    print_line
-    echo ""
-    
-    # Buat temporary directory untuk backup
-    mkdir -p "$temp_dir"
-    
-    # Copy semua file penting
-    if [ -d "$CONFIG_DIR" ]; then
-        cp -r "$CONFIG_DIR" "$temp_dir/"
-        echo -e "${GREEN}✓ Config files${NC}"
-    fi
-    
-    # Copy logs
-    if [ -f "/var/log/zivpn.log" ]; then
-        cp /var/log/zivpn.log "$temp_dir/"
-        echo -e "${GREEN}✓ Log files${NC}"
-    fi
-    
-    # Copy service file
-    if [ -f "/etc/systemd/system/zivpn.service" ]; then
-        cp /etc/systemd/system/zivpn.service "$temp_dir/"
-        echo -e "${GREEN}✓ Service file${NC}"
-    fi
-    
-    # Buat info file
-    cat > "$temp_dir/backup_info.txt" << EOF
-ZiVPN Backup Information
-=======================
-Date: $(date)
-Version: $(/usr/local/bin/zivpn --version 2>/dev/null || echo "Unknown")
-IP: $(curl -s ifconfig.me 2>/dev/null || echo "Unknown")
-Files included:
-- Configurations
-- User database
-- SSL certificates
-- Log files
-EOF
-    
-    # Buat tar.gz archive
-    tar -czf "$backup_file" -C "$temp_dir" . 2>/dev/null
+    echo "Membuat backup..."
+    cd "$CONFIG_DIR" && zip "$backup_file" "${BACKUP_FILES[@]}" 2>/dev/null
     
     if [ ! -f "$backup_file" ]; then
-        echo -e "${RED}❌ Failed to create backup archive!${NC}"
-        rm -rf "$temp_dir"
-        return 1
+        echo "❌ Gagal membuat backup"
+        exit 1
     fi
+
+    echo "Mengirim ke Telegram..."
+    local response=$(curl -s -F "chat_id=${TELEGRAM_CHAT_ID}" \
+        -F "document=@${backup_file}" \
+        "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument")
+
+    local file_id=$(echo "$response" | grep -o '"file_id":"[^"]*"' | cut -d'"' -f4)
     
-    local file_size=$(du -h "$backup_file" | cut -f1)
-    echo ""
-    echo -e "${GREEN}✅ Backup created: ${backup_file}${NC}"
-    echo -e "${CYAN}📦 Size: ${file_size}${NC}"
-    
-    # Cleanup temp dir
-    rm -rf "$temp_dir"
-    
-    # Kirim ke Telegram jika diatur
-    if [ -f "$TELEGRAM_CONF" ]; then
-        source "$TELEGRAM_CONF" 2>/dev/null
-        
-        if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
-            print_line
-            echo -e "${CYAN}Sending to Telegram...${NC}"
-            print_line
-            echo ""
-            
-            # Upload file ke Telegram
-            local response=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument" \
-                -F "chat_id=${TELEGRAM_CHAT_ID}" \
-                -F "document=@${backup_file}" \
-                -F "caption=📦 ZiVPN Backup
-📅 $(date '+%Y-%m-%d %H:%M:%S')
-💾 Size: ${file_size}
-🔐 Total users: $(wc -l < "${CONFIG_DIR}/users.db" 2>/dev/null || echo "0")")
-            
-            if echo "$response" | jq -e '.ok == true' >/dev/null 2>&1; then
-                local file_id=$(echo "$response" | jq -r '.result.document.file_id')
-                echo -e "${GREEN}✅ Backup sent to Telegram!${NC}"
-                echo -e "${CYAN}📎 File ID: ${file_id}${NC}"
-                
-                # Simpan file ID untuk restore
-                echo "BACKUP_${timestamp}_FILE_ID=${file_id}" >> "$CONFIG_DIR/backup_history.txt"
-                
-            else
-                echo -e "${YELLOW}⚠️  Failed to send to Telegram${NC}"
-            fi
-        fi
+    if [ -z "$file_id" ]; then
+        echo "❌ Gagal upload ke Telegram"
+        rm -f "$backup_file"
+        exit 1
     fi
+
+    # Kirim info backup
+    local host=$(get_host)
+    local date_now=$(date +"%d %B %Y")
+    local total_users=$(wc -l < "${CONFIG_DIR}/users.db" 2>/dev/null || echo "0")
     
-    # Hapus backup lama (keep last 10)
-    local backup_count=$(ls -1 "${BACKUP_DIR}/zivpn_backup_"*.tar.gz 2>/dev/null | wc -l)
-    if [ "$backup_count" -gt 10 ]; then
-        echo -e "${YELLOW}Cleaning old backups...${NC}"
-        ls -t "${BACKUP_DIR}/zivpn_backup_"*.tar.gz | tail -n +11 | xargs rm -f
-    fi
+    local message="
+◇━━━━━━━━━━━━━━◇
+   📦 BACKUP ZIVPN
+◇━━━━━━━━━━━━━━◇
+Host : ${host}
+Tanggal : ${date_now}
+User : ${total_users}
+File ID : ${file_id}
+◇━━━━━━━━━━━━━━◇
+"
     
-    echo ""
-    print_green_line
-    echo -e "${GREEN}           BACKUP COMPLETED                  ${NC}"
-    print_green_line
-    echo ""
+    send_telegram_notification "$message"
+    rm -f "$backup_file"
     
-    log_message "INFO" "Backup created: $backup_file"
-    return 0
+    echo "✅ Backup berhasil!"
+    echo "File ID: ${file_id}"
 }
 
-# Restore dengan VALIDASI
-restore_zivpn() {
-    print_line
-    echo -e "${BLUE}           RESTORE ZIVPN CONFIGURATION         ${NC}"
-    print_line
-    echo ""
-    
-    check_deps
-    
+function handle_restore() {
+    echo "--- Restore Data ---"
+
     if [ ! -f "$TELEGRAM_CONF" ]; then
-        echo -e "${RED}❌ Telegram not configured!${NC}"
-        echo -e "${YELLOW}Setup Telegram first: $0 setup${NC}"
-        return 1
+        echo "Telegram belum dikonfigurasi."
+        exit 1
     fi
-    
+
     source "$TELEGRAM_CONF" 2>/dev/null
     
-    echo -e "${CYAN}Restore Options:${NC}"
-    echo "1) Restore from local backup file"
-    echo "2) Restore from Telegram (using File ID)"
-    echo ""
+    read -p "Masukkan File ID: " file_id
+    if [ -z "$file_id" ]; then
+        echo "File ID tidak boleh kosong."
+        exit 1
+    fi
+
+    read -p "Yakin restore? Data saat ini akan ditimpa. (y/n): " confirm
+    if [[ "$confirm" != "y" ]]; then
+        echo "Dibatalkan."
+        exit 0
+    fi
+
+    echo "Mendownload backup..."
+    local response=$(curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getFile?file_id=${file_id}")
+    local file_path=$(echo "$response" | grep -o '"file_path":"[^"]*"' | cut -d'"' -f4)
     
-    read -p "Select option [1/2]: " restore_choice
+    if [ -z "$file_path" ]; then
+        echo "❌ File tidak ditemukan"
+        exit 1
+    fi
+
+    local temp_file="/tmp/restore_$(basename "$file_path")"
+    curl -s -o "$temp_file" "https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${file_path}"
     
-    case $restore_choice in
-        1)
-            # Restore dari local file
-            echo ""
-            echo -e "${YELLOW}Available backups:${NC}"
-            ls -lh "${BACKUP_DIR}/zivpn_backup_"*.tar.gz 2>/dev/null | awk '{print NR ") " $9 " (" $5 ")"}'
-            echo ""
-            
-            read -p "Enter backup number: " backup_num
-            
-            local backup_files=($(ls "${BACKUP_DIR}/zivpn_backup_"*.tar.gz 2>/dev/null))
-            
-            if [ ${#backup_files[@]} -eq 0 ]; then
-                echo -e "${RED}❌ No local backups found!${NC}"
-                return 1
-            fi
-            
-            if [[ "$backup_num" =~ ^[0-9]+$ ]] && [ "$backup_num" -ge 1 ] && [ "$backup_num" -le ${#backup_files[@]} ]; then
-                local backup_file="${backup_files[$((backup_num-1))]}"
-                echo -e "${GREEN}Selected: $(basename "$backup_file")${NC}"
-            else
-                echo -e "${RED}❌ Invalid selection!${NC}"
-                return 1
-            fi
+    if [ ! -f "$temp_file" ]; then
+        echo "❌ Gagal download"
+        exit 1
+    fi
+
+    echo "Mengekstrak..."
+    unzip -o "$temp_file" -d "$CONFIG_DIR" 2>/dev/null
+    
+    if [ $? -eq 0 ]; then
+        systemctl restart zivpn.service
+        echo "✅ Restore berhasil!"
+        send_telegram_notification "✅ Restore completed!"
+    else
+        echo "❌ Gagal ekstrak file"
+    fi
+    
+    rm -f "$temp_file"
+}
+
+function handle_notification() {
+    local type="$1"
+    shift
+    
+    case "$type" in
+        "expiry")
+            # $2=host $3=ip $4=client $5=isp $6=exp_date
+            local message="
+◇━━━━━━━━━━━━━━◇
+ ⚠️ LICENSE EXPIRED
+◇━━━━━━━━━━━━━━◇
+IP : $3
+Host : $2
+Client : $4
+ISP : $5
+Expired : $6
+◇━━━━━━━━━━━━━━◇
+"
+            local keyboard='{"inline_keyboard":[[{"text":"Perpanjang","url":"https://t.me/bendakerep"}]]}'
+            send_telegram_notification "$message" "$keyboard"
             ;;
             
-        2)
-            # Restore dari Telegram
-            echo ""
-            read -p "Enter Telegram File ID: " file_id
-            
-            if [ -z "$file_id" ]; then
-                echo -e "${RED}❌ File ID cannot be empty!${NC}"
-                return 1
-            fi
-            
-            # Download file dari Telegram
-            echo -e "${YELLOW}Downloading from Telegram...${NC}"
-            
-            # Get file path
-            local response=$(curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getFile?file_id=${file_id}")
-            local file_path=$(echo "$response" | jq -r '.result.file_path // empty')
-            
-            if [ -z "$file_path" ]; then
-                echo -e "${RED}❌ Invalid File ID or file not found!${NC}"
-                return 1
-            fi
-            
-            # Download file
-            local backup_file="/tmp/zivpn_telegram_backup.tar.gz"
-            curl -s -o "$backup_file" "https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${file_path}"
-            
-            if [ ! -s "$backup_file" ]; then
-                echo -e "${RED}❌ Failed to download file!${NC}"
-                return 1
-            fi
-            
-            echo -e "${GREEN}✓ File downloaded${NC}"
+        "renewed")
+            # $2=host $3=ip $4=client $5=isp $6=days
+            local message="
+◇━━━━━━━━━━━━━━◇
+ ✅ LICENSE RENEWED
+◇━━━━━━━━━━━━━━◇
+IP : $3
+Host : $2
+Client : $4
+Sisa : $6 hari
+◇━━━━━━━━━━━━━━◇
+"
+            send_telegram_notification "$message"
             ;;
             
-        *)
-            echo -e "${RED}❌ Invalid option!${NC}"
-            return 1
+        "api-key")
+            # $2=api_key $3=server_ip $4=domain
+            local message="
+🔑 API Key Generated
+Key : $2
+Server : $3
+Domain : $4
+"
+            send_telegram_notification "$message"
+            ;;
+            
+        "custom")
+            send_telegram_notification "$2"
             ;;
     esac
-    
-    # Konfirmasi restore
-    echo ""
-    echo -e "${RED}⚠️  WARNING: This will overwrite current configuration!${NC}"
-    read -p "Are you sure you want to restore? (y/n): " confirm
-    
-    if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
-        echo -e "${YELLOW}Restore cancelled.${NC}"
-        return 0
-    fi
-    
-    print_line
-    echo -e "${CYAN}Restoring configuration...${NC}"
-    print_line
-    echo ""
-    
-    # Buat backup sebelum restore
-    local pre_restore_backup="${BACKUP_DIR}/pre_restore_$(date +%Y%m%d_%H%M%S).tar.gz"
-    tar -czf "$pre_restore_backup" -C /etc zivpn/ 2>/dev/null
-    echo -e "${GREEN}✓ Pre-restore backup created${NC}"
-    
-    # Extract backup
-    local temp_restore="/tmp/zivpn_restore_$(date +%s)"
-    mkdir -p "$temp_restore"
-    
-    if tar -xzf "$backup_file" -C "$temp_restore" 2>/dev/null; then
-        # Restore files
-        if [ -d "$temp_restore/zivpn" ]; then
-            cp -r "$temp_restore/zivpn"/* "$CONFIG_DIR/" 2>/dev/null
-            echo -e "${GREEN}✓ Config files restored${NC}"
-        fi
-        
-        # Restore service file jika ada
-        if [ -f "$temp_restore/zivpn.service" ]; then
-            cp "$temp_restore/zivpn.service" /etc/systemd/system/
-            systemctl daemon-reload
-            echo -e "${GREEN}✓ Service file restored${NC}"
-        fi
-        
-        # Set permissions
-        chmod 600 "$CONFIG_DIR"/*.key "$CONFIG_DIR"/*.db 2>/dev/null
-        echo -e "${GREEN}✓ Permissions set${NC}"
-        
-        # Restart service
-        systemctl restart zivpn.service
-        echo -e "${GREEN}✓ Service restarted${NC}"
-        
-        # Cleanup
-        rm -rf "$temp_restore"
-        if [ "$restore_choice" = "2" ]; then
-            rm -f "$backup_file"
-        fi
-        
-        # Send notification
-        send_notification "✅ ZiVPN Restore Completed!
-📅 $(date '+%Y-%m-%d %H:%M:%S')
-🔄 Configuration has been restored"
-        
-        echo ""
-        print_green_line
-        echo -e "${GREEN}           RESTORE COMPLETED                ${NC}"
-        print_green_line
-        echo ""
-        
-        log_message "INFO" "Restore completed from $backup_file"
-        return 0
-        
-    else
-        echo -e "${RED}❌ Failed to extract backup file!${NC}"
-        rm -rf "$temp_restore"
-        return 1
-    fi
 }
 
-# Send custom notification
-send_custom_notif() {
-    local message="$2"
-    
-    if [ -z "$message" ]; then
-        echo -e "${RED}❌ Message cannot be empty!${NC}"
-        echo "Usage: $0 notify 'Your message here'"
-        return 1
-    fi
-    
-    print_line
-    echo -e "${BLUE}           SENDING NOTIFICATION              ${NC}"
-    print_line
-    echo ""
-    
-    send_notification "$message"
-    
-    if [ $? -eq 0 ]; then
-        echo -e "${GREEN}✅ Notification sent!${NC}"
-    else
-        echo -e "${RED}❌ Failed to send notification${NC}"
-    fi
-    
-    echo ""
-}
-
-# Test Telegram connection
-test_telegram() {
-    print_line
-    echo -e "${BLUE}           TEST TELEGRAM CONNECTION           ${NC}"
-    print_line
-    echo ""
-    
+function auto_backup() {
+    # Function untuk cron job
     if [ ! -f "$TELEGRAM_CONF" ]; then
-        echo -e "${RED}❌ Telegram not configured!${NC}"
         return 1
     fi
     
     source "$TELEGRAM_CONF" 2>/dev/null
     
-    echo -e "${CYAN}Testing bot token...${NC}"
-    response=$(curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMe")
+    local timestamp=$(date +%Y%m%d-%H%M)
+    local backup_file="/tmp/auto_backup_${timestamp}.zip"
     
-    if echo "$response" | jq -e '.ok == true' >/dev/null 2>&1; then
-        bot_name=$(echo "$response" | jq -r '.result.username')
-        echo -e "${GREEN}✅ Bot: @${bot_name}${NC}"
-    else
-        echo -e "${RED}❌ Invalid bot token!${NC}"
-        return 1
+    cd "$CONFIG_DIR" && zip "$backup_file" "${BACKUP_FILES[@]}" 2>/dev/null
+    
+    if [ -f "$backup_file" ]; then
+        curl -s -F "chat_id=${TELEGRAM_CHAT_ID}" \
+            -F "document=@${backup_file}" \
+            -F "caption=Auto Backup $(date +'%Y-%m-%d %H:%M')" \
+            "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument" > /dev/null
+        rm -f "$backup_file"
     fi
-    
-    echo -e "${CYAN}Testing chat ID...${NC}"
-    send_notification "🔔 ZiVPN Test Notification
-✅ Connection test successful
-📅 $(date '+%Y-%m-%d %H:%M:%S')
-🤖 Bot: @${bot_name}"
-    
-    if [ $? -eq 0 ]; then
-        echo -e "${GREEN}✅ Test message sent successfully!${NC}"
-    else
-        echo -e "${RED}❌ Failed to send test message${NC}"
-        echo -e "${YELLOW}Check your Chat ID${NC}"
-    fi
-    
-    echo ""
-    print_green_line
-    echo -e "${GREEN}           TEST COMPLETED                    ${NC}"
-    print_green_line
-    echo ""
 }
 
-# Show backup history
-show_backups() {
-    print_line
-    echo -e "${BLUE}           BACKUP HISTORY                     ${NC}"
-    print_line
-    echo ""
-    
-    echo -e "${CYAN}Local Backups:${NC}"
-    echo "========================="
-    
-    if ls "${BACKUP_DIR}/zivpn_backup_"*.tar.gz 2>/dev/null >/dev/null; then
-        ls -lh "${BACKUP_DIR}/zivpn_backup_"*.tar.gz | awk '{print "📦 " $9 " (" $5 ") - " $6 " " $7 " " $8}'
-    else
-        echo "No local backups found"
-    fi
-    
-    echo ""
-    echo -e "${CYAN}Telegram Backup History:${NC}"
-    echo "==============================="
-    
-    if [ -f "${CONFIG_DIR}/backup_history.txt" ]; then
-        cat "${CONFIG_DIR}/backup_history.txt" | head -10
-    else
-        echo "No Telegram backup history"
-    fi
-    
-    echo ""
-}
-
-# Main menu
+# Main
 case "$1" in
     "setup")
         setup_telegram
         ;;
     "backup")
-        backup_zivpn
+        handle_backup
         ;;
     "restore")
-        restore_zivpn
+        handle_restore
+        ;;
+    "auto-backup")
+        auto_backup
         ;;
     "notify")
-        send_custom_notif "$@"
+        if [ "$2" == "expiry" ] && [ $# -eq 7 ]; then
+            handle_notification "expiry" "$3" "$4" "$5" "$6" "$7"
+        elif [ "$2" == "renewed" ] && [ $# -eq 6 ]; then
+            handle_notification "renewed" "$3" "$4" "$5" "$6"
+        elif [ "$2" == "api-key" ] && [ $# -eq 4 ]; then
+            handle_notification "api-key" "$3" "$4"
+        elif [ "$2" == "custom" ] && [ $# -eq 3 ]; then
+            handle_notification "custom" "$3"
+        else
+            echo "Usage:"
+            echo "  $0 notify expiry <host> <ip> <client> <isp> <exp_date>"
+            echo "  $0 notify renewed <host> <ip> <client> <isp> <days>"
+            echo "  $0 notify api-key <key> <server_ip> <domain>"
+            echo "  $0 notify custom <message>"
+        fi
         ;;
     "test")
-        test_telegram
-        ;;
-    "list")
-        show_backups
-        ;;
-    "help"|"--help"|"-h")
-        echo -e "${CYAN}ZiVPN Helper - Telegram Bot & Backup System${NC}"
-        print_line
-        echo ""
-        echo "Available commands:"
-        echo "  setup          - Setup Telegram bot"
-        echo "  backup         - Backup configuration to Telegram"
-        echo "  restore        - Restore from backup"
-        echo "  notify 'msg'   - Send custom notification"
-        echo "  test           - Test Telegram connection"
-        echo "  list           - List available backups"
-        echo "  help           - Show this help"
-        echo ""
-        echo "Examples:"
-        echo "  $0 setup"
-        echo "  $0 backup"
-        echo "  $0 notify 'Server will restart in 5 minutes'"
+        if [ ! -f "$TELEGRAM_CONF" ]; then
+            echo "Telegram not configured"
+            exit 1
+        fi
+        send_telegram_notification "✅ Test notification $(date +'%H:%M:%S')"
+        echo "Test message sent"
         ;;
     *)
-        echo -e "${CYAN}ZiVPN Helper${NC}"
-        echo "Usage: $0 {setup|backup|restore|notify|test|list|help}"
+        echo "ZIVPN Helper - Simple Version"
+        echo "Usage: $0 {setup|backup|restore|notify|test|auto-backup}"
         echo ""
-        echo "Run '$0 help' for more information"
+        echo "Examples:"
+        echo "  $0 setup              # Setup Telegram"
+        echo "  $0 backup             # Backup to Telegram"
+        echo "  $0 restore            # Restore from Telegram"
+        echo "  $0 notify custom 'Hello'  # Send custom message"
+        echo "  $0 test               # Test Telegram connection"
         ;;
 esac
