@@ -1,7 +1,6 @@
 #!/bin/bash
 # ===========================================
-# ZIVPN HYBRID INSTALLER - SIMPLE & RELIABLE
-# Best of Both Worlds: Zahid's simplicity + Our features
+# ZIVPN HYBRID INSTALLER
 # GitHub: https://github.com/Pondok-Vpn/udp-ziv
 # Telegram: @bendakerep
 # ===========================================
