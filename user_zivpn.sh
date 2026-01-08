@@ -119,25 +119,25 @@ show_info_panel() {
     figlet -f small "PONDOK VPN" | lolcat
     echo -e "${NC}"
     echo -e "${BLUE}╔════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║${WHITE}  IP VPS : ${CYAN}$(printf '%-15s' "$IP_ADDRESS")${WHITE}        HOST : ${CYAN}$(printf '%-20s' "$HOST_NAME")${BLUE}║${NC}"
-    echo -e "${BLUE}║${WHITE}  OS     : ${CYAN}$(printf '%-15s' "$OS_SHORT")${WHITE}        EXP  : ${CYAN}$(printf '%-20s' "$LICENSE_EXP")${BLUE}║${NC}"
-    echo -e "${BLUE}║${WHITE}  ISP    : ${CYAN}$(printf '%-15s' "$ISP_SHORT")${WHITE}        RAM  : ${CYAN}$(printf '%-20s' "$RAM_INFO")${BLUE}║${NC}"
-    echo -e "${BLUE}║${WHITE}  CPU    : ${CYAN}$(printf '%-15s' "$CPU_INFO")${WHITE}        USER : ${CYAN}$(printf '%-20s' "$TOTAL_USERS")${BLUE}║${NC}"
+    echo -e "${BLUE}║${WHITE}  IP VPS : ${CYAN}$(printf '%-15s' "$IP_ADDRESS")${WHITE}        HOST : ${CYAN}$(printf '%-20s' "$HOST_NAME")${NC}"
+    echo -e "${BLUE}║${WHITE}  OS     : ${CYAN}$(printf '%-15s' "$OS_SHORT")${WHITE}        EXP  : ${CYAN}$(printf '%-20s' "$LICENSE_EXP")${NC}"
+    echo -e "${BLUE}║${WHITE}  ISP    : ${CYAN}$(printf '%-15s' "$ISP_SHORT")${WHITE}        RAM  : ${CYAN}$(printf '%-20s' "$RAM_INFO")${NC}"
+    echo -e "${BLUE}║${WHITE}  CPU    : ${CYAN}$(printf '%-15s' "$CPU_INFO")${WHITE}        USER : ${CYAN}$(printf '%-20s' "$TOTAL_USERS")${NC}"
     echo -e "${BLUE}╚════════════════════════════════════════════════════╝${NC}"
     echo -e "                           ${WHITE}Status : ${SERVICE_STATUS}${NC}"
 }
 
 show_main_menu() {
     echo -e "${BLUE}╔════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║                                                     ║${NC}"
-    echo -e "${BLUE}║${WHITE}  1)${CYAN} BUAT AKUN ZIVPN${WHITE}             5)${CYAN} BOT SETTING${WHITE}      ${BLUE}║${NC}"
-    echo -e "${BLUE}║                                                     ║${NC}"
-    echo -e "${BLUE}║${WHITE}  2)${CYAN} BUAT AKUN TRIAL${WHITE}             6)${CYAN} BACK/REST${WHITE}        ${BLUE}║${NC}"
-    echo -e "${BLUE}║                                                     ║${NC}"
-    echo -e "${BLUE}║${WHITE}  3)${CYAN} RENEW AKUN${WHITE}                  7)${CYAN} HAPUS AKUN${WHITE}       ${BLUE}║${NC}"
-    echo -e "${BLUE}║                                                     ║${NC}"
-    echo -e "${BLUE}║${WHITE}  4)${CYAN} RESTART SERVIS${WHITE}              0)${CYAN} EXIT${WHITE}             ${BLUE}║${NC}"
-    echo -e "${BLUE}║                                                     ║${NC}"
+    echo -e "${BLUE}║                                                    ║${NC}"
+    echo -e "${BLUE}║${WHITE}  1)${CYAN} BUAT AKUN ZIVPN${WHITE}            5)${CYAN} BOT SETTING${WHITE}      ${BLUE}║${NC}"
+    echo -e "${BLUE}║                                                    ║${NC}"
+    echo -e "${BLUE}║${WHITE}  2)${CYAN} BUAT AKUN TRIAL${WHITE}            6)${CYAN} BACK/REST${WHITE}        ${BLUE}║${NC}"
+    echo -e "${BLUE}║                                                    ║${NC}"
+    echo -e "${BLUE}║${WHITE}  3)${CYAN} RENEW AKUN${WHITE}                 7)${CYAN} HAPUS AKUN${WHITE}       ${BLUE}║${NC}"
+    echo -e "${BLUE}║                                                    ║${NC}"
+    echo -e "${BLUE}║${WHITE}  4)${CYAN} RESTART SERVIS${WHITE}             0)${CYAN} EXIT${WHITE}             ${BLUE}║${NC}"
+    echo -e "${BLUE}║                                                    ║${NC}"
     echo -e "${BLUE}╚════════════════════════════════════════════════════╝${NC}"
 }
 
@@ -198,7 +198,7 @@ create_account() {
     clear
     echo ""
     echo -e "${BLUE}"
-    figlet -f digital "SUCCESS" | lolcat
+    figlet -f small "SUCCESS" | lolcat
     echo -e "${NC}"
     
     echo -e "${BLUE}╔═══════════════════════════╗${NC}"
@@ -277,7 +277,7 @@ create_trial_account() {
     clear
     echo ""
     echo -e "${BLUE}"
-    figlet -f digital "SUCCESS" | lolcat
+    figlet -f small "SUCCESS" | lolcat
     echo -e "${NC}"
     
     echo -e "${BLUE}╔═══════════════════════════╗${NC}"
@@ -351,7 +351,7 @@ delete_account() {
     clear
     echo ""
     echo -e "${BLUE}"
-    figlet -f mini "HAPUS AKUN" | lolcat
+    figlet -f small "HAPUS AKUN" | lolcat
     echo -e "${NC}"
     
     # Load accounts
