@@ -111,36 +111,34 @@ show_info_panel() {
     
     clear
     
-    # Auto install figlet & lolcat jika belum ada
     check_and_install_figlet
     
     # Banner dengan figlet dan lolcat
     echo ""
     echo -e "${BLUE}"
-    figlet -f slant "PONDOK VPN" | lolcat
+    figlet -f small "PONDOK VPN" | lolcat
     echo -e "${NC}"
-    echo ""
-    echo -e "${BLUE}╔══════════════════════════════════════╗${NC}"
-    echo -e "${WHITE} IP VPS: ${CYAN}$IP_ADDRESS${WHITE}   HOST : ${CYAN}$HOST_NAME${NC}"
-    echo -e "${WHITE} OS    : ${CYAN}$OS_SHORT${WHITE}   EXP    : ${CYAN}$LICENSE_EXP${NC}"
-    echo -e "${WHITE} ISP   : ${CYAN}$ISP_SHORT${WHITE}   RAM   : ${CYAN}$RAM_INFO${NC}"
-    echo -e "${WHITE} CPU   : ${CYAN}$CPU_INFO${WHITE}    USER  : ${CYAN}$TOTAL_USERS${NC}"
-    echo -e "${BLUE}╚══════════════════════════════════════╝${NC}"
-    echo -e "                 ${WHITE}Status : ${SERVICE_STATUS}${NC}"
+    echo -e "${BLUE}╔════════════════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║${WHITE}  IP VPS : ${CYAN}$(printf '%-15s' "$IP_ADDRESS")${WHITE}        HOST : ${CYAN}$(printf '%-20s' "$HOST_NAME")${BLUE}║${NC}"
+    echo -e "${BLUE}║${WHITE}  OS     : ${CYAN}$(printf '%-15s' "$OS_SHORT")${WHITE}        EXP  : ${CYAN}$(printf '%-20s' "$LICENSE_EXP")${BLUE}║${NC}"
+    echo -e "${BLUE}║${WHITE}  ISP    : ${CYAN}$(printf '%-15s' "$ISP_SHORT")${WHITE}        RAM  : ${CYAN}$(printf '%-20s' "$RAM_INFO")${BLUE}║${NC}"
+    echo -e "${BLUE}║${WHITE}  CPU    : ${CYAN}$(printf '%-15s' "$CPU_INFO")${WHITE}        USER : ${CYAN}$(printf '%-20s' "$TOTAL_USERS")${BLUE}║${NC}"
+    echo -e "${BLUE}╚════════════════════════════════════════════════════╝${NC}"
+    echo -e "                           ${WHITE}Status : ${SERVICE_STATUS}${NC}"
 }
 
 show_main_menu() {
-    echo -e "${BLUE}╔══════════════════════════════════════╗${NC}"
-    echo -e ""
-    echo -e "${WHITE} 1)${CYAN} BUAT AKUN ZIVPN${WHITE}   5)${CYAN} BOT SETTING${NC}"
-    echo -e ""
-    echo -e "${WHITE} 2)${CYAN} BUAT AKUN TRIAL${WHITE}   6)${CYAN} BACK/REST${NC}"
-    echo -e ""
-    echo -e "${WHITE} 3)${CYAN} RENEW AKUN     ${WHITE}   7)${CYAN} HAPUS AKUN${NC}"
-    echo -e ""
-    echo -e "${WHITE} 4)${CYAN} RESTART SERVIS ${WHITE}   0)${CYAN} EXIT${NC}"
-    echo -e ""
-    echo -e "${BLUE}╚══════════════════════════════════════╝${NC}"
+    echo -e "${BLUE}╔════════════════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║                                                     ║${NC}"
+    echo -e "${BLUE}║${WHITE}  1)${CYAN} BUAT AKUN ZIVPN${WHITE}             5)${CYAN} BOT SETTING${WHITE}      ${BLUE}║${NC}"
+    echo -e "${BLUE}║                                                     ║${NC}"
+    echo -e "${BLUE}║${WHITE}  2)${CYAN} BUAT AKUN TRIAL${WHITE}             6)${CYAN} BACK/REST${WHITE}        ${BLUE}║${NC}"
+    echo -e "${BLUE}║                                                     ║${NC}"
+    echo -e "${BLUE}║${WHITE}  3)${CYAN} RENEW AKUN${WHITE}                  7)${CYAN} HAPUS AKUN${WHITE}       ${BLUE}║${NC}"
+    echo -e "${BLUE}║                                                     ║${NC}"
+    echo -e "${BLUE}║${WHITE}  4)${CYAN} RESTART SERVIS${WHITE}              0)${CYAN} EXIT${WHITE}             ${BLUE}║${NC}"
+    echo -e "${BLUE}║                                                     ║${NC}"
+    echo -e "${BLUE}╚════════════════════════════════════════════════════╝${NC}"
 }
 
 # Create account function
@@ -148,7 +146,7 @@ create_account() {
     clear
     echo ""
     echo -e "${BLUE}"
-    figlet -f small "CREATE ACCOUNT" | lolcat
+    figlet -f digital "CREATE ACCOUNT" | lolcat
     echo -e "${NC}"
     
     echo -e "${BLUE}╔═══════════════════════════╗${NC}"
@@ -200,33 +198,31 @@ create_account() {
     clear
     echo ""
     echo -e "${BLUE}"
-    figlet -f script "SUCCESS" | lolcat
+    figlet -f digital "SUCCESS" | lolcat
     echo -e "${NC}"
     
     echo -e "${BLUE}╔═══════════════════════════╗${NC}"
-    echo -e "${WHITE}   ✅ AKUN BERHASIL DIBUAT${NC}"
+    echo -e "║${WHITE}   ✅ AKUN BERHASIL DIBUAT${NC}"
     echo -e "${BLUE}╠═══════════════════════════╣${NC}"
-    echo -e "${WHITE}"
-    echo -e "║"
-    echo -e "║  Nama client : ${CYAN}$client_name${WHITE}"
-    echo -e "║"
-    echo -e "║  IP/Host     : ${CYAN}$HOST_NAME${WHITE}"
-    echo -e "║"
-    echo -e "║  Password    : ${CYAN}$password${WHITE}"
-    echo -e "║"
-    echo -e "║  Expiry Date : ${CYAN}$expiry_date${WHITE}"
-    echo -e "║"
-    echo -e "║  Limit Device: ${CYAN}1 device${WHITE}"
-    echo -e "║"
-    echo -e "${NC}"
+    echo -e "║${BLUE}"
+    echo -e "║${BLUE}  Nama client : ${CYAN}$client_name${WHITE}"
+    echo -e "║${BLUE}"
+    echo -e "║${BLUE}  IP/Host     : ${CYAN}$HOST_NAME${WHITE}"
+    echo -e "║${BLUE}"
+    echo -e "║${BLUE}  Password    : ${CYAN}$password${WHITE}"
+    echo -e "║${BLUE}"
+    echo -e "║${BLUE}  Expiry Date : ${CYAN}$expiry_date${WHITE}"
+    echo -e "║${BLUE}"
+    echo -e "║${BLUE}  Limit Device: ${CYAN}1 device${WHITE}"
+    echo -e "║${BLUE}"
     echo -e "${BLUE}╠═══════════════════════════╣${NC}"
-    echo -e "${WHITE}       ⚠️  PERINGATAN${NC}"
-    echo -e "${WHITE}   Akun akan otomatis di-Band${NC}"
-    echo -e "${WHITE}   jika IP melebihi ketentuan${NC}"
-    echo -e "${WHITE}"
+    echo -e "║${WHITE}       ⚠️  PERINGATAN${NC}"
+    echo -e "║${WHITE}   Akun akan otomatis di-Band${NC}"
+    echo -e "║${WHITE}   jika IP melebihi ketentuan${NC}"
+    echo -e "║${WHITE}"
     echo -e "${BLUE}╠═══════════════════════════╣${NC}"
-    echo -e "${WHITE}   Terima kasih sudah order!${NC}"
-    echo -e "${WHITE}        @bendakerep${NC}"
+    echo -e "║${WHITE}   Terima kasih sudah order!${NC}"
+    echo -e "║${WHITE}        @bendakerep${NC}"
     echo -e "${BLUE}╚═══════════════════════════╝${NC}"
     
     log_action "Created account: $client_name, expires: $expiry_date"
@@ -240,7 +236,7 @@ create_trial_account() {
     clear
     echo ""
     echo -e "${BLUE}"
-    figlet -f small "TRIAL ACCOUNT" | lolcat
+    figlet -f digital "TRIAL ACCOUNT" | lolcat
     echo -e "${NC}"
     
     echo -e "${BLUE}╔═══════════════════════════╗${NC}"
@@ -281,13 +277,12 @@ create_trial_account() {
     clear
     echo ""
     echo -e "${BLUE}"
-    figlet -f banner "SUCCESS" | lolcat
+    figlet -f digital "SUCCESS" | lolcat
     echo -e "${NC}"
     
     echo -e "${BLUE}╔═══════════════════════════╗${NC}"
-    echo -e "${WHITE} ✅ AKUN TRIAL BERHASIL${NC}"
+    echo -e "${WHITE}   ✅ AKUN TRIAL BERHASIL${NC}"
     echo -e "${BLUE}╠═══════════════════════════╣${NC}"
-    echo -e "${WHITE}"
     echo -e "║"
     echo -e "║  Nama client : ${CYAN}$client_name${WHITE}"
     echo -e "║"
@@ -299,7 +294,6 @@ create_trial_account() {
     echo -e "║"
     echo -e "║  Limit Device: ${CYAN}1 device${WHITE}"
     echo -e "║"
-    echo -e "${NC}"
     echo -e "${BLUE}╠═══════════════════════════╣${NC}"
     echo -e "${WHITE}        ⚠️  PERINGATAN${NC}"
     echo -e "${WHITE}   Akun akan otomatis di-Band${NC}"
@@ -331,69 +325,27 @@ renew_account() {
         return
     fi
     
-    echo -e "${BLUE}╔═══════════════════════════╗${NC}"
-    echo -e "${WHITE}          RENEW AKUN${NC}"
-    echo -e "${BLUE}╚═══════════════════════════╝${NC}"
-    echo -e "${BLUE}════════════════════════════════════${NC}"
-    echo -e "${WHITE}No.  Nama         password           expired${NC}"
-    echo -e "${BLUE}════════════════════════════════════${NC}"
+    echo -e "${BLUE}╔═══════════════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║${WHITE}                      RENEW AKUN                     ${BLUE}║${NC}"
+    echo -e "${BLUE}╚═══════════════════════════════════════════════════╝${NC}"
+    echo -e "${BLUE}═════════════════════════════════════════════════════${NC}"
+    echo -e "${WHITE}No.   Nama Client          Password          Expired${NC}"
+    echo -e "${BLUE}═════════════════════════════════════════════════════${NC}"
     
-    # Display accounts
+    # Display accounts dengan format tabel rapi
     count=1
     while IFS=':' read -r password expiry_timestamp client_name; do
         if [ -n "$password" ]; then
             expiry_date=$(date -d "@$expiry_timestamp" +"%m-%d-%Y")
-            echo -e "${WHITE}$count.   ${CYAN}$client_name${WHITE}        $password          $expiry_date${NC}"
+            printf "${WHITE}%-4s  ${CYAN}%-20s${WHITE}  %-15s  %-10s${NC}\n" "$count." "$client_name" "$password" "$expiry_date"
             count=$((count + 1))
         fi
     done < "$USER_DB"
     
-    echo -e "${BLUE}════════════════════════════════════${NC}"
+    echo -e "${BLUE}═════════════════════════════════════════════════════${NC}"
     echo ""
-    read -p "Pilih nomer untuk renew akun: " choice
-    
-    if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
-        echo -e "${RED}Pilihan tidak valid!${NC}"
-        read -p "Tekan Enter untuk kembali..."
-        return
-    fi
-    
-    # Get selected account
-    selected_line=$(sed -n "${choice}p" "$USER_DB")
-    if [ -z "$selected_line" ]; then
-        echo -e "${RED}Akun tidak ditemukan!${NC}"
-        read -p "Tekan Enter untuk kembali..."
-        return
-    fi
-    
-    IFS=':' read -r password expiry_timestamp client_name <<< "$selected_line"
-    
-    echo ""
-    read -p "Masukkan tambahan hari: " add_days
-    
-    if ! [[ "$add_days" =~ ^[0-9]+$ ]]; then
-        echo -e "${RED}Hari harus angka!${NC}"
-        read -p "Tekan Enter untuk kembali..."
-        return
-    fi
-    
-    # Calculate new expiry
-    new_expiry_timestamp=$((expiry_timestamp + (add_days * 86400)))
-    new_expiry_date=$(date -d "@$new_expiry_timestamp" +"%d %B %Y")
-    
-    # Update database
-    sed -i "${choice}s/$expiry_timestamp/$new_expiry_timestamp/" "$USER_DB"
-    
-    echo ""
-    echo -e "${GREEN}✅ Akun berhasil di-renew!${NC}"
-    echo -e "${WHITE}Password: ${CYAN}$password${NC}"
-    echo -e "${WHITE}Expiry baru: ${CYAN}$new_expiry_date${NC}"
-    
-    log_action "Renewed account: $password, added $add_days days"
-    
-    read -p "Tekan Enter untuk kembali ke menu..."
+    read -p "Pilih nomor untuk renew akun: " choice
 }
-
 # Delete account
 delete_account() {
     clear
@@ -409,71 +361,26 @@ delete_account() {
         return
     fi
     
-    echo -e "${BLUE}╔═══════════════════════════╗${NC}"
-    echo -e "${WHITE}           HAPUS AKUN${NC}"
-    echo -e "${BLUE}╚═══════════════════════════╝${NC}"
-    echo -e "${BLUE}════════════════════════════════════${NC}"
-    echo -e "${WHITE}No.  Nama         password           expired${NC}"
-    echo -e "${BLUE}════════════════════════════════════${NC}"
+    echo -e "${BLUE}╔═══════════════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║${WHITE}                      HAPUS AKUN                      ${BLUE}║${NC}"
+    echo -e "${BLUE}╚═══════════════════════════════════════════════════╝${NC}"
+    echo -e "${BLUE}═════════════════════════════════════════════════════${NC}"
+    echo -e "${WHITE}No.   Nama Client          Password          Expired${NC}"
+    echo -e "${BLUE}═════════════════════════════════════════════════════${NC}"
     
-    # Display accounts
+    # Display accounts dengan format tabel rapi
     count=1
     while IFS=':' read -r password expiry_timestamp client_name; do
         if [ -n "$password" ]; then
             expiry_date=$(date -d "@$expiry_timestamp" +"%m-%d-%Y")
-            echo -e "${WHITE}$count.   ${CYAN}$client_name${WHITE}        $password          $expiry_date${NC}"
+            printf "${WHITE}%-4s  ${CYAN}%-20s${WHITE}  %-15s  %-10s${NC}\n" "$count." "$client_name" "$password" "$expiry_date"
             count=$((count + 1))
         fi
     done < "$USER_DB"
     
-    echo -e "${BLUE}════════════════════════════════════${NC}"
+    echo -e "${BLUE}═════════════════════════════════════════════════════${NC}"
     echo ""
-    read -p "Pilih nomer untuk hapus akun: " choice
-    
-    if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
-        echo -e "${RED}Pilihan tidak valid!${NC}"
-        read -p "Tekan Enter untuk kembali..."
-        return
-    fi
-    
-    # Get selected account
-    selected_line=$(sed -n "${choice}p" "$USER_DB")
-    if [ -z "$selected_line" ]; then
-        echo -e "${RED}Akun tidak ditemukan!${NC}"
-        read -p "Tekan Enter untuk kembali..."
-        return
-    fi
-    
-    IFS=':' read -r password expiry_timestamp client_name <<< "$selected_line"
-    
-    echo ""
-    read -p "Yakin hapus akun $client_name? (y/n): " confirm
-    
-    if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
-        echo -e "${YELLOW}Dibatalkan!${NC}"
-        read -p "Tekan Enter untuk kembali..."
-        return
-    fi
-    
-    # Remove from database
-    sed -i "${choice}d" "$USER_DB"
-    
-    # Remove from config.json
-    if [ -f "$CONFIG_FILE" ]; then
-        current_config=$(cat "$CONFIG_FILE")
-        echo "$current_config" | jq --arg pass "$password" 'del(.auth.config[] | select(. == $pass))' > "$CONFIG_FILE.tmp"
-        mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
-    fi
-    
-    # Restart service
-    systemctl restart zivpn.service
-    
-    echo ""
-    echo -e "${GREEN}✅ Akun berhasil dihapus!${NC}"
-    
-    log_action "Deleted account: $client_name ($password)"
-    
-    read -p "Tekan Enter untuk kembali ke menu..."
+    read -p "Pilih nomor untuk hapus akun: " choice
 }
 
 # Restart service
@@ -580,7 +487,7 @@ backup_restore() {
     clear
     echo ""
     echo -e "${BLUE}"
-    figlet -f ivrit "BACKUP/RESTORE" | lolcat
+    figlet -f digital "BACKUP/RESTORE" | lolcat
     echo -e "${NC}"
     
     echo -e "${BLUE}╔═══════════════════════════╗${NC}"
@@ -758,7 +665,7 @@ main_menu() {
             0)
                 clear
                 echo ""
-                figlet -f small "THANK YOU" | lolcat
+                figlet -f small "PONDOK VPN" | lolcat
                 echo -e "${CYAN}Terima kasih telah menggunakan ZIVPN!${NC}"
                 echo -e "${WHITE}Telegram: @bendakerep${NC}"
                 echo ""
