@@ -760,7 +760,7 @@ main_menu() {
                 clear
                 echo ""
                 echo -e "${BLUE}"
-                figlet -f small "PONDOK VPN" | lolcat
+                figlet -f small "THANK YOU" | lolcat
                 echo -e "${NC}"
                 echo -e "${CYAN}Terima kasih telah menggunakan ZIVPN!${NC}"
                 echo -e "${WHITE}Telegram: @bendakerep${NC}"
