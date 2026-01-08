@@ -207,12 +207,10 @@ setup_swap() {
     
     log "INFO" "Creating 1GB swap file..."
     
-    
     fallocate -l 1G /swapfile 2>/dev/null || dd if=/dev/zero of=/swapfile bs=1M count=1024
     chmod 600 /swapfile
     mkswap /swapfile
     swapon /swapfile
-    
     
     echo '/swapfile none swap sw 0 0' | tee -a /etc/fstab
     
@@ -363,6 +361,10 @@ get_domain_or_ip() {
     sleep 1
 }
 
+# ======================================================
+# FUNGSI BARU: DOWNLOAD BINARY DENGAN AUTO-DETECT ARCH
+# ======================================================
+
 # Download and install ZiVPN binary
 install_zivpn_binary() {
     print_separator
@@ -374,23 +376,146 @@ install_zivpn_binary() {
     pkill zivpn 2>/dev/null
     systemctl stop zivpn 2>/dev/null
     
-    # Download binary
-    log "INFO" "Downloading from official repository..."
-    if wget -q https://github.com/zahidbd2/udp-zivpn/releases/download/udp-zivpn_1.4.9/udp-zivpn-linux-amd64 \
-        -O /usr/local/bin/zivpn; then
-        chmod +x /usr/local/bin/zivpn
-        log "INFO" "✓ ZiVPN binary downloaded successfully"
+    # Detect architecture
+    ARCH=$(uname -m)
+    BINARY_NAME=""
+    
+    case $ARCH in
+        x86_64|amd64)
+            log "INFO" "Detected architecture: AMD64 (x86_64)"
+            BINARY_NAME="udp-zivpn-linux-amd64"
+            ;;
+        aarch64|arm64)
+            log "INFO" "Detected architecture: ARM64"
+            BINARY_NAME="udp-zivpn-linux-arm64"
+            ;;
+        armv7l|armhf)
+            log "INFO" "Detected architecture: ARMv7"
+            BINARY_NAME="udp-zivpn-linux-armv7"
+            ;;
+        *)
+            log "ERROR" "Unsupported architecture: $ARCH"
+            echo -e "${YELLOW}Supported: AMD64, ARM64, ARMv7${NC}"
+            exit 1
+            ;;
+    esac
+    
+    # Multiple download sources
+    declare -A SOURCES=(
+        ["github"]="https://github.com/zahidbd2/udp-zivpn/releases/download/udp-zivpn_1.4.9/$BINARY_NAME"
+        ["raw"]="https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/$BINARY_NAME"
+        ["cdn"]="https://cdn.jsdelivr.net/gh/zahidbd2/udp-zivpn@latest/$BINARY_NAME"
+        ["mirror"]="https://gitlab.com/zivpn-projects/zivpn/-/raw/main/$BINARY_NAME"
+    )
+    
+    DOWNLOAD_SUCCESS=0
+    
+    # Try each source
+    for source_name in "${!SOURCES[@]}"; do
+        url="${SOURCES[$source_name]}"
+        
+        log "INFO" "Trying source: $source_name"
+        echo -e "${YELLOW}URL: $(echo $url | cut -d'/' -f3)...${NC}"
+        
+        # Download with timeout 30 seconds
+        if timeout 30 wget --tries=2 --timeout=15 -q "$url" -O /usr/local/bin/zivpn; then
+            # Verify file size (should be > 1MB)
+            FILE_SIZE=$(stat -c%s /usr/local/bin/zivpn 2>/dev/null || echo 0)
+            
+            if [ $FILE_SIZE -gt 1000000 ]; then
+                chmod +x /usr/local/bin/zivpn
+                log "INFO" "✓ Download successful from $source_name"
+                log "INFO" "✓ File size: $((FILE_SIZE/1024/1024))MB"
+                DOWNLOAD_SUCCESS=1
+                break
+            else
+                log "WARN" "File too small ($FILE_SIZE bytes), trying next source..."
+                rm -f /usr/local/bin/zivpn
+            fi
+        else
+            log "WARN" "Download failed from $source_name"
+        fi
+    done
+    
+    # If all downloads failed
+    if [ $DOWNLOAD_SUCCESS -eq 0 ]; then
+        log "ERROR" "All download sources failed!"
+        
+        # Check if binary already exists
+        if [ -f /usr/local/bin/zivpn ]; then
+            log "WARN" "Using existing binary (may be outdated)"
+            chmod +x /usr/local/bin/zivpn
+        else
+            # Create emergency placeholder
+            log "WARN" "Creating emergency placeholder binary"
+            cat > /usr/local/bin/zivpn << 'EOF'
+#!/bin/bash
+echo "=========================================="
+echo "   ZIVPN EMERGENCY PLACEHOLDER BINARY"
+echo "=========================================="
+echo ""
+echo "⚠️  Original binary download failed!"
+echo ""
+echo "Please download manually:"
+echo "For AMD64 (x86_64):"
+echo "  wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/udp-zivpn-linux-amd64 -O /usr/local/bin/zivpn"
+echo ""
+echo "For ARM64:"
+echo "  wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/udp-zivpn-linux-arm64 -O /usr/local/bin/zivpn"
+echo ""
+echo "Then: chmod +x /usr/local/bin/zivpn"
+echo "And: systemctl restart zivpn"
+echo ""
+exit 1
+EOF
+            chmod +x /usr/local/bin/zivpn
+            log "INFO" "✓ Emergency placeholder created"
+            
+            # Show manual download instructions
+            echo ""
+            echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+            echo -e "${RED}   MANUAL DOWNLOAD REQUIRED!${NC}"
+            echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+            echo ""
+            echo -e "Architecture detected: ${CYAN}$ARCH${NC}"
+            echo ""
+            echo -e "${GREEN}Please run these commands:${NC}"
+            echo "----------------------------------------"
+            echo -e "${CYAN}cd /usr/local/bin${NC}"
+            
+            if [[ "$ARCH" == "x86_64" || "$ARCH" == "amd64" ]]; then
+                echo -e "${CYAN}wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/udp-zivpn-linux-amd64 -O zivpn${NC}"
+            elif [[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]]; then
+                echo -e "${CYAN}wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/udp-zivpn-linux-arm64 -O zivpn${NC}"
+            else
+                echo -e "${CYAN}wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/udp-zivpn-linux-amd64 -O zivpn${NC}"
+                echo -e "${YELLOW}(Trying AMD64 as fallback)${NC}"
+            fi
+            
+            echo -e "${CYAN}chmod +x zivpn${NC}"
+            echo -e "${CYAN}systemctl restart zivpn${NC}"
+            echo "----------------------------------------"
+            echo ""
+            echo -e "${YELLOW}After download, restart installation or run:${NC}"
+            echo -e "${CYAN}systemctl start zivpn${NC}"
+        fi
     else
-        log "ERROR" "Failed to download ZiVPN binary"
-        exit 1
+        log "INFO" "✓ ZiVPN binary installed successfully"
     fi
     
     echo ""
     print_green_separator
-    echo -e "${GREEN}           ZIVPN BINARY INSTALLED              ${NC}"
+    
+    if [ $DOWNLOAD_SUCCESS -eq 1 ]; then
+        echo -e "${GREEN}           ZIVPN BINARY INSTALLED              ${NC}"
+    else
+        echo -e "${YELLOW}           PLACEHOLDER BINARY SET             ${NC}"
+        echo -e "${RED}           MANUAL DOWNLOAD REQUIRED           ${NC}"
+    fi
+    
     print_green_separator
     echo ""
-    sleep 1
+    sleep 2
 }
 
 # Setup directories and files
@@ -664,6 +789,13 @@ start_service() {
     else
         log "ERROR" "Failed to start service"
         echo -e "${YELLOW}Check: systemctl status zivpn.service${NC}"
+        
+        # Show more details if service fails
+        echo ""
+        echo -e "${YELLOW}Debug information:${NC}"
+        echo "----------------------------------------"
+        journalctl -u zivpn.service -n 20 --no-pager
+        echo "----------------------------------------"
     fi
     
     echo ""
@@ -685,6 +817,19 @@ show_summary() {
         domain_info="IP: $public_ip"
     fi
     
+    # Check binary status
+    local binary_status=""
+    if [ -f /usr/local/bin/zivpn ]; then
+        FILE_SIZE=$(stat -c%s /usr/local/bin/zivpn 2>/dev/null || echo 0)
+        if [ $FILE_SIZE -gt 1000000 ]; then
+            binary_status="${GREEN}✓ Valid${NC}"
+        else
+            binary_status="${YELLOW}⚠️ Placeholder${NC}"
+        fi
+    else
+        binary_status="${RED}✗ Missing${NC}"
+    fi
+    
     echo ""
     print_separator
     print_separator
@@ -698,6 +843,7 @@ show_summary() {
     echo -e "  ${YELLOW}•${NC} Server       : ${GREEN}$domain_info${NC}"
     echo -e "  ${YELLOW}•${NC} Port         : ${GREEN}5667 UDP${NC}"
     echo -e "  ${YELLOW}•${NC} Default Pass : ${GREEN}pondok123${NC}"
+    echo -e "  ${YELLOW}•${NC} Binary Status: $binary_status"
     print_separator
     echo ""
     
@@ -718,6 +864,26 @@ show_summary() {
     echo -e "  3. Change default password"
     print_separator
     echo ""
+    
+    # Warning if binary is placeholder
+    if [ -f /usr/local/bin/zivpn ] && [ $(stat -c%s /usr/local/bin/zivpn 2>/dev/null || echo 0) -lt 1000000 ]; then
+        echo -e "${RED}⚠️  IMPORTANT: Binary download failed!${NC}"
+        print_separator
+        echo -e "${YELLOW}Please download binary manually:${NC}"
+        echo ""
+        
+        ARCH=$(uname -m)
+        if [[ "$ARCH" == "x86_64" || "$ARCH" == "amd64" ]]; then
+            echo -e "${CYAN}wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/udp-zivpn-linux-amd64 -O /usr/local/bin/zivpn${NC}"
+        elif [[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]]; then
+            echo -e "${CYAN}wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/udp-zivpn-linux-arm64 -O /usr/local/bin/zivpn${NC}"
+        fi
+        
+        echo -e "${CYAN}chmod +x /usr/local/bin/zivpn${NC}"
+        echo -e "${CYAN}systemctl restart zivpn${NC}"
+        print_separator
+        echo ""
+    fi
     
     echo -e "${YELLOW}⚠️  AUTO-BAN SYSTEM ACTIVE${NC}"
     print_separator
