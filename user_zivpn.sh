@@ -128,6 +128,7 @@ show_info_panel() {
     echo -e "${BLUE}╚══════════════════════════════════════╝${NC}"
     echo -e "                 ${WHITE}Status : ${SERVICE_STATUS}${NC}"
 }
+
 show_main_menu() {
     echo -e "${BLUE}╔══════════════════════════════════════╗${NC}"
     echo -e ""
@@ -637,8 +638,6 @@ backup_data() {
     read -p "Tekan Enter untuk kembali..."
 }
 
-# Restore data
-restore_data() {
 # Restore data
 restore_data() {
     echo -e "${YELLOW}Restoring data...${NC}"
