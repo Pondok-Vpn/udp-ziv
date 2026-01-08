@@ -185,6 +185,51 @@ check_license() {
     sleep 1
 }
 
+# --- Setup Swap Memory ---
+setup_swap() {
+    print_separator
+    echo -e "${BLUE}           SETUP SWAP MEMORY (1GB)            ${NC}"
+    print_separator
+    echo ""
+    
+    # Check if swap already exists
+    if swapon --show | grep -q "/swapfile"; then
+        log "INFO" "✓ Swap already exists"
+        return
+    fi
+    
+    if free | grep -q "Swap"; then
+        if [ $(free | grep Swap | awk '{print $2}') -gt 0 ]; then
+            log "INFO" "✓ Swap already configured"
+            return
+        fi
+    fi
+    
+    log "INFO" "Creating 1GB swap file..."
+    
+    
+    fallocate -l 1G /swapfile 2>/dev/null || dd if=/dev/zero of=/swapfile bs=1M count=1024
+    chmod 600 /swapfile
+    mkswap /swapfile
+    swapon /swapfile
+    
+    
+    echo '/swapfile none swap sw 0 0' | tee -a /etc/fstab
+    
+    echo "vm.swappiness=10" | tee -a /etc/sysctl.conf
+    echo "vm.vfs_cache_pressure=50" | tee -a /etc/sysctl.conf
+    sysctl -p
+    
+    log "INFO" "✓ 1GB swap created and activated"
+    
+    echo ""
+    print_green_separator
+    echo -e "${GREEN}           SWAP MEMORY SETUP COMPLETE       ${NC}"
+    print_green_separator
+    echo ""
+    sleep 1
+}
+
 # Install dependencies
 install_dependencies() {
     print_separator
@@ -714,6 +759,7 @@ main() {
     # Step-by-step installation with separators
     check_root
     check_license
+    setup_swap
     install_dependencies
     install_fail2ban
     get_domain_or_ip
