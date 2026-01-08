@@ -759,9 +759,7 @@ main_menu() {
             0)
                 clear
                 echo ""
-                echo -e "${BLUE}"
                 figlet -f small "THANK YOU" | lolcat
-                echo -e "${NC}"
                 echo -e "${CYAN}Terima kasih telah menggunakan ZIVPN!${NC}"
                 echo -e "${WHITE}Telegram: @bendakerep${NC}"
                 echo ""
