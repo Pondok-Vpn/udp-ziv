@@ -1,7 +1,6 @@
 #!/bin/bash
 # ===========================================
 # ZIVPN USER MANAGEMENT - COMPLETE VERSION
-# Integrasi: Pondok-Vpn + Kedaivpn Features
 # Version: 3.0
 # Telegram: @bendakerep
 # ===========================================
