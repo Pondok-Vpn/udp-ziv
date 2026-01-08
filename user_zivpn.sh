@@ -17,6 +17,19 @@ LIGHT_CYAN='\033[1;96m'
 WHITE='\033[1;37m'
 NC='\033[0m'
 
+# Box configuration - MUDAH DIEDIT
+BOX_WIDTH=50
+INNER_WIDTH=$((BOX_WIDTH - 4))
+LINE_CHAR="═"
+CORNER_TL="╔"
+CORNER_TR="╗"
+CORNER_BL="╚"
+CORNER_BR="╝"
+VERTICAL_LINE="║"
+HORIZONTAL_LINE="═"
+T_LEFT="╠"
+T_RIGHT="╣"
+
 # Paths
 CONFIG_DIR="/etc/zivpn"
 CONFIG_FILE="$CONFIG_DIR/config.json"
@@ -27,19 +40,45 @@ BACKUP_DIR="/var/backups/zivpn"
 
 # Function untuk garis pembatas
 print_line() {
-    echo -e "${BLUE}═════════════════════════════${NC}"
+    echo -e "${BLUE}$(printf "%${BOX_WIDTH}s" | tr ' ' "${LINE_CHAR}")${NC}"
 }
 
 print_double_line() {
-    echo -e "${BLUE}╔═══════════════════════════╗${NC}"
+    echo -e "${BLUE}${CORNER_TL}$(printf "%$((BOX_WIDTH-2))s" | tr ' ' "${HORIZONTAL_LINE}")${CORNER_TR}${NC}"
 }
 
 print_double_line_end() {
-    echo -e "${BLUE}╚═══════════════════════════╝${NC}"
+    echo -e "${BLUE}${CORNER_BL}$(printf "%$((BOX_WIDTH-2))s" | tr ' ' "${HORIZONTAL_LINE}")${CORNER_BR}${NC}"
 }
 
 print_single_line() {
-    echo -e "${BLUE}╠═══════════════════════════╣${NC}"
+    echo -e "${BLUE}${T_LEFT}$(printf "%$((BOX_WIDTH-2))s" | tr ' ' "${HORIZONTAL_LINE}")${T_RIGHT}${NC}"
+}
+
+# Function untuk box dengan judul
+print_title_box() {
+    local title="$1"
+    local title_length=${#title}
+    local padding=$(( (BOX_WIDTH - title_length - 2) / 2 ))
+    
+    echo -e "${BLUE}${CORNER_TL}$(printf "%$((BOX_WIDTH-2))s" | tr ' ' "${HORIZONTAL_LINE}")${CORNER_TR}${NC}"
+    printf "${BLUE}${VERTICAL_LINE}${NC}%*s${WHITE}%s${NC}%*s${BLUE}${VERTICAL_LINE}${NC}\n" \
+        $padding "" "$title" $((padding + ((BOX_WIDTH - title_length - 2) % 2))) ""
+}
+
+# Function untuk box tanpa judul (hanya garis)
+print_simple_box() {
+    echo -e "${BLUE}${CORNER_TL}$(printf "%$((BOX_WIDTH-2))s" | tr ' ' "${HORIZONTAL_LINE}")${CORNER_TR}${NC}"
+}
+
+# Function untuk konten box
+print_box_content() {
+    local text="$1"
+    local text_length=${#text}
+    local padding=$(( (BOX_WIDTH - text_length - 2) / 2 ))
+    
+    printf "${BLUE}${VERTICAL_LINE}${NC}%*s%s%*s${BLUE}${VERTICAL_LINE}${NC}\n" \
+        $padding "" "$text" $((padding + ((BOX_WIDTH - text_length - 2) % 2))) ""
 }
 
 # Logging
@@ -136,10 +175,10 @@ show_info_panel() {
     figlet -f slant "ZIVPN PREMIUM" | lolcat
     
     print_double_line
-    echo -e "${WHITE}       IP VPS : ${CYAN}$IP_ADDRESS${WHITE}           HOST : ${CYAN}$HOST_NAME${NC}"
-    echo -e "${WHITE}       OS        : ${CYAN}$OS_SHORT${WHITE}           EXP    : ${CYAN}$LICENSE_EXP${NC}"
-    echo -e "${WHITE}       ISP       : ${CYAN}$ISP_SHORT${WHITE}           RAM   : ${CYAN}$RAM_INFO${NC}"
-    echo -e "${WHITE}       CPU     : ${CYAN}$CPU_INFO${WHITE}           USER  : ${CYAN}$TOTAL_USERS${NC}"
+    echo -e "${BLUE}${VERTICAL_LINE}${NC}${WHITE}       IP VPS : ${CYAN}$IP_ADDRESS${WHITE}           HOST : ${CYAN}$HOST_NAME${NC}${BLUE}${VERTICAL_LINE}${NC}"
+    echo -e "${BLUE}${VERTICAL_LINE}${NC}${WHITE}       OS        : ${CYAN}$OS_SHORT${WHITE}           EXP    : ${CYAN}$LICENSE_EXP${NC}${BLUE}${VERTICAL_LINE}${NC}"
+    echo -e "${BLUE}${VERTICAL_LINE}${NC}${WHITE}       ISP       : ${CYAN}$ISP_SHORT${WHITE}           RAM   : ${CYAN}$RAM_INFO${NC}${BLUE}${VERTICAL_LINE}${NC}"
+    echo -e "${BLUE}${VERTICAL_LINE}${NC}${WHITE}       CPU     : ${CYAN}$CPU_INFO${WHITE}           USER  : ${CYAN}$TOTAL_USERS${NC}${BLUE}${VERTICAL_LINE}${NC}"
     print_double_line_end
     echo -e "                          ${WHITE}Status : ${SERVICE_STATUS}${NC}"
 }
@@ -147,15 +186,15 @@ show_info_panel() {
 # Display main menu
 show_main_menu() {
     print_double_line
-    echo -e ""
-    echo -e "${WHITE} 1)${CYAN} BUAT AKUN ZIVPN${WHITE}   5)${CYAN} BOT SETTING${NC}"
-    echo -e ""
-    echo -e "${WHITE} 2)${CYAN} BUAT AKUN TRIAL${WHITE}   6)${CYAN} BACK/REST${NC}"
-    echo -e ""
-    echo -e "${WHITE} 3)${CYAN} RENEW AKUN     ${WHITE}   7)${CYAN} HAPUS AKUN${NC}"
-    echo -e ""
-    echo -e "${WHITE} 4)${CYAN} RESTART SERVIS ${WHITE}   0)${CYAN} EXIT${NC}"
-    echo -e ""
+    echo -e "${BLUE}${VERTICAL_LINE}${NC}"
+    echo -e "${BLUE}${VERTICAL_LINE}${NC}${WHITE} 1)${CYAN} BUAT AKUN ZIVPN${WHITE}   5)${CYAN} BOT SETTING${NC}${BLUE}${VERTICAL_LINE}${NC}"
+    echo -e "${BLUE}${VERTICAL_LINE}${NC}"
+    echo -e "${BLUE}${VERTICAL_LINE}${NC}${WHITE} 2)${CYAN} BUAT AKUN TRIAL${WHITE}   6)${CYAN} BACK/REST${NC}${BLUE}${VERTICAL_LINE}${NC}"
+    echo -e "${BLUE}${VERTICAL_LINE}${NC}"
+    echo -e "${BLUE}${VERTICAL_LINE}${NC}${WHITE} 3)${CYAN} RENEW AKUN     ${WHITE}   7)${CYAN} HAPUS AKUN${NC}${BLUE}${VERTICAL_LINE}${NC}"
+    echo -e "${BLUE}${VERTICAL_LINE}${NC}"
+    echo -e "${BLUE}${VERTICAL_LINE}${NC}${WHITE} 4)${CYAN} RESTART SERVIS ${WHITE}   0)${CYAN} EXIT${NC}${BLUE}${VERTICAL_LINE}${NC}"
+    echo -e "${BLUE}${VERTICAL_LINE}${NC}"
     print_double_line_end
 }
 
@@ -165,9 +204,7 @@ create_account() {
     echo ""
     figlet -f small "CREATE ACCOUNT" | lolcat
     
-    print_double_line
-    echo -e "${WHITE}    📝 BUAT AKUN ZIVPN${NC}"
-    print_double_line_end
+    print_title_box "📝 BUAT AKUN ZIVPN"
     
     echo ""
     read -p "Masukkan nama client: " client_name
@@ -215,28 +252,28 @@ create_account() {
     echo ""
     figlet -f small "SUCCESS" | lolcat
     
-    print_double_line
-    echo -e "${WHITE}    ✅ AKUN BERHASIL DIBUAT${NC}"
+    print_simple_box
+    print_box_content "✅ AKUN BERHASIL DIBUAT"
     print_single_line
-    echo -e ""
-    echo -e "${WHITE}  Nama client   : ${CYAN}$client_name${NC}"
-    echo -e ""
-    echo -e "${WHITE}  IP/Host       : ${CYAN}$HOST_NAME${NC}"
-    echo -e ""
-    echo -e "${WHITE}  Password      : ${CYAN}$password${NC}"
-    echo -e ""
-    echo -e "${WHITE}  Expiry Date   : ${CYAN}$expiry_date${NC}"
-    echo -e ""
-    echo -e "${WHITE}  Limit Device  : ${CYAN}1 device${NC}"
-    echo -e ""
+    print_box_content ""
+    print_box_content "${WHITE}  Nama client   : ${CYAN}$client_name${NC}"
+    print_box_content ""
+    print_box_content "${WHITE}  IP/Host       : ${CYAN}$HOST_NAME${NC}"
+    print_box_content ""
+    print_box_content "${WHITE}  Password      : ${CYAN}$password${NC}"
+    print_box_content ""
+    print_box_content "${WHITE}  Expiry Date   : ${CYAN}$expiry_date${NC}"
+    print_box_content ""
+    print_box_content "${WHITE}  Limit Device  : ${CYAN}1 device${NC}"
+    print_box_content ""
     print_single_line
-    echo -e "${WHITE}                  ⚠️  PERINGATAN${NC}"
-    echo -e "${WHITE}           Akun akan otomatis di-Band${NC}"
-    echo -e "${WHITE}             jika IP melebihi ketentuan${NC}"
-    echo -e ""
+    print_box_content "⚠️  PERINGATAN"
+    print_box_content "Akun akan otomatis di-Band"
+    print_box_content "jika IP melebihi ketentuan"
+    print_box_content ""
     print_single_line
-    echo -e "${WHITE}                Terima kasih sudah order!${NC}"
-    echo -e "${WHITE}                       @bendakerep${NC}"
+    print_box_content "Terima kasih sudah order!"
+    print_box_content "@bendakerep"
     print_double_line_end
     
     log_action "Created account: $client_name, expires: $expiry_date"
@@ -251,9 +288,7 @@ create_trial_account() {
     echo ""
     figlet -f small "TRIAL ACCOUNT" | lolcat
     
-    print_double_line
-    echo -e "${WHITE}    🆓 BUAT AKUN TRIAL${NC}"
-    print_double_line_end
+    print_title_box "🆓 BUAT AKUN TRIAL"
     
     echo ""
     read -p "Masukkan masa aktif (menit): " minutes
@@ -290,28 +325,28 @@ create_trial_account() {
     echo ""
     figlet -f small "SUCCESS" | lolcat
     
-    print_double_line
-    echo -e "${WHITE}    ✅ AKUN TRIAL BERHASIL${NC}"
+    print_simple_box
+    print_box_content "✅ AKUN TRIAL BERHASIL"
     print_single_line
-    echo -e ""
-    echo -e "${WHITE}  Nama client   : ${CYAN}$client_name${NC}"
-    echo -e ""
-    echo -e "${WHITE}  IP/Host       : ${CYAN}$HOST_NAME${NC}"
-    echo -e ""
-    echo -e "${WHITE}  Password      : ${CYAN}$password${NC}"
-    echo -e ""
-    echo -e "${WHITE}  Expiry Date   : ${CYAN}$expiry_date${NC}"
-    echo -e ""
-    echo -e "${WHITE}  Limit Device  : ${CYAN}1 device${NC}"
-    echo -e ""
+    print_box_content ""
+    print_box_content "${WHITE}  Nama client   : ${CYAN}$client_name${NC}"
+    print_box_content ""
+    print_box_content "${WHITE}  IP/Host       : ${CYAN}$HOST_NAME${NC}"
+    print_box_content ""
+    print_box_content "${WHITE}  Password      : ${CYAN}$password${NC}"
+    print_box_content ""
+    print_box_content "${WHITE}  Expiry Date   : ${CYAN}$expiry_date${NC}"
+    print_box_content ""
+    print_box_content "${WHITE}  Limit Device  : ${CYAN}1 device${NC}"
+    print_box_content ""
     print_single_line
-    echo -e "${WHITE}                  ⚠️  PERINGATAN${NC}"
-    echo -e "${WHITE}           Akun akan otomatis di-Band${NC}"
-    echo -e "${WHITE}             jika IP melebihi ketentuan${NC}"
-    echo -e ""
+    print_box_content "⚠️  PERINGATAN"
+    print_box_content "Akun akan otomatis di-Band"
+    print_box_content "jika IP melebihi ketentuan"
+    print_box_content ""
     print_single_line
-    echo -e "${WHITE}                Terima kasih sudah order!${NC}"
-    echo -e "${WHITE}                       @bendakerep${NC}"
+    print_box_content "Terima kasih sudah order!"
+    print_box_content "@bendakerep"
     print_double_line_end
     
     log_action "Created trial account: $password, expires: $expiry_date"
@@ -333,9 +368,7 @@ renew_account() {
         return
     fi
     
-    print_double_line
-    echo -e "${WHITE}               RENEW AKUN${NC}"
-    print_double_line_end
+    print_title_box "RENEW AKUN"
     print_line
     echo -e "${WHITE}No.  Nama         password           expired${NC}"
     print_line
@@ -409,9 +442,7 @@ delete_account() {
         return
     fi
     
-    print_double_line
-    echo -e "${WHITE}               HAPUS AKUN${NC}"
-    print_double_line_end
+    print_title_box "HAPUS AKUN"
     print_line
     echo -e "${WHITE}No.  Nama         password           expired${NC}"
     print_line
@@ -504,9 +535,7 @@ bot_setting() {
     echo ""
     figlet -f small "BOT SETTING" | lolcat
     
-    print_double_line
-    echo -e "${WHITE}    🤖 TELEGRAM BOT SETUP${NC}"
-    print_double_line_end
+    print_title_box "🤖 TELEGRAM BOT SETUP"
     
     echo ""
     echo -e "${CYAN}Instruksi:${NC}"
@@ -577,9 +606,7 @@ backup_restore() {
     echo ""
     figlet -f small "BACKUP/RESTORE" | lolcat
     
-    print_double_line
-    echo -e "${WHITE}    💾 BACKUP & RESTORE${NC}"
-    print_double_line_end
+    print_title_box "💾 BACKUP & RESTORE"
     
     echo ""
     echo -e "${WHITE} 1)${CYAN} Backup Data${NC}"
