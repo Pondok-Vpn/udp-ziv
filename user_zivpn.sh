@@ -85,10 +85,17 @@ get_system_info() {
     ISP_INFO=$(curl -s ipinfo.io/org 2>/dev/null | cut -d' ' -f2- | head -1 || echo "Unknown")
     ISP_SHORT=$(echo "$ISP_INFO" | awk '{print $1}')
     
-    # RAM Info
+    # RAM Info - FIXED ERROR
     RAM_TOTAL=$(free -m 2>/dev/null | awk '/^Mem:/{print $2}' || echo "0")
     RAM_USED=$(free -m 2>/dev/null | awk '/^Mem:/{print $3}' || echo "0")
-    RAM_PERCENT=$((RAM_USED * 100 / RAM_TOTAL 2>/dev/null || echo 0))
+    
+    # FIX: Arithmetic calculation tanpa 2>/dev/null di dalam $(( ))
+    if [ "$RAM_TOTAL" -gt 0 ] 2>/dev/null; then
+        RAM_PERCENT=$((RAM_USED * 100 / RAM_TOTAL))
+    else
+        RAM_PERCENT=0
+    fi
+    
     RAM_INFO="${RAM_USED}MB/${RAM_TOTAL}MB"
     
     # CPU Info
