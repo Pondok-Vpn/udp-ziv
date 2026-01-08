@@ -532,7 +532,7 @@ setup_firewall() {
     sleep 1
 }
 
-# Install menu manager
+# Install menu manager dan helper scripts
 install_menu_manager() {
     print_separator
     echo -e "${BLUE}           INSTALLING MENU MANAGER             ${NC}"
@@ -550,7 +550,6 @@ install_menu_manager() {
         log "INFO" "✓ Menu manager downloaded"
     else
         log "WARN" "Failed to download menu manager, creating basic one..."
-        # Create basic menu as fallback
         cat > /usr/local/bin/zivpn-menu << EOF
 #!/bin/bash
 echo "ZiVPN Menu Manager"
@@ -561,10 +560,39 @@ EOF
         chmod +x /usr/local/bin/zivpn-menu
     fi
     
+    # ============================================
+    # DOWNLOAD HELPER SCRIPT (TELEGRAM & BACKUP)
+    # ============================================
+    log "INFO" "Downloading helper script..."
+    
+    wget -q "$REPO_URL/udp-ziv/main/zivpn_helper.sh" \
+        -O /usr/local/bin/zivpn-helper
+    
+    if [ $? -eq 0 ]; then
+        chmod +x /usr/local/bin/zivpn-helper
+        log "INFO" "✓ Helper script downloaded"
+    else
+        log "WARN" "Failed to download helper script"
+        # Create basic helper
+        cat > /usr/local/bin/zivpn-helper << EOF
+#!/bin/bash
+echo "ZiVPN Helper"
+echo "Download manually:"
+echo "wget $REPO_URL/udp-ziv/main/zivpn_helper.sh -O /usr/local/bin/zivpn-helper"
+echo "chmod +x /usr/local/bin/zivpn-helper"
+EOF
+        chmod +x /usr/local/bin/zivpn-helper
+    fi
+    
     # Create alias
     if ! grep -q "alias menu=" /root/.bashrc; then
         echo "alias menu='zivpn-menu'" >> /root/.bashrc
         log "INFO" "✓ Alias added to .bashrc"
+    fi
+    
+    # Create alias for helper
+    if ! grep -q "alias zivpn-backup=" /root/.bashrc; then
+        echo "alias zivpn-backup='zivpn-helper backup'" >> /root/.bashrc
     fi
     
     echo ""
@@ -631,6 +659,8 @@ show_summary() {
     echo -e "${CYAN}🚀 AVAILABLE COMMANDS:${NC}"
     print_separator
     echo -e "  ${YELLOW}•${NC} ${GREEN}menu${NC}                 : Open management menu"
+    echo -e "  ${YELLOW}•${NC} ${GREEN}zivpn-helper setup${NC}    : Setup Telegram bot"
+    echo -e "  ${YELLOW}•${NC} ${GREEN}zivpn-helper backup${NC}   : Backup configuration"
     echo -e "  ${YELLOW}•${NC} ${GREEN}systemctl status zivpn${NC} : Check service status"
     echo -e "  ${YELLOW}•${NC} ${GREEN}systemctl restart zivpn${NC}: Restart service"
     print_separator
@@ -639,8 +669,8 @@ show_summary() {
     echo -e "${CYAN}📝 QUICK START:${NC}"
     print_separator
     echo -e "  1. Type ${GREEN}menu${NC} to manage users"
-    echo -e "  2. Change default password"
-    echo -e "  3. Add your users"
+    echo -e "  2. Run ${GREEN}zivpn-helper setup${NC} for Telegram"
+    echo -e "  3. Change default password"
     print_separator
     echo ""
     
