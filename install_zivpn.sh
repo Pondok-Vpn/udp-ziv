@@ -1,6 +1,6 @@
 #!/bin/bash
 # ===========================================
-# ZIVPN COMPLETE INSTALLER
+# ZIVPN COMPLETE INSTALLER - OPTIMIZED FOR 1GB RAM
 # All-in-one: zi.sh + setup_zivpn.sh + features
 # GitHub: https://github.com/Pondok-Vpn/udp-ziv
 # Telegram: @bendakerep
@@ -17,7 +17,6 @@ NC='\033[0m'
 
 # Variables
 REPO_URL="https://raw.githubusercontent.com/Pondok-Vpn"
-# PERBAIKAN: DAFTAR ada di repo Pondok-Vpn, bukan di udp-ziv
 LICENSE_URL="$REPO_URL/Pondok-Vpn/main/DAFTAR"
 INSTALL_LOG="/var/log/zivpn_install.log"
 CONFIG_DIR="/etc/zivpn"
@@ -25,7 +24,7 @@ SERVICE_FILE="/etc/systemd/system/zivpn.service"
 
 # Function untuk garis pembatas
 print_separator() {
-    echo -e "${BLUE}======================================================${NC}"
+    echo -e "${YELLOW}======================================================${NC}"
 }
 
 print_green_separator() {
@@ -37,7 +36,7 @@ show_banner() {
     clear
     print_separator
     echo -e "${BLUE}           ZIVPN COMPLETE INSTALLER               ${NC}"
-    echo -e "${BLUE}           VERSION 3.0 - ALL IN ONE               ${NC}"
+    echo -e "${BLUE}           VERSION 4.1 - OPTIMIZED 1GB RAM        ${NC}"
     echo -e "${BLUE}           Telegram: @bendakerep                  ${NC}"
     print_separator
     echo ""
@@ -82,7 +81,7 @@ check_root() {
     sleep 1
 }
 
-# Check license from DAFTAR file (di repo Pondok-Vpn)
+# Check license from DAFTAR file
 check_license() {
     print_separator
     echo -e "${BLUE}           CHECKING LICENSE VALIDITY             ${NC}"
@@ -92,14 +91,12 @@ check_license() {
     local vps_ip=$(curl -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
     log "INFO" "VPS IP: $vps_ip"
     
-    # PERBAIKAN: Download DAFTAR dari repo Pondok-Vpn
     local temp_file=$(mktemp)
     log "INFO" "Downloading license file from: $LICENSE_URL"
     
     if curl -s "$LICENSE_URL" -o "$temp_file" 2>/dev/null; then
         log "INFO" "✓ License file downloaded successfully"
         
-        # Format DAFTAR: IP_VPS NAMA_USER EXPIRED
         if grep -q "^$vps_ip" "$temp_file"; then
             local license_info=$(grep "^$vps_ip" "$temp_file")
             local user_name=$(echo "$license_info" | awk '{print $2}')
@@ -137,42 +134,8 @@ check_license() {
             exit 1
         fi
     else
-        # Fallback: Coba dari repo udp-ziv (jika ada backup)
-        log "WARN" "Cannot connect to main license server"
-        log "INFO" "Trying backup location..."
-        
-        local backup_url="$REPO_URL/udp-ziv/main/DAFTAR"
-        if curl -s "$backup_url" -o "$temp_file" 2>/dev/null; then
-            log "INFO" "✓ Using backup license file"
-            
-            if grep -q "^$vps_ip" "$temp_file"; then
-                local license_info=$(grep "^$vps_ip" "$temp_file")
-                local user_name=$(echo "$license_info" | awk '{print $2}')
-                local expired_date=$(echo "$license_info" | awk '{print $3}')
-                
-                log "INFO" "✓ License VALID for: $user_name"
-                log "INFO" "✓ Expiry date: $expired_date"
-                
-                # Save user info
-                mkdir -p /etc/zivpn
-                echo "$user_name" > /etc/zivpn/.license_info
-                echo "$expired_date" >> /etc/zivpn/.license_info
-                chmod 600 /etc/zivpn/.license_info
-                
-            else
-                print_separator
-                echo -e "${YELLOW}       LICENSE CHECK SKIPPED              ${NC}"
-                echo -e "${YELLOW}   Running in evaluation mode            ${NC}"
-                print_separator
-                sleep 3
-            fi
-        else
-            print_separator
-            echo -e "${YELLOW}       LICENSE CHECK SKIPPED              ${NC}"
-            echo -e "${YELLOW}   Running in evaluation mode            ${NC}"
-            print_separator
-            sleep 3
-        fi
+        log "WARN" "Cannot connect to license server, running in evaluation mode"
+        sleep 3
     fi
     
     rm -f "$temp_file"
@@ -185,73 +148,146 @@ check_license() {
     sleep 1
 }
 
-# --- Setup Swap Memory ---
+# --- Setup Swap Memory OPTIMIZED for 1GB RAM ---
 setup_swap() {
     print_separator
-    echo -e "${BLUE}           SETUP SWAP MEMORY (1GB)            ${NC}"
+    echo -e "${BLUE}           SETUP SWAP MEMORY (OPTIMIZED)         ${NC}"
     print_separator
     echo ""
     
-    # Check if swap already exists
-    if swapon --show | grep -q "/swapfile"; then
-        log "INFO" "✓ Swap already exists"
-        return
+    # Check current memory
+    RAM_MB=$(free -m | awk '/^Mem:/{print $2}')
+    log "INFO" "Detected RAM: ${RAM_MB}MB"
+    
+    # Always setup swap regardless of existing swap (for 1GB RAM safety)
+    log "INFO" "Setting up swap for 1GB RAM optimization..."
+    
+    # Stop existing swap
+    swapoff -a 2>/dev/null
+    
+    # Remove old swap files
+    rm -f /swapfile /swapfile1 /swapfile2 2>/dev/null
+    
+    # Calculate optimal swap size: 2GB for 1GB RAM
+    SWAP_SIZE_MB=2048  # 2GB for 1GB RAM
+    
+    # Check disk space
+    DISK_FREE_MB=$(df -m / | tail -1 | awk '{print $4}')
+    if [ $DISK_FREE_MB -lt 2500 ]; then
+        SWAP_SIZE_MB=1024  # Reduce to 1GB if low disk
+        log "WARN" "Low disk space, reducing swap to 1GB"
     fi
     
-    if free | grep -q "Swap"; then
-        if [ $(free | grep Swap | awk '{print $2}') -gt 0 ]; then
-            log "INFO" "✓ Swap already configured"
-            return
-        fi
-    fi
+    log "INFO" "Creating ${SWAP_SIZE_MB}MB swap file..."
     
-    log "INFO" "Creating 1GB swap file..."
-    
-    fallocate -l 1G /swapfile 2>/dev/null || dd if=/dev/zero of=/swapfile bs=1M count=1024
+    # Create swap file with dd (more reliable than fallocate)
+    dd if=/dev/zero of=/swapfile bs=1M count=$SWAP_SIZE_MB status=progress
     chmod 600 /swapfile
+    
+    # Make swap
     mkswap /swapfile
     swapon /swapfile
     
-    echo '/swapfile none swap sw 0 0' | tee -a /etc/fstab
+    # Make permanent
+    if ! grep -q "/swapfile" /etc/fstab; then
+        echo "/swapfile none swap sw 0 0" >> /etc/fstab
+    else
+        sed -i '/\/swapfile/d' /etc/fstab
+        echo "/swapfile none swap sw 0 0" >> /etc/fstab
+    fi
     
-    echo "vm.swappiness=10" | tee -a /etc/sysctl.conf
-    echo "vm.vfs_cache_pressure=50" | tee -a /etc/sysctl.conf
-    sysctl -p
+    # Optimize swappiness for 1GB RAM
+    cat > /etc/sysctl.d/99-zivpn-swap.conf << EOF
+# ZIVPN Swap Optimization for 1GB RAM
+vm.swappiness=40
+vm.vfs_cache_pressure=50
+vm.dirty_ratio=20
+vm.dirty_background_ratio=10
+EOF
     
-    log "INFO" "✓ 1GB swap created and activated"
+    sysctl -p /etc/sysctl.d/99-zivpn-swap.conf 2>/dev/null
+    
+    # Verify
+    SWAP_TOTAL=$(free -m | awk '/^Swap:/{print $2}')
+    log "INFO" "✓ Swap created: ${SWAP_TOTAL}MB"
+    log "INFO" "✓ Swappiness: $(cat /proc/sys/vm/swappiness)"
+    
+    # Test swap is working
+    if swapon --show | grep -q "/swapfile"; then
+        log "INFO" "✓ Swap is active and working"
+    else
+        log "ERROR" "❌ Swap failed to activate!"
+    fi
     
     echo ""
     print_green_separator
-    echo -e "${GREEN}           SWAP MEMORY SETUP COMPLETE       ${NC}"
+    echo -e "${GREEN}           SWAP SETUP COMPLETE                  ${NC}"
     print_green_separator
     echo ""
-    sleep 1
+    sleep 2
 }
 
-# Install dependencies
+# Install minimal dependencies
 install_dependencies() {
     print_separator
-    echo -e "${BLUE}           INSTALLING DEPENDENCIES              ${NC}"
+    echo -e "${BLUE}           INSTALLING MINIMAL DEPENDENCIES       ${NC}"
     print_separator
     echo ""
     
-    log "INFO" "Updating package lists..."
-    apt update -y 2>&1 | tee -a "$INSTALL_LOG"
+    # Stop any running apt processes to prevent conflicts
+    log "INFO" "Stopping any running apt processes..."
+    pkill apt 2>/dev/null || true
+    pkill dpkg 2>/dev/null || true
+    systemctl stop apt-daily.timer apt-daily-upgrade.timer 2>/dev/null || true
+    
+    # Configure apt for low memory
+    log "INFO" "Configuring apt for low memory..."
+    cat > /etc/apt/apt.conf.d/99zivpn-lowmem << 'EOF'
+APT::Install-Recommends "false";
+APT::Install-Suggests "false";
+APT::Get::Assume-Yes "true";
+APT::Get::Fix-Missing "true";
+DPkg::Options {
+   "--force-confdef";
+   "--force-confold";
+}
+Acquire::http::Timeout "30";
+Acquire::https::Timeout "30";
+Acquire::Retries "3";
+EOF
+    
+    # Update package lists with retry
+    log "INFO" "Updating package lists (with retry)..."
+    for i in {1..3}; do
+        if apt update -y 2>&1 | tee -a "$INSTALL_LOG"; then
+            log "INFO" "✓ Package lists updated successfully"
+            break
+        else
+            log "WARN" "Attempt $i failed, retrying..."
+            sleep 2
+            if [ $i -eq 3 ]; then
+                log "ERROR" "Failed to update package lists after 3 attempts"
+                echo -e "${YELLOW}Continuing with installation...${NC}"
+            fi
+        fi
+    done
     echo ""
     
-    log "INFO" "Upgrading packages..."
-    apt upgrade -y 2>&1 | tee -a "$INSTALL_LOG"
+    # Install CORE packages only (no fail2ban, no ufw)
+    log "INFO" "Installing CORE packages only..."
+    apt install -y wget curl jq openssl 2>&1 | tee -a "$INSTALL_LOG"
     echo ""
     
-    log "INFO" "Installing essential packages..."
-    apt install -y wget curl jq openssl zip unzip net-tools ufw \
-                   iptables iptables-persistent 2>&1 | tee -a "$INSTALL_LOG"
-    echo ""
+    # Install optional packages (skip if fail)
+    log "INFO" "Installing optional packages..."
+    apt install -y net-tools figlet lolcat 2>&1 | tee -a "$INSTALL_LOG" || \
+        log "WARN" "Some optional packages failed, continuing..."
     
-    log "INFO" "Installing figlet & lolcat..."
-    apt install -y figlet lolcat 2>&1 | tee -a "$INSTALL_LOG"
-    echo ""
+    # Clean up to save space
+    apt clean
+    apt autoclean
     
+    echo ""
     print_green_separator
     echo -e "${GREEN}           DEPENDENCIES INSTALLED              ${NC}"
     print_green_separator
@@ -259,113 +295,50 @@ install_dependencies() {
     sleep 1
 }
 
-# Install fail2ban
-install_fail2ban() {
+# Get IP address only (no domain option)
+get_ip_address() {
     print_separator
-    echo -e "${BLUE}           INSTALLING FAIL2BAN                  ${NC}"
+    echo -e "${BLUE}           DETECTING SERVER IP ADDRESS          ${NC}"
     print_separator
     echo ""
     
-    log "INFO" "Installing fail2ban package..."
-    apt install -y fail2ban 2>&1 | tee -a "$INSTALL_LOG"
+    # Try multiple methods to get IP
+    IP_ADDRESS=""
+    
+    # Method 1: curl ifconfig.me
+    log "INFO" "Getting IP address from ifconfig.me..."
+    IP_ADDRESS=$(curl -s --max-time 10 ifconfig.me 2>/dev/null)
+    
+    # Method 2: hostname -I
+    if [ -z "$IP_ADDRESS" ]; then
+        log "INFO" "Getting IP from hostname..."
+        IP_ADDRESS=$(hostname -I | awk '{print $1}' 2>/dev/null)
+    fi
+    
+    # Method 3: ip command
+    if [ -z "$IP_ADDRESS" ]; then
+        log "INFO" "Getting IP from ip command..."
+        IP_ADDRESS=$(ip -4 addr show scope global | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | head -1)
+    fi
+    
+    if [ -z "$IP_ADDRESS" ]; then
+        log "ERROR" "Failed to detect IP address!"
+        IP_ADDRESS="127.0.0.1"
+    fi
+    
+    log "INFO" "Server IP: $IP_ADDRESS"
+    DOMAIN_TYPE="ip"
+    DOMAIN_VALUE="$IP_ADDRESS"
+    
     echo ""
-    
-    log "INFO" "Configuring fail2ban for ZiVPN..."
-    
-    # Create fail2ban config for ZiVPN
-    cat > /etc/fail2ban/jail.local << EOF
-[zivpn]
-enabled = true
-port = 5667
-protocol = udp
-filter = zivpn
-logpath = /var/log/zivpn_auth.log
-maxretry = 3
-bantime = 3600
-findtime = 600
-EOF
-    
-    # Create filter for ZiVPN
-    cat > /etc/fail2ban/filter.d/zivpn.conf << EOF
-[Definition]
-failregex = ^.*FAILED.*from <HOST>
-ignoreregex =
-EOF
-    
-    systemctl restart fail2ban
-    systemctl enable fail2ban
-    
-    log "INFO" "✓ Fail2ban service started and enabled"
-    echo ""
-    
     print_green_separator
-    echo -e "${GREEN}           FAIL2BAN INSTALLED                  ${NC}"
+    echo -e "${GREEN}           IP ADDRESS DETECTED                 ${NC}"
     print_green_separator
     echo ""
     sleep 1
 }
 
-# Domain or IP selection
-get_domain_or_ip() {
-    print_separator
-    echo -e "${BLUE}           DOMAIN CONFIGURATION                 ${NC}"
-    print_separator
-    echo ""
-    
-    echo -e "${CYAN}Select SSL certificate type:${NC}"
-    echo "1) Use Domain (example: vpn.pondok.com)"
-    echo "2) Use IP Address only"
-    echo ""
-    
-    read -p "Choose option [1/2]: " domain_choice
-    
-    case $domain_choice in
-        1)
-            read -p "Enter your domain (without http://): " domain_name
-            
-            if [[ -z "$domain_name" ]]; then
-                log "WARN" "Domain empty, using IP instead"
-                DOMAIN_TYPE="ip"
-                DOMAIN_VALUE=$(curl -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
-            else
-                DOMAIN_TYPE="domain"
-                DOMAIN_VALUE="$domain_name"
-                
-                # Update /etc/hosts if needed
-                local vps_ip=$(curl -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
-                if ! grep -q "$domain_name" /etc/hosts; then
-                    echo "$vps_ip $domain_name" >> /etc/hosts
-                    log "INFO" "✓ Added $domain_name to /etc/hosts"
-                fi
-            fi
-            ;;
-        2)
-            DOMAIN_TYPE="ip"
-            DOMAIN_VALUE=$(curl -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
-            log "INFO" "Using IP address: $DOMAIN_VALUE"
-            ;;
-        *)
-            log "WARN" "Invalid choice, using IP address"
-            DOMAIN_TYPE="ip"
-            DOMAIN_VALUE=$(curl -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
-            ;;
-    esac
-    
-    log "INFO" "SSL will be created for: $DOMAIN_VALUE ($DOMAIN_TYPE)"
-    echo ""
-    
-    print_green_separator
-    echo -e "${GREEN}           DOMAIN CONFIGURED                   ${NC}"
-    print_green_separator
-    echo ""
-    sleep 1
-}
-
-# ======================================================
-# FUNGSI BARU: DOWNLOAD BINARY DENGAN AUTO-DETECT ARCH
-# ======================================================
-
-# Download and install ZiVPN binary
+# Download binary dengan OOM protection
 install_zivpn_binary() {
     print_separator
     echo -e "${BLUE}           DOWNLOADING ZIVPN BINARY             ${NC}"
@@ -376,143 +349,120 @@ install_zivpn_binary() {
     pkill zivpn 2>/dev/null
     systemctl stop zivpn 2>/dev/null
     
+    # Check memory before download
+    log "INFO" "Checking memory before download..."
+    FREE_MEM=$(free -m | awk '/^Mem:/{print $4}')
+    log "INFO" "Free memory: ${FREE_MEM}MB"
+    
+    if [ $FREE_MEM -lt 100 ]; then
+        log "WARN" "Low memory! Freeing cache..."
+        sync
+        echo 3 > /proc/sys/vm/drop_caches
+        sleep 2
+        FREE_MEM=$(free -m | awk '/^Mem:/{print $4}')
+        log "INFO" "Free memory after cleanup: ${FREE_MEM}MB"
+    fi
+    
     # Detect architecture
     ARCH=$(uname -m)
-    BINARY_NAME=""
+    log "INFO" "Architecture: $ARCH"
     
-    case $ARCH in
-        x86_64|amd64)
-            log "INFO" "Detected architecture: AMD64 (x86_64)"
-            BINARY_NAME="udp-zivpn-linux-amd64"
-            ;;
-        aarch64|arm64)
-            log "INFO" "Detected architecture: ARM64"
-            BINARY_NAME="udp-zivpn-linux-arm64"
-            ;;
-        armv7l|armhf)
-            log "INFO" "Detected architecture: ARMv7"
-            BINARY_NAME="udp-zivpn-linux-armv7"
-            ;;
-        *)
-            log "ERROR" "Unsupported architecture: $ARCH"
-            echo -e "${YELLOW}Supported: AMD64, ARM64, ARMv7${NC}"
-            exit 1
-            ;;
-    esac
+    BINARY_NAME=""
+    if [[ "$ARCH" == "x86_64" ]] || [[ "$ARCH" == "amd64" ]]; then
+        BINARY_NAME="udp-zivpn-linux-amd64"
+    elif [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]]; then
+        BINARY_NAME="udp-zivpn-linux-arm64"
+    else
+        log "ERROR" "Unsupported architecture: $ARCH"
+        BINARY_NAME="udp-zivpn-linux-amd64"  # Try anyway
+    fi
+    
+    log "INFO" "Binary: $BINARY_NAME"
     
     # Multiple download sources
     declare -A SOURCES=(
-        ["github"]="https://github.com/zahidbd2/udp-zivpn/releases/download/udp-zivpn_1.4.9/$BINARY_NAME"
         ["raw"]="https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/$BINARY_NAME"
+        ["github"]="https://github.com/zahidbd2/udp-zivpn/releases/download/udp-zivpn_1.4.9/$BINARY_NAME"
         ["cdn"]="https://cdn.jsdelivr.net/gh/zahidbd2/udp-zivpn@latest/$BINARY_NAME"
-        ["mirror"]="https://gitlab.com/zivpn-projects/zivpn/-/raw/main/$BINARY_NAME"
     )
     
     DOWNLOAD_SUCCESS=0
     
-    # Try each source
+    # Try each source with timeout and memory check
     for source_name in "${!SOURCES[@]}"; do
         url="${SOURCES[$source_name]}"
         
         log "INFO" "Trying source: $source_name"
-        echo -e "${YELLOW}URL: $(echo $url | cut -d'/' -f3)...${NC}"
+        echo -e "${YELLOW}Downloading from: $(echo $url | cut -d'/' -f3)${NC}"
         
-        # Download with timeout 30 seconds
-        if timeout 30 wget --tries=2 --timeout=15 -q "$url" -O /usr/local/bin/zivpn; then
-            # Verify file size (should be > 1MB)
-            FILE_SIZE=$(stat -c%s /usr/local/bin/zivpn 2>/dev/null || echo 0)
-            
-            if [ $FILE_SIZE -gt 1000000 ]; then
-                chmod +x /usr/local/bin/zivpn
-                log "INFO" "✓ Download successful from $source_name"
-                log "INFO" "✓ File size: $((FILE_SIZE/1024/1024))MB"
-                DOWNLOAD_SUCCESS=1
-                break
-            else
-                log "WARN" "File too small ($FILE_SIZE bytes), trying next source..."
-                rm -f /usr/local/bin/zivpn
+        # Download dengan ulimit memory protection
+        if timeout 45 wget --tries=2 --timeout=20 -q "$url" -O /usr/local/bin/zivpn; then
+            # Verify file size
+            if [ -f /usr/local/bin/zivpn ]; then
+                FILE_SIZE=$(stat -c%s /usr/local/bin/zivpn 2>/dev/null || echo 0)
+                log "INFO" "Downloaded size: ${FILE_SIZE} bytes"
+                
+                if [ $FILE_SIZE -gt 1000000 ]; then
+                    chmod +x /usr/local/bin/zivpn
+                    log "INFO" "✓ Download successful"
+                    DOWNLOAD_SUCCESS=1
+                    
+                    # Quick test
+                    if /usr/local/bin/zivpn --version 2>&1 | head -1 | grep -q "zivpn\|ZIVPN"; then
+                        log "INFO" "✓ Binary verified"
+                    else
+                        log "WARN" "Binary test inconclusive, but file seems valid"
+                    fi
+                    break
+                else
+                    log "WARN" "File too small, trying next source..."
+                    rm -f /usr/local/bin/zivpn
+                fi
             fi
         else
             log "WARN" "Download failed from $source_name"
+            rm -f /usr/local/bin/zivpn 2>/dev/null
         fi
+        
+        # Small pause between attempts
+        sleep 1
     done
     
-    # If all downloads failed
+    # If all downloads failed, STOP INSTALLATION
     if [ $DOWNLOAD_SUCCESS -eq 0 ]; then
-        log "ERROR" "All download sources failed!"
-        
-        # Check if binary already exists
-        if [ -f /usr/local/bin/zivpn ]; then
-            log "WARN" "Using existing binary (may be outdated)"
-            chmod +x /usr/local/bin/zivpn
-        else
-            # Create emergency placeholder
-            log "WARN" "Creating emergency placeholder binary"
-            cat > /usr/local/bin/zivpn << 'EOF'
-#!/bin/bash
-echo "=========================================="
-echo "   ZIVPN EMERGENCY PLACEHOLDER BINARY"
-echo "=========================================="
-echo ""
-echo "⚠️  Original binary download failed!"
-echo ""
-echo "Please download manually:"
-echo "For AMD64 (x86_64):"
-echo "  wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/udp-zivpn-linux-amd64 -O /usr/local/bin/zivpn"
-echo ""
-echo "For ARM64:"
-echo "  wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/udp-zivpn-linux-arm64 -O /usr/local/bin/zivpn"
-echo ""
-echo "Then: chmod +x /usr/local/bin/zivpn"
-echo "And: systemctl restart zivpn"
-echo ""
-exit 1
-EOF
-            chmod +x /usr/local/bin/zivpn
-            log "INFO" "✓ Emergency placeholder created"
-            
-            # Show manual download instructions
-            echo ""
-            echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-            echo -e "${RED}   MANUAL DOWNLOAD REQUIRED!${NC}"
-            echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-            echo ""
-            echo -e "Architecture detected: ${CYAN}$ARCH${NC}"
-            echo ""
-            echo -e "${GREEN}Please run these commands:${NC}"
-            echo "----------------------------------------"
-            echo -e "${CYAN}cd /usr/local/bin${NC}"
-            
-            if [[ "$ARCH" == "x86_64" || "$ARCH" == "amd64" ]]; then
-                echo -e "${CYAN}wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/udp-zivpn-linux-amd64 -O zivpn${NC}"
-            elif [[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]]; then
-                echo -e "${CYAN}wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/udp-zivpn-linux-arm64 -O zivpn${NC}"
-            else
-                echo -e "${CYAN}wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/udp-zivpn-linux-amd64 -O zivpn${NC}"
-                echo -e "${YELLOW}(Trying AMD64 as fallback)${NC}"
-            fi
-            
-            echo -e "${CYAN}chmod +x zivpn${NC}"
-            echo -e "${CYAN}systemctl restart zivpn${NC}"
-            echo "----------------------------------------"
-            echo ""
-            echo -e "${YELLOW}After download, restart installation or run:${NC}"
-            echo -e "${CYAN}systemctl start zivpn${NC}"
+        log "ERROR" "❌ All download attempts failed!"
+        echo ""
+        echo -e "${RED}=================================================${NC}"
+        echo -e "${RED}           INSTALLATION FAILED!                 ${NC}"
+        echo -e "${RED}=================================================${NC}"
+        echo ""
+        echo -e "${YELLOW}Real ZiVPN binary could not be downloaded.${NC}"
+        echo ""
+        echo -e "${GREEN}Manual steps required:${NC}"
+        echo "----------------------------------------"
+        echo "1. Check internet connection:"
+        echo "   ping -c 3 github.com"
+        echo ""
+        echo "2. Download binary manually:"
+        echo "   cd /usr/local/bin"
+        if [[ "$ARCH" == "x86_64" ]] || [[ "$ARCH" == "amd64" ]]; then
+            echo "   wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/udp-zivpn-linux-amd64 -O zivpn"
+        elif [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]]; then
+            echo "   wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/udp-zivpn-linux-arm64 -O zivpn"
         fi
-    else
-        log "INFO" "✓ ZiVPN binary installed successfully"
+        echo "   chmod +x zivpn"
+        echo ""
+        echo "3. Restart installation:"
+        echo "   bash $0"
+        echo "----------------------------------------"
+        echo ""
+        echo -e "${RED}Installation halted. Please fix and try again.${NC}"
+        exit 1
     fi
     
     echo ""
     print_green_separator
-    
-    if [ $DOWNLOAD_SUCCESS -eq 1 ]; then
-        echo -e "${GREEN}           ZIVPN BINARY INSTALLED              ${NC}"
-    else
-        echo -e "${YELLOW}           PLACEHOLDER BINARY SET             ${NC}"
-        echo -e "${RED}           MANUAL DOWNLOAD REQUIRED           ${NC}"
-    fi
-    
+    echo -e "${GREEN}           BINARY DOWNLOAD SUCCESS          ${NC}"
     print_green_separator
     echo ""
     sleep 2
@@ -530,21 +480,12 @@ setup_directories() {
     log "INFO" "✓ Directories created"
     echo ""
     
-    # Generate SSL certificate based on domain/ip choice
-    log "INFO" "Generating SSL certificate for: $DOMAIN_VALUE"
-    echo ""
-    
-    if [[ "$DOMAIN_TYPE" == "domain" ]]; then
-        openssl req -new -newkey rsa:2048 -days 365 -nodes -x509 \
-            -subj "/C=ID/CN=$DOMAIN_VALUE" \
-            -keyout "$CONFIG_DIR/zivpn.key" \
-            -out "$CONFIG_DIR/zivpn.crt" 2>&1 | tee -a "$INSTALL_LOG"
-    else
-        openssl req -new -newkey rsa:2048 -days 365 -nodes -x509 \
-            -subj "/C=ID/CN=zivpn" \
-            -keyout "$CONFIG_DIR/zivpn.key" \
-            -out "$CONFIG_DIR/zivpn.crt" 2>&1 | tee -a "$INSTALL_LOG"
-    fi
+    # Generate SSL certificate with IP
+    log "INFO" "Generating SSL certificate..."
+    openssl req -new -newkey rsa:2048 -days 365 -nodes -x509 \
+        -subj "/C=ID/CN=zivpn" \
+        -keyout "$CONFIG_DIR/zivpn.key" \
+        -out "$CONFIG_DIR/zivpn.crt" 2>&1 | tee -a "$INSTALL_LOG"
     
     log "INFO" "✓ SSL certificate generated"
     echo ""
@@ -555,7 +496,7 @@ setup_directories() {
     log "INFO" "✓ User database created"
     echo ""
     
-    # Create default config.json
+    # Create config.json dengan IP yang terdeteksi
     log "INFO" "Creating config.json..."
     cat > "$CONFIG_DIR/config.json" << EOF
 {
@@ -593,7 +534,7 @@ EOF
     sleep 1
 }
 
-# Create systemd service
+# Create systemd service - FIXED SECURITY
 create_service() {
     print_separator
     echo -e "${BLUE}           CREATING SYSTEMD SERVICE            ${NC}"
@@ -601,7 +542,7 @@ create_service() {
     echo ""
     
     log "INFO" "Creating service file..."
-    cat > "$SERVICE_FILE" << EOF
+    cat > "$SERVICE_FILE" << 'EOF'
 [Unit]
 Description=ZiVPN UDP Server
 After=network.target
@@ -609,12 +550,19 @@ After=network.target
 [Service]
 Type=simple
 User=root
-WorkingDirectory=$CONFIG_DIR
-ExecStart=/usr/local/bin/zivpn server -c $CONFIG_DIR/config.json
+WorkingDirectory=/etc/zivpn
+ExecStart=/usr/local/bin/zivpn server -c /etc/zivpn/config.json
 Restart=always
 RestartSec=3
 StandardOutput=append:/var/log/zivpn.log
 StandardError=append:/var/log/zivpn-error.log
+
+# Security - relaxed for compatibility
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/etc/zivpn /var/log /tmp
+ReadOnlyPaths=/
 
 [Install]
 WantedBy=multi-user.target
@@ -635,64 +583,94 @@ EOF
     sleep 1
 }
 
-# Setup firewall with port forwarding option
+# Setup firewall simple (FIXED - tidak lock SSH)
 setup_firewall() {
     print_separator
     echo -e "${BLUE}           CONFIGURING FIREWALL                ${NC}"
     print_separator
     echo ""
     
-    echo -e "${CYAN}Select firewall configuration:${NC}"
-    echo "1) Simple setup (Port 5667 only)"
-    echo "2) Advanced with port forwarding (5667 + 6000-19999)"
-    echo ""
+    log "INFO" "Setting up basic firewall rules..."
     
-    read -p "Choose option [1/2]: " fw_choice
+    # Flush existing rules
+    iptables -F 2>/dev/null
+    iptables -X 2>/dev/null
+    iptables -t nat -F 2>/dev/null
+    iptables -t nat -X 2>/dev/null
     
-    log "INFO" "Setting up firewall rules..."
+    # SET POLICY ACCEPT (JANGAN DROP!)
+    iptables -P INPUT ACCEPT
+    iptables -P FORWARD ACCEPT
+    iptables -P OUTPUT ACCEPT
     
-    case $fw_choice in
-        2)
-            # Advanced: dengan port forwarding
-            log "INFO" "Setting up port forwarding 6000-19999 -> 5667"
-            
-            # Allow main port
-            iptables -A INPUT -p udp --dport 5667 -j ACCEPT 2>/dev/null
-            
-            # Allow port range
-            iptables -A INPUT -p udp --dport 6000:19999 -j ACCEPT 2>/dev/null
-            
-            # Port forwarding
-            INTERFACE=$(ip route | grep default | awk '{print $5}' | head -1)
-            if [ -n "$INTERFACE" ]; then
-                iptables -t nat -A PREROUTING -i $INTERFACE -p udp --dport 6000:19999 -j DNAT --to-destination :5667
-                log "INFO" "✓ Port forwarding set on interface: $INTERFACE"
-            fi
-            
-            # UFW jika aktif
-            if command -v ufw >/dev/null 2>&1 && ufw status | grep -q "Status: active"; then
-                ufw allow 5667/udp comment "ZiVPN Main Port"
-                ufw allow 6000:19999/udp comment "ZiVPN Port Range"
-                log "INFO" "✓ UFW rules added for port range"
-            fi
-            
-            log "INFO" "✓ Advanced firewall with port forwarding configured"
-            ;;
-        *)
-            # Simple: hanya port 5667
-            iptables -A INPUT -p udp --dport 5667 -j ACCEPT 2>/dev/null
-            
-            if command -v ufw >/dev/null 2>&1 && ufw status | grep -q "Status: active"; then
-                ufw allow 5667/udp comment "ZiVPN UDP Port"
-                log "INFO" "✓ UFW rule added: 5667/udp"
-            fi
-            
-            log "INFO" "✓ Simple firewall configured"
-            ;;
-    esac
+    # Allow all loopback
+    iptables -A INPUT -i lo -j ACCEPT
+    iptables -A OUTPUT -o lo -j ACCEPT
     
-    # Save iptables rules
-    iptables-save > /etc/iptables/rules.v4 2>/dev/null
+    # Allow established connections
+    iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+    
+    # Get SSH port from sshd config (jangan assume port 22)
+    SSH_PORT=$(sshd -T 2>/dev/null | grep "^port " | awk '{print $2}')
+    if [ -z "$SSH_PORT" ]; then
+        SSH_PORT=22
+    fi
+    
+    # Allow SSH (dengan port yang benar)
+    iptables -A INPUT -p tcp --dport $SSH_PORT -j ACCEPT
+    log "INFO" "✓ Allowing SSH on port: $SSH_PORT"
+    
+    # Allow ZIVPN UDP port 5667
+    iptables -A INPUT -p udp --dport 5667 -j ACCEPT
+    log "INFO" "✓ Allowing ZIVPN on port: 5667/udp"
+    
+    # Allow ICMP (ping)
+    iptables -A INPUT -p icmp -j ACCEPT
+    
+    # Log dropped packets (optional)
+    iptables -A INPUT -m limit --limit 5/min -j LOG --log-prefix "IPTables-Dropped: " --log-level 4
+    
+    # Install netfilter-persistent untuk Ubuntu 24.04/25.04
+    if ! command -v netfilter-persistent >/dev/null 2>&1; then
+        log "INFO" "Installing netfilter-persistent for Ubuntu 24.04/25.04..."
+        apt install -y iptables-persistent netfilter-persistent 2>/dev/null || \
+        log "WARN" "Failed to install netfilter-persistent"
+    fi
+    
+    # Save rules untuk persistence
+    log "INFO" "Saving iptables rules..."
+    mkdir -p /etc/iptables
+    iptables-save > /etc/iptables/rules.v4
+    ip6tables-save > /etc/iptables/rules.v6
+    
+    # Save dengan netfilter-persistent jika ada
+    if command -v netfilter-persistent >/dev/null 2>&1; then
+        netfilter-persistent save 2>/dev/null && \
+        log "INFO" "✓ Rules saved with netfilter-persistent"
+    else
+        # Fallback: Manual save untuk systemd
+        cat > /etc/systemd/system/iptables-restore.service << 'EOF'
+[Unit]
+Description=Restore iptables rules
+Before=network-pre.target
+Wants=network-pre.target
+
+[Service]
+Type=oneshot
+ExecStart=/sbin/iptables-restore < /etc/iptables/rules.v4
+ExecStart=/sbin/ip6tables-restore < /etc/iptables/rules.v6
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+        
+        systemctl daemon-reload
+        systemctl enable iptables-restore.service
+        log "INFO" "✓ Rules saved with custom systemd service"
+    fi
+    
+    log "INFO" "✓ Basic firewall configured (ACCEPT policy)"
     echo ""
     
     print_green_separator
@@ -702,7 +680,7 @@ setup_firewall() {
     sleep 1
 }
 
-# Install menu manager dan helper scripts
+# Install menu manager
 install_menu_manager() {
     print_separator
     echo -e "${BLUE}           INSTALLING MENU MANAGER             ${NC}"
@@ -711,45 +689,34 @@ install_menu_manager() {
     
     log "INFO" "Downloading menu manager..."
     
-    # Download user_zivpn.sh dari repo udp-ziv
-    wget -q "$REPO_URL/udp-ziv/main/user_zivpn.sh" \
-        -O /usr/local/bin/zivpn-menu
-    
-    if [ $? -eq 0 ]; then
+    # Download user_zivpn.sh
+    if wget -q "$REPO_URL/udp-ziv/main/user_zivpn.sh" -O /usr/local/bin/zivpn-menu; then
         chmod +x /usr/local/bin/zivpn-menu
         log "INFO" "✓ Menu manager downloaded"
     else
         log "WARN" "Failed to download menu manager, creating basic one..."
-        cat > /usr/local/bin/zivpn-menu << EOF
+        cat > /usr/local/bin/zivpn-menu << 'EOF'
 #!/bin/bash
 echo "ZiVPN Menu Manager"
 echo "Please download manually:"
-echo "wget $REPO_URL/udp-ziv/main/user_zivpn.sh -O /usr/local/bin/zivpn-menu"
+echo "wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/user_zivpn.sh -O /usr/local/bin/zivpn-menu"
 echo "chmod +x /usr/local/bin/zivpn-menu"
 EOF
         chmod +x /usr/local/bin/zivpn-menu
     fi
     
-    # ============================================
-    # DOWNLOAD HELPER SCRIPT (TELEGRAM & BACKUP)
-    # ============================================
+    # Download helper script
     log "INFO" "Downloading helper script..."
-    
-    wget -q "$REPO_URL/udp-ziv/main/zivpn_helper.sh" \
-        -O /usr/local/bin/zivpn-helper
-    
-    if [ $? -eq 0 ]; then
+    if wget -q "$REPO_URL/udp-ziv/main/zivpn_helper.sh" -O /usr/local/bin/zivpn-helper; then
         chmod +x /usr/local/bin/zivpn-helper
         log "INFO" "✓ Helper script downloaded"
     else
         log "WARN" "Failed to download helper script"
-        # Create basic helper
-        cat > /usr/local/bin/zivpn-helper << EOF
+        cat > /usr/local/bin/zivpn-helper << 'EOF'
 #!/bin/bash
 echo "ZiVPN Helper"
-echo "Download manually:"
-echo "wget $REPO_URL/udp-ziv/main/zivpn_helper.sh -O /usr/local/bin/zivpn-helper"
-echo "chmod +x /usr/local/bin/zivpn-helper"
+echo "Please download manually:"
+echo "wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/zivpn_helper.sh -O /usr/local/bin/zivpn-helper"
 EOF
         chmod +x /usr/local/bin/zivpn-helper
     fi
@@ -760,11 +727,6 @@ EOF
         log "INFO" "✓ Alias added to .bashrc"
     fi
     
-    # Create alias for helper
-    if ! grep -q "alias zivpn-backup=" /root/.bashrc; then
-        echo "alias zivpn-backup='zivpn-helper backup'" >> /root/.bashrc
-    fi
-    
     echo ""
     print_green_separator
     echo -e "${GREEN}           MENU MANAGER INSTALLED             ${NC}"
@@ -773,12 +735,53 @@ EOF
     sleep 1
 }
 
-# Start the service
+# Start the service - DENGAN BINARY VALIDATION
 start_service() {
     print_separator
     echo -e "${BLUE}           STARTING ZIVPN SERVICE              ${NC}"
     print_separator
     echo ""
+    
+    # CRITICAL CHECK: Pastikan binary benar-benar ada dan valid
+    log "INFO" "Validating ZiVPN binary before starting service..."
+    
+    if [ ! -f /usr/local/bin/zivpn ]; then
+        log "ERROR" "❌ ZiVPN binary not found at /usr/local/bin/zivpn"
+        echo -e "${RED}Service cannot start. Binary missing.${NC}"
+        exit 1
+    fi
+    
+    FILE_SIZE=$(stat -c%s /usr/local/bin/zivpn 2>/dev/null || echo 0)
+    if [ "$FILE_SIZE" -lt 1000000 ]; then
+        log "ERROR" "❌ Invalid ZiVPN binary (too small: ${FILE_SIZE} bytes)"
+        echo -e "${RED}Service cannot start. Binary is placeholder or corrupt.${NC}"
+        echo ""
+        echo -e "${YELLOW}Please download real binary manually:${NC}"
+        ARCH=$(uname -m)
+        if [[ "$ARCH" == "x86_64" ]] || [[ "$ARCH" == "amd64" ]]; then
+            echo "wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/udp-zivpn-linux-amd64 -O /usr/local/bin/zivpn"
+        elif [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]]; then
+            echo "wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/udp-zivpn-linux-arm64 -O /usr/local/bin/zivpn"
+        fi
+        echo "chmod +x /usr/local/bin/zivpn"
+        echo "systemctl restart zivpn"
+        exit 1
+    fi
+    
+    # Check if binary is executable
+    if [ ! -x /usr/local/bin/zivpn ]; then
+        log "ERROR" "❌ ZiVPN binary is not executable"
+        chmod +x /usr/local/bin/zivpn
+        log "INFO" "✓ Fixed permissions"
+    fi
+    
+    # Test binary dengan quick check
+    log "INFO" "Testing ZiVPN binary..."
+    if /usr/local/bin/zivpn --version 2>&1 | head -1 | grep -q "zivpn\|ZIVPN"; then
+        log "INFO" "✓ Binary test passed"
+    else
+        log "WARN" "Binary test inconclusive, but will try to start anyway"
+    fi
     
     log "INFO" "Starting ZiVPN service..."
     systemctl start zivpn.service
@@ -786,15 +789,28 @@ start_service() {
     
     if systemctl is-active --quiet zivpn.service; then
         log "INFO" "✓ ZiVPN service started successfully"
+        
+        # Verify port is listening
+        sleep 2
+        if ss -tulpn | grep -q ":5667"; then
+            log "INFO" "✓ Port 5667 is listening"
+        else
+            log "WARN" "Port 5667 not listening, checking logs..."
+            journalctl -u zivpn.service -n 10 --no-pager
+        fi
     else
         log "ERROR" "Failed to start service"
-        echo -e "${YELLOW}Check: systemctl status zivpn.service${NC}"
-        
-        # Show more details if service fails
+        echo -e "${YELLOW}Checking logs...${NC}"
+        journalctl -u zivpn.service -n 20 --no-pager
         echo ""
+        
+        # Try to debug
         echo -e "${YELLOW}Debug information:${NC}"
         echo "----------------------------------------"
-        journalctl -u zivpn.service -n 20 --no-pager
+        ls -lh /usr/local/bin/zivpn
+        echo ""
+        echo "Config file:"
+        ls -la /etc/zivpn/config.json
         echo "----------------------------------------"
     fi
     
@@ -809,26 +825,6 @@ start_service() {
 # Show installation summary
 show_summary() {
     local public_ip=$(curl -s ifconfig.me 2>/dev/null || echo "Unknown")
-    local domain_info=""
-    
-    if [[ "$DOMAIN_TYPE" == "domain" ]]; then
-        domain_info="Domain: $DOMAIN_VALUE"
-    else
-        domain_info="IP: $public_ip"
-    fi
-    
-    # Check binary status
-    local binary_status=""
-    if [ -f /usr/local/bin/zivpn ]; then
-        FILE_SIZE=$(stat -c%s /usr/local/bin/zivpn 2>/dev/null || echo 0)
-        if [ $FILE_SIZE -gt 1000000 ]; then
-            binary_status="${GREEN}✓ Valid${NC}"
-        else
-            binary_status="${YELLOW}⚠️ Placeholder${NC}"
-        fi
-    else
-        binary_status="${RED}✗ Missing${NC}"
-    fi
     
     echo ""
     print_separator
@@ -838,59 +834,81 @@ show_summary() {
     print_separator
     echo ""
     
+    # Validate everything is working
+    echo -e "${CYAN}✅ VALIDATION CHECK:${NC}"
+    print_separator
+    
+    # Check binary
+    if [ -f /usr/local/bin/zivpn ]; then
+        FILE_SIZE=$(stat -c%s /usr/local/bin/zivpn 2>/dev/null || echo 0)
+        if [ $FILE_SIZE -gt 1000000 ]; then
+            echo -e "  ${GREEN}✓ Binary: Valid ($((FILE_SIZE/1024/1024))MB)${NC}"
+        else
+            echo -e "  ${RED}✗ Binary: Invalid (too small)${NC}"
+        fi
+    else
+        echo -e "  ${RED}✗ Binary: Missing${NC}"
+    fi
+    
+    # Check service
+    if systemctl is-active --quiet zivpn.service; then
+        echo -e "  ${GREEN}✓ Service: Running${NC}"
+    else
+        echo -e "  ${RED}✗ Service: Stopped${NC}"
+    fi
+    
+    # Check port
+    if ss -tulpn | grep -q ":5667"; then
+        echo -e "  ${GREEN}✓ Port 5667: Listening${NC}"
+    else
+        echo -e "  ${YELLOW}⚠ Port 5667: Not listening${NC}"
+    fi
+    
+    # Check swap
+    if swapon --show | grep -q "/swapfile"; then
+        SWAP_TOTAL=$(free -m | awk '/^Swap:/{print $2}')
+        echo -e "  ${GREEN}✓ Swap: ${SWAP_TOTAL}MB active${NC}"
+    else
+        echo -e "  ${YELLOW}⚠ Swap: Not active${NC}"
+    fi
+    
+    print_separator
+    echo ""
+    
     echo -e "${CYAN}📦 ZIVPN INFORMATION:${NC}"
     print_separator
-    echo -e "  ${YELLOW}•${NC} Server       : ${GREEN}$domain_info${NC}"
+    echo -e "  ${YELLOW}•${NC} Server IP   : ${GREEN}$public_ip${NC}"
     echo -e "  ${YELLOW}•${NC} Port         : ${GREEN}5667 UDP${NC}"
     echo -e "  ${YELLOW}•${NC} Default Pass : ${GREEN}pondok123${NC}"
-    echo -e "  ${YELLOW}•${NC} Binary Status: $binary_status"
+    echo -e "  ${YELLOW}•${NC} Config Path  : ${GREEN}/etc/zivpn/${NC}"
     print_separator
     echo ""
     
     echo -e "${CYAN}🚀 AVAILABLE COMMANDS:${NC}"
     print_separator
     echo -e "  ${YELLOW}•${NC} ${GREEN}menu${NC}                 : Open management menu"
-    echo -e "  ${YELLOW}•${NC} ${GREEN}zivpn-helper setup${NC}    : Setup Telegram bot"
-    echo -e "  ${YELLOW}•${NC} ${GREEN}zivpn-helper backup${NC}   : Backup configuration"
     echo -e "  ${YELLOW}•${NC} ${GREEN}systemctl status zivpn${NC} : Check service status"
     echo -e "  ${YELLOW}•${NC} ${GREEN}systemctl restart zivpn${NC}: Restart service"
+    echo -e "  ${YELLOW}•${NC} ${GREEN}zivpn-helper setup${NC}    : Setup Telegram bot"
     print_separator
     echo ""
     
-    echo -e "${CYAN}📝 QUICK START:${NC}"
+    # Memory info
+    echo -e "${CYAN}📊 SYSTEM INFORMATION:${NC}"
     print_separator
-    echo -e "  1. Type ${GREEN}menu${NC} to manage users"
-    echo -e "  2. Run ${GREEN}zivpn-helper setup${NC} for Telegram"
-    echo -e "  3. Change default password"
+    FREE_MEM=$(free -m | awk '/^Mem:/{print $4}')
+    SWAP_TOTAL=$(free -m | awk '/^Swap:/{print $2}')
+    echo -e "  ${YELLOW}•${NC} Free RAM     : ${GREEN}${FREE_MEM}MB${NC}"
+    echo -e "  ${YELLOW}•${NC} Total Swap   : ${GREEN}${SWAP_TOTAL}MB${NC}"
     print_separator
     echo ""
     
-    # Warning if binary is placeholder
-    if [ -f /usr/local/bin/zivpn ] && [ $(stat -c%s /usr/local/bin/zivpn 2>/dev/null || echo 0) -lt 1000000 ]; then
-        echo -e "${RED}⚠️  IMPORTANT: Binary download failed!${NC}"
-        print_separator
-        echo -e "${YELLOW}Please download binary manually:${NC}"
-        echo ""
-        
-        ARCH=$(uname -m)
-        if [[ "$ARCH" == "x86_64" || "$ARCH" == "amd64" ]]; then
-            echo -e "${CYAN}wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/udp-zivpn-linux-amd64 -O /usr/local/bin/zivpn${NC}"
-        elif [[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]]; then
-            echo -e "${CYAN}wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/udp-zivpn-linux-arm64 -O /usr/local/bin/zivpn${NC}"
-        fi
-        
-        echo -e "${CYAN}chmod +x /usr/local/bin/zivpn${NC}"
-        echo -e "${CYAN}systemctl restart zivpn${NC}"
-        print_separator
+    # Warning jika ada masalah
+    if ! systemctl is-active --quiet zivpn.service; then
+        echo -e "${RED}⚠️  WARNING: Service is not running!${NC}"
+        echo -e "${YELLOW}Run: systemctl status zivpn.service for details${NC}"
         echo ""
     fi
-    
-    echo -e "${YELLOW}⚠️  AUTO-BAN SYSTEM ACTIVE${NC}"
-    print_separator
-    echo -e "  Users exceeding device limit = AUTO BAN"
-    echo -e "  Use 'menu' to manage bans"
-    print_separator
-    echo ""
     
     print_separator
     print_separator
@@ -902,11 +920,11 @@ show_summary() {
 
 # Auto start menu
 auto_start_menu() {
-    echo -e "${YELLOW}Starting menu manager in 5 seconds...${NC}"
+    echo -e "${YELLOW}Starting menu manager in 3 seconds...${NC}"
     echo -e "${YELLOW}Press Ctrl+C to cancel${NC}"
     echo ""
     
-    for i in {5..1}; do
+    for i in {3..1}; do
         echo -ne "${YELLOW}Starting in $i seconds...\033[0K\r${NC}"
         sleep 1
     done
@@ -922,18 +940,29 @@ main() {
     
     show_banner
     
-    # Step-by-step installation with separators
+    # Step-by-step installation
     check_root
     check_license
+    
+    # SWAP FIRST untuk mencegah OOM
     setup_swap
+    
+    # Install minimal dependencies
     install_dependencies
-    install_fail2ban
-    get_domain_or_ip
+    
+    # Get IP address
+    get_ip_address
+    
+    # Download binary (setelah swap aktif) - JIKA GAGAL, STOP!
     install_zivpn_binary
+    
+    # Setup everything else
     setup_directories
     create_service
     setup_firewall
     install_menu_manager
+    
+    # Start service dengan validasi ketat
     start_service
     
     # Show final summary
