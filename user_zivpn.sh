@@ -127,13 +127,13 @@ show_info_panel() {
 show_main_menu() {
     echo -e "${BLUE}╔════════════════════════════════════════════════════╗${NC}"
     echo -e "${BLUE}║                                                    ║${NC}"
-    echo -e "${BLUE}║${GOLD}  1)${CYAN} BUAT AKUN ZIVPN${GOLD}           5)${CYAN} BOT SETTING${WHITE}      ${BLUE}║${NC}"
+    echo -e "${BLUE}║${ORANGE} ◉ 1.${CYAN} BUAT AKUN ZIVPN${ORANGE}           ◉ 5.${CYAN} BOT SETTING${WHITE}    ${BLUE}║${NC}"
     echo -e "${BLUE}║                                                    ║${NC}"
-    echo -e "${BLUE}║${GOLD}  2)${CYAN} BUAT AKUN TRIAL${GOLD}           6)${CYAN} FEATURES${WHITE}         ${BLUE}║${NC}"
+    echo -e "${BLUE}║${ORANGE} ◉ 2.${CYAN} BUAT AKUN TRIAL${ORANGE}           ◉ 6.${CYAN} FEATURES${WHITE}       ${BLUE}║${NC}"
     echo -e "${BLUE}║                                                    ║${NC}"
-    echo -e "${BLUE}║${GOLD}  3)${CYAN} RENEW AKUN${GOLD}                7)${CYAN} HAPUS AKUN${WHITE}       ${BLUE}║${NC}"
+    echo -e "${BLUE}║${ORANGE} ◉ 3.${CYAN} RENEW AKUN${ORANGE}                ◉ 7.${CYAN} HAPUS AKUN${WHITE}     ${BLUE}║${NC}"
     echo -e "${BLUE}║                                                    ║${NC}"
-    echo -e "${BLUE}║${GOLD}  4)${CYAN} RESTART SERVIS${GOLD}            0)${CYAN} EXIT${WHITE}             ${BLUE}║${NC}"
+    echo -e "${BLUE}║${ORANGE} ◉ 4.${CYAN} RESTART SERVIS${ORANGE}            ◉ 0.${CYAN} EXIT${WHITE}           ${BLUE}║${NC}"
     echo -e "${BLUE}║                                                    ║${NC}"
     echo -e "${BLUE}╚════════════════════════════════════════════════════╝${NC}"
 }
