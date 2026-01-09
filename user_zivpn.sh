@@ -124,19 +124,19 @@ show_info_panel() {
     echo -e "${BLUE}║${WHITE}  ISP    : ${CYAN}$(printf '%-15s' "$ISP_SHORT")${WHITE}        RAM  : ${CYAN}$(printf '%-20s' "$RAM_INFO")${NC}"
     echo -e "${BLUE}║${WHITE}  CPU    : ${CYAN}$(printf '%-15s' "$CPU_INFO")${WHITE}        USER : ${CYAN}$(printf '%-20s' "$TOTAL_USERS")${NC}"
     echo -e "${BLUE}╚════════════════════════════════════════════════════╝${NC}"
-    echo -e "                      ${WHITE}Status : ${SERVICE_STATUS}${NC}"
+    echo -e "                    ${WHITE}Status : ${SERVICE_STATUS}${NC}"
 }
 
 show_main_menu() {
     echo -e "${BLUE}╔════════════════════════════════════════════════════╗${NC}"
     echo -e "${BLUE}║                                                    ║${NC}"
-    echo -e "${BLUE}║${WHITE}  1)${CYAN} BUAT AKUN ZIVPN${WHITE}            5)${CYAN} BOT SETTING${WHITE}      ${BLUE}║${NC}"
+    echo -e "${BLUE}║${YELLOW}  1)${CYAN} BUAT AKUN ZIVPN${YELLOW}            5)${CYAN} BOT SETTING${WHITE}      ${BLUE}║${NC}"
     echo -e "${BLUE}║                                                    ║${NC}"
-    echo -e "${BLUE}║${WHITE}  2)${CYAN} BUAT AKUN TRIAL${WHITE}            6)${CYAN} BACK/REST${WHITE}        ${BLUE}║${NC}"
+    echo -e "${BLUE}║${YELLOW}  2)${CYAN} BUAT AKUN TRIAL${YELLOW}            6)${CYAN} BACK/REST${WHITE}        ${BLUE}║${NC}"
     echo -e "${BLUE}║                                                    ║${NC}"
-    echo -e "${BLUE}║${WHITE}  3)${CYAN} RENEW AKUN${WHITE}                 7)${CYAN} HAPUS AKUN${WHITE}       ${BLUE}║${NC}"
+    echo -e "${BLUE}║${YELLOW}  3)${CYAN} RENEW AKUN${YELLOW}                 7)${CYAN} HAPUS AKUN${WHITE}       ${BLUE}║${NC}"
     echo -e "${BLUE}║                                                    ║${NC}"
-    echo -e "${BLUE}║${WHITE}  4)${CYAN} RESTART SERVIS${WHITE}             0)${CYAN} EXIT${WHITE}             ${BLUE}║${NC}"
+    echo -e "${BLUE}║${YELLOW}  4)${CYAN} RESTART SERVIS${YELLOW}             0)${CYAN} EXIT${WHITE}             ${BLUE}║${NC}"
     echo -e "${BLUE}║                                                    ║${NC}"
     echo -e "${BLUE}╚════════════════════════════════════════════════════╝${NC}"
 }
@@ -202,27 +202,27 @@ create_account() {
     echo -e "${NC}"
     
     echo -e "${BLUE}╔═════════════════════════╗${NC}"
-    echo -e "${BLUE}║${WHITE}   ✅ AKUN BERHASIL DIBUAT${NC}"
+    echo -e "${BLUE}║${WHITE} ✅ AKUN BERHASIL DIBUAT${NC}"
     echo -e "${BLUE}╠═════════════════════════╣${NC}"
     echo -e "${BLUE}║${NC}"
-    echo -e "${BLUE}║  Nama client : ${CYAN}$client_name${WHITE}"
+    echo -e "${BLUE}║ ${WHITE} Nama client : ${CYAN}$client_name${WHITE}"
     echo -e "${BLUE}║${NC}"
-    echo -e "${BLUE}║  IP/Host     : ${CYAN}$HOST_NAME${WHITE}"
+    echo -e "${BLUE}║ ${WHITE} IP/Host     : ${CYAN}$HOST_NAME${WHITE}"
     echo -e "${BLUE}║${NC}"
-    echo -e "${BLUE}║  Password    : ${CYAN}$password${WHITE}"
+    echo -e "${BLUE}║ ${WHITE} Password    : ${CYAN}$password${WHITE}"
     echo -e "${BLUE}║${NC}"
-    echo -e "${BLUE}║  Expiry Date : ${CYAN}$expiry_date${WHITE}"
+    echo -e "${BLUE}║ ${WHITE} Expiry Date : ${CYAN}$expiry_date${WHITE}"
     echo -e "${BLUE}║${NC}"
-    echo -e "${BLUE}║  Limit Device: ${CYAN}1 device${WHITE}"
+    echo -e "${BLUE}║ ${WHITE} Limit Device: ${CYAN}1 device${WHITE}"
     echo -e "${BLUE}║${NC}"
     echo -e "${BLUE}╠═════════════════════════╣${NC}"
-    echo -e "${BLUE}║${WHITE}     ⚠️  PERINGATAN${NC}"
+    echo -e "${BLUE}║${RED}     ⚠️  PERINGATAN${NC}"
     echo -e "${BLUE}║${WHITE} Akun akan otomatis di-Band${NC}"
     echo -e "${BLUE}║${WHITE} jika IP melebihi ketentuan${NC}"
     echo -e "${BLUE}║${NC}"
     echo -e "${BLUE}╠═════════════════════════╣${NC}"
     echo -e "${BLUE}║${WHITE} Terima kasih sudah order!${NC}"
-    echo -e "${BLUE}║${WHITE}   @bendakerep${NC}"
+    echo -e "${BLUE}║${WHITE} Bot: @bendakerep${NC}"
     echo -e "${BLUE}╚═════════════════════════╝${NC}"
     
     log_action "Created account: $client_name, expires: $expiry_date"
@@ -315,7 +315,7 @@ renew_account() {
     clear
     echo ""
     echo -e "${BLUE}"
-    figlet -f mini "RENEW AKUN" | lolcat
+    figlet -f small "RENEW AKUN" | lolcat
     echo -e "${NC}"
     
     # Load accounts
@@ -325,12 +325,12 @@ renew_account() {
         return
     fi
     
-    echo -e "${BLUE}╔═══════════════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}╔═════════════════════════════════════════════════════╗${NC}"
     echo -e "${BLUE}║${WHITE}                      RENEW AKUN                     ${BLUE}║${NC}"
-    echo -e "${BLUE}╚═══════════════════════════════════════════════════╝${NC}"
-    echo -e "${BLUE}═════════════════════════════════════════════════════${NC}"
-    echo -e "${WHITE}No.   Nama Client          Password          Expired${NC}"
-    echo -e "${BLUE}═════════════════════════════════════════════════════${NC}"
+    echo -e "${BLUE}╚═════════════════════════════════════════════════════╝${NC}"
+    echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
+    echo -e "${WHITE}No.   Nama Client           Password          Expired${NC}"
+    echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
     
     # Display accounts dengan format tabel rapi
     count=1
@@ -342,7 +342,7 @@ renew_account() {
         fi
     done < "$USER_DB"
     
-    echo -e "${BLUE}═════════════════════════════════════════════════════${NC}"
+    echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
     echo ""
     read -p "Pilih nomor untuk renew akun: " choice
 }
@@ -361,12 +361,12 @@ delete_account() {
         return
     fi
     
-    echo -e "${BLUE}╔═══════════════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}╔═════════════════════════════════════════════════════╗${NC}"
     echo -e "${BLUE}║${WHITE}                      HAPUS AKUN                      ${BLUE}║${NC}"
-    echo -e "${BLUE}╚═══════════════════════════════════════════════════╝${NC}"
-    echo -e "${BLUE}═════════════════════════════════════════════════════${NC}"
-    echo -e "${WHITE}No.   Nama Client          Password          Expired${NC}"
-    echo -e "${BLUE}═════════════════════════════════════════════════════${NC}"
+    echo -e "${BLUE}╚═════════════════════════════════════════════════════╝${NC}"
+    echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
+    echo -e "${WHITE}No.   Nama Client           Password          Expired${NC}"
+    echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
     
     # Display accounts dengan format tabel rapi
     count=1
@@ -378,7 +378,7 @@ delete_account() {
         fi
     done < "$USER_DB"
     
-    echo -e "${BLUE}═════════════════════════════════════════════════════${NC}"
+    echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
     echo ""
     read -p "Pilih nomor untuk hapus akun: " choice
 }
@@ -412,7 +412,7 @@ bot_setting() {
     clear
     echo ""
     echo -e "${BLUE}"
-    figlet -f digital "BOT SETTING" | lolcat
+    figlet -f digital "_BOT SETTING" | lolcat
     echo -e "${NC}"
     
     echo -e "${BLUE}╔═══════════════════════════╗${NC}"
