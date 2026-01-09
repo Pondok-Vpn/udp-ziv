@@ -1,11 +1,10 @@
 #!/bin/bash
-# ===========================================
-# ZIVPN USER MANAGEMENT - COMPLETE VERSION
-# Version: 3.0
-# Telegram: @bendakerep
-# ===========================================
-
-# Colors
+# ══════════════════════════════
+# UDP ZIVPN MODULE MANAGER SHELL
+# BY : PONDOK VPN (C) 2026 9 januari
+# TELEGRAM : @bendakerep
+# EMAIL : redzall55@gmail.com
+# ══════════════════════════════
 RED='\033[0;31m'
 GREEN='\033[0;92m'
 YELLOW='\033[0;93m'
@@ -67,11 +66,10 @@ get_system_info() {
     ISP_INFO=$(curl -s ipinfo.io/org 2>/dev/null | cut -d' ' -f2- | head -1 || echo "Unknown")
     ISP_SHORT=$(echo "$ISP_INFO" | awk '{print $1}')
     
-    # RAM Info - FIXED ERROR
+    # RAM Info
     RAM_TOTAL=$(free -m 2>/dev/null | awk '/^Mem:/{print $2}' || echo "0")
     RAM_USED=$(free -m 2>/dev/null | awk '/^Mem:/{print $3}' || echo "0")
     
-    # FIX: Arithmetic calculation tanpa 2>/dev/null di dalam $(( ))
     if [ "$RAM_TOTAL" -gt 0 ] 2>/dev/null; then
         RAM_PERCENT=$((RAM_USED * 100 / RAM_TOTAL))
     else
@@ -99,7 +97,7 @@ get_system_info() {
     
     # Service Status
     if systemctl is-active --quiet zivpn.service; then
-        SERVICE_STATUS="${GREEN}active${NC}"
+        SERVICE_STATUS="${GREEN}Active${NC}"
     else
         SERVICE_STATUS="${RED}stopped${NC}"
     fi
@@ -113,7 +111,7 @@ show_info_panel() {
     
     check_and_install_figlet
     
-    # Banner dengan figlet dan lolcat
+    # Banner panel & figlet
     echo ""
     echo -e "${BLUE}"
     figlet -f small "PONDOK VPN" | lolcat
