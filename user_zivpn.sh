@@ -500,6 +500,84 @@ check_expired_accounts() {
     fi
 }
 
+# Function untuk cron job delete expired
+delete_expired_cron() {
+    if [ ! -f "$USER_DB" ] || [ ! -s "$USER_DB" ]; then
+        return
+    fi
+    
+    current_timestamp=$(date +%s)
+    temp_file=$(mktemp)
+    deleted_count=0
+    
+    while IFS=':' read -r password expiry_timestamp client_name; do
+        if [ -n "$password" ] && [ "$expiry_timestamp" -lt "$current_timestamp" ]; then
+            # Hapus dari config.json
+            if [ -f "$CONFIG_FILE" ]; then
+                current_config=$(cat "$CONFIG_FILE")
+                echo "$current_config" | jq --arg pass "$password" 'del(.auth.config[] | select(. == $pass))' > "$CONFIG_FILE.tmp"
+                mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
+            fi
+            deleted_count=$((deleted_count + 1))
+            echo "[$(date '+%Y-%m-%d %H:%M:%S')] Cron: Deleted $client_name ($password)" >> "$LOG_FILE"
+        else
+            echo "$password:$expiry_timestamp:$client_name" >> "$temp_file"
+        fi
+    done < "$USER_DB"
+    
+    mv "$temp_file" "$USER_DB"
+    
+    if [ $deleted_count -gt 0 ]; then
+        systemctl restart zivpn.service > /dev/null 2>&1
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] Cron: Deleted $deleted_count expired accounts" >> "$LOG_FILE"
+    fi
+}
+
+# Setup auto delete via cron
+auto_delete_setup() {
+    echo -e "${YELLOW}Setup auto delete expired accounts...${NC}"
+    
+    echo -e "${CYAN}Pilihan interval:${NC}"
+    echo "1. Setiap jam"
+    echo "2. Setiap 6 jam"
+    echo "3. Setiap 12 jam"
+    echo "4. Setiap hari (00:00)"
+    echo "5. Nonaktifkan"
+    echo ""
+    
+    read -p "Pilih interval [1-5]: " interval_choice
+    
+    # Remove existing cron job
+    (crontab -l 2>/dev/null | grep -v "# zivpn-auto-delete") | crontab -
+    
+    case $interval_choice in
+        1)
+            (crontab -l 2>/dev/null; echo "0 * * * * /usr/local/bin/zivpn_helper.sh delete_expired # zivpn-auto-delete") | crontab -
+            echo -e "${GREEN}✅ Auto delete di-set setiap jam${NC}"
+            ;;
+        2)
+            (crontab -l 2>/dev/null; echo "0 */6 * * * /usr/local/bin/zivpn_helper.sh delete_expired # zivpn-auto-delete") | crontab -
+            echo -e "${GREEN}✅ Auto delete di-set setiap 6 jam${NC}"
+            ;;
+        3)
+            (crontab -l 2>/dev/null; echo "0 */12 * * * /usr/local/bin/zivpn_helper.sh delete_expired # zivpn-auto-delete") | crontab -
+            echo -e "${GREEN}✅ Auto delete di-set setiap 12 jam${NC}"
+            ;;
+        4)
+            (crontab -l 2>/dev/null; echo "0 0 * * * /usr/local/bin/zivpn_helper.sh delete_expired # zivpn-auto-delete") | crontab -
+            echo -e "${GREEN}✅ Auto delete di-set setiap hari jam 00:00${NC}"
+            ;;
+        5)
+            echo -e "${YELLOW}Auto delete dimatikan${NC}"
+            ;;
+        *)
+            echo -e "${RED}Pilihan tidak valid!${NC}"
+            ;;
+    esac
+    
+    read -p "Tekan Enter untuk kembali..."
+}
+
 # Restart service
 restart_service() {
     clear
@@ -522,6 +600,155 @@ restart_service() {
     log_action "Restarted ZIVPN service"
     
     read -p "Tekan Enter untuk kembali ke menu..."
+}
+
+# Function to check and block multi-login
+check_multi_login() {
+    if [ ! -f "$CONFIG_FILE" ] || [ ! -f "$CONFIG_DIR/.auto_block" ]; then
+        return
+    fi
+    
+    mode=$(cat "$CONFIG_DIR/.auto_block" 2>/dev/null)
+    if [ "$mode" != "STRICT" ] && [ "$mode" != "WARNING" ]; then
+        return
+    fi
+    
+    # Path untuk log aktifitas login
+    LOGIN_LOG="$CONFIG_DIR/login.log"
+    
+    # Buat file log jika belum ada
+    touch "$LOGIN_LOG"
+    
+    # Ambil daftar user aktif dari config.json
+    users=$(jq -r '.auth.config[]?' "$CONFIG_FILE" 2>/dev/null)
+    
+    if [ -z "$users" ]; then
+        return
+    fi
+    
+    blocked_count=0
+    
+    for user in $users; do
+        # Cek di database
+        user_info=$(grep "^$user:" "$USER_DB" 2>/dev/null)
+        if [ -n "$user_info" ]; then
+            IFS=':' read -r password expiry_timestamp client_name <<< "$user_info"
+            
+            # Cek log login terakhir untuk user ini
+            last_log=$(grep "LOGIN:$user:" "$LOGIN_LOG" | tail -1)
+            
+            if [ -n "$last_log" ]; then
+                # Ekstrak IP dari log
+                last_ip=$(echo "$last_log" | cut -d':' -f4)
+                current_ip=$(curl -s ifconfig.me 2>/dev/null || echo "UNKNOWN")
+                
+                # Jika IP berbeda, blokir akun (hanya di STRICT mode)
+                if [ "$last_ip" != "$current_ip" ] && [ "$last_ip" != "UNKNOWN" ] && [ "$current_ip" != "UNKNOWN" ]; then
+                    if [ "$mode" = "STRICT" ]; then
+                        # Hapus user dari config.json
+                        current_config=$(cat "$CONFIG_FILE")
+                        echo "$current_config" | jq --arg pass "$user" 'del(.auth.config[] | select(. == $pass))' > "$CONFIG_FILE.tmp"
+                        mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
+                        
+                        # Log aksi blocking
+                        echo "[$(date '+%Y-%m-%d %H:%M:%S')] BLOCKED: $client_name ($user) - Multi login detected. IP: $last_ip -> $current_ip" >> "$LOGIN_LOG"
+                        log_action "Blocked multi-login: $client_name ($user) from IP: $current_ip"
+                        
+                        blocked_count=$((blocked_count + 1))
+                        
+                        # Tambahkan ke daftar blocked
+                        echo "$current_ip:$user:$(date +%s):MULTI_LOGIN" >> "$CONFIG_DIR/blocked.log"
+                    else
+                        # WARNING mode: hanya log
+                        echo "[$(date '+%Y-%m-%d %H:%M:%S')] WARNING: $client_name ($user) - Multi login detected. IP: $last_ip -> $current_ip" >> "$LOGIN_LOG"
+                    fi
+                fi
+            fi
+            
+            # Log login saat ini
+            echo "[$(date '+%Y-%m-%d %H:%M:%S')] LOGIN:$user:$(hostname):$current_ip:$client_name" >> "$LOGIN_LOG"
+        fi
+    done
+    
+    if [ $blocked_count -gt 0 ] && [ "$mode" = "STRICT" ]; then
+        # Restart service untuk apply blocking
+        systemctl restart zivpn.service > /dev/null 2>&1
+        log_action "Blocked $blocked_count accounts for multi-login"
+    fi
+}
+
+# Function untuk setup auto-block
+auto_block_setup() {
+    clear
+    echo ""
+    echo -e "${BLUE}"
+    figlet -f digital "AUTO BLOCK" | lolcat
+    echo -e "${NC}"
+    
+    echo -e "${BLUE}╔═══════════════════════════╗${NC}"
+    echo -e "${WHITE}    🚫 AUTO BLOCK SETTINGS${NC}"
+    echo -e "${BLUE}╚═══════════════════════════╝${NC}"
+    
+    echo ""
+    echo -e "${CYAN}Pilihan mode auto block:${NC}"
+    echo "1. Strict Mode (Block langsung saat multi login)"
+    echo "2. Warning Mode (Hanya log, tidak block)"
+    echo "3. Nonaktifkan Auto Block"
+    echo ""
+    
+    read -p "Pilih mode [1-3]: " mode_choice
+    
+    case $mode_choice in
+        1)
+            echo "STRICT" > "$CONFIG_DIR/.auto_block"
+            echo -e "${GREEN}✅ Strict Mode diaktifkan${NC}"
+            ;;
+        2)
+            echo "WARNING" > "$CONFIG_DIR/.auto_block"
+            echo -e "${GREEN}✅ Warning Mode diaktifkan${NC}"
+            ;;
+        3)
+            rm -f "$CONFIG_DIR/.auto_block"
+            echo -e "${YELLOW}❌ Auto Block dinonaktifkan${NC}"
+            ;;
+        *)
+            echo -e "${RED}Pilihan tidak valid!${NC}"
+            ;;
+    esac
+    
+    read -p "Tekan Enter untuk kembali..."
+}
+
+# Function untuk lihat log blocked accounts
+view_blocked_log() {
+    clear
+    echo ""
+    echo -e "${BLUE}"
+    figlet -f small "BLOCKED LOG" | lolcat
+    echo -e "${NC}"
+    
+    echo -e "${BLUE}╔═════════════════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║${WHITE}                  DAFTAR AKUN TERBLOKIR               ${BLUE}║${NC}"
+    echo -e "${BLUE}╚═════════════════════════════════════════════════════╝${NC}"
+    
+    if [ ! -f "$CONFIG_DIR/blocked.log" ] || [ ! -s "$CONFIG_DIR/blocked.log" ]; then
+        echo -e "${YELLOW}Tidak ada akun yang diblokir${NC}"
+    else
+        echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
+        echo -e "${WHITE}IP Address       Username         Waktu           Alasan${NC}"
+        echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
+        
+        while IFS=':' read -r ip user block_time reason; do
+            if [ -n "$ip" ]; then
+                block_date=$(date -d "@$block_time" +"%d-%m-%Y %H:%M")
+                printf "${RED}%-15s ${CYAN}%-15s ${YELLOW}%-15s ${WHITE}%-20s${NC}\n" "$ip" "$user" "$block_date" "$reason"
+            fi
+        done < "$CONFIG_DIR/blocked.log"
+        
+        echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
+    fi
+    
+    read -p "Tekan Enter untuk kembali..."
 }
 
 # Bot setting (Telegram setup)
@@ -610,15 +837,18 @@ backup_restore() {
     echo -e "${BLUE}╔═══════════════════════════╗${NC}"
     echo -e "${WHITE}    💾 BACKUP & RESTORE${NC}"
     echo -e "${BLUE}╚═══════════════════════════╝${NC}"
-    
+    echo -e "${BLUE}╔═══════════════════════════╗${NC}"
     echo ""
-    echo -e "${WHITE} 1)${CYAN} Backup Data${NC}"
-    echo -e "${WHITE} 2)${CYAN} Restore Data${NC}"
-    echo -e "${WHITE} 3)${CYAN} Auto Backup${NC}"
-    echo -e "${WHITE} 0)${CYAN} Kembali${NC}"
+    echo -e "${YELLOW}  1)${CYAN}     Backup Data${NC}"
+    echo -e "${YELLOW}  2)${CYAN}     Restore Data${NC}"
+    echo -e "${YELLOW}  3)${CYAN}     Auto Backup${NC}"
+    echo -e "${YELLOW}  4)${CYAN}     Auto Delete Setup${NC}"
+    echo -e "${YELLOW}  5)${CYAN}     Auto Block Setup${NC}"
+    echo -e "${YELLOW}  6)${CYAN}     View Blocked Log${NC}"
+    echo -e "${YELLOW}  0)${CYAN}     Kembali${NC}"
     echo ""
-    
-    read -p "Pilih menu [0-3]: " choice
+    echo -e "${BLUE}╚═══════════════════════════╝${NC}"
+    read -p "Pilih menu [0-6]: " choice
     
     case $choice in
         1)
@@ -629,6 +859,15 @@ backup_restore() {
             ;;
         3)
             auto_backup_setup
+            ;;
+        4)
+            auto_delete_setup
+            ;;
+        5)
+            auto_block_setup
+            ;;
+        6)
+            view_blocked_log
             ;;
         0)
             return
@@ -751,14 +990,17 @@ auto_backup_setup() {
 # Main loop
 main_menu() {
     while true; do
+        # 1. Cek expired accounts (real-time)
         check_expired_accounts
+        
+        # 2. Cek multi login (jika auto-block aktif)
+        check_multi_login
       
         show_info_panel
         show_main_menu
         echo ""
         read -p "Pilih menu (0-7): " choice
         case $choice in
-            
             1)
                 create_account
                 ;;
