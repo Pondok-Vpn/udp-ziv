@@ -341,6 +341,46 @@ renew_account() {
     echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
     echo ""
     read -p "Pilih nomor untuk renew akun: " choice
+if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
+    echo -e "${RED}Pilihan tidak valid!${NC}"
+    read -p "Tekan Enter untuk kembali..."
+    return
+fi
+
+# Get selected account
+selected_line=$(sed -n "${choice}p" "$USER_DB")
+if [ -z "$selected_line" ]; then
+    echo -e "${RED}Akun tidak ditemukan!${NC}"
+    read -p "Tekan Enter untuk kembali..."
+    return
+fi
+
+IFS=':' read -r password expiry_timestamp client_name <<< "$selected_line"
+
+echo ""
+read -p "Masukkan tambahan hari: " add_days
+
+if ! [[ "$add_days" =~ ^[0-9]+$ ]]; then
+    echo -e "${RED}Hari harus angka!${NC}"
+    read -p "Tekan Enter untuk kembali..."
+    return
+fi
+
+# Calculate new expiry
+new_expiry_timestamp=$((expiry_timestamp + (add_days * 86400)))
+new_expiry_date=$(date -d "@$new_expiry_timestamp" +"%d %B %Y")
+
+# Update database
+sed -i "${choice}s/$expiry_timestamp/$new_expiry_timestamp/" "$USER_DB"
+
+echo ""
+echo -e "${GREEN}✅ Akun berhasil di-renew!${NC}"
+echo -e "${WHITE}Password: ${CYAN}$password${NC}"
+echo -e "${WHITE}Expiry baru: ${CYAN}$new_expiry_date${NC}"
+
+log_action "Renewed account: $password, added $add_days days"
+
+read -p "Tekan Enter untuk kembali ke menu..."
 }
 # Delete account
 delete_account() {
@@ -377,6 +417,87 @@ delete_account() {
     echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
     echo ""
     read -p "Pilih nomor untuk hapus akun: " choice
+
+if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
+    echo -e "${RED}Pilihan tidak valid!${NC}"
+    read -p "Tekan Enter untuk kembali..."
+    return
+fi
+
+# Get selected account
+selected_line=$(sed -n "${choice}p" "$USER_DB")
+if [ -z "$selected_line" ]; then
+    echo -e "${RED}Akun tidak ditemukan!${NC}"
+    read -p "Tekan Enter untuk kembali..."
+    return
+fi
+
+IFS=':' read -r password expiry_timestamp client_name <<< "$selected_line"
+
+echo ""
+read -p "Yakin hapus akun $client_name? (y/n): " confirm
+
+if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+    echo -e "${YELLOW}Dibatalkan!${NC}"
+    read -p "Tekan Enter untuk kembali..."
+    return
+fi
+
+# Remove from database
+sed -i "${choice}d" "$USER_DB"
+
+# Remove from config.json
+if [ -f "$CONFIG_FILE" ]; then
+    current_config=$(cat "$CONFIG_FILE")
+    echo "$current_config" | jq --arg pass "$password" 'del(.auth.config[] | select(. == $pass))' > "$CONFIG_FILE.tmp"
+    mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
+fi
+
+# Restart service
+systemctl restart zivpn.service
+
+echo ""
+echo -e "${GREEN}✅ Akun berhasil dihapus!${NC}"
+
+log_action "Deleted account: $client_name ($password)"
+
+read -p "Tekan Enter untuk kembali ke menu..."
+}
+
+# Function to check and delete expired accounts
+check_expired_accounts() {
+    if [ ! -f "$USER_DB" ] || [ ! -s "$USER_DB" ]; then
+        return
+    fi
+    
+    current_timestamp=$(date +%s)
+    temp_file=$(mktemp)
+    deleted_count=0
+    
+    while IFS=':' read -r password expiry_timestamp client_name; do
+        if [ -n "$password" ] && [ "$expiry_timestamp" -lt "$current_timestamp" ]; then
+            # Akun expired, hapus dari config.json
+            if [ -f "$CONFIG_FILE" ]; then
+                current_config=$(cat "$CONFIG_FILE")
+                echo "$current_config" | jq --arg pass "$password" 'del(.auth.config[] | select(. == $pass))' > "$CONFIG_FILE.tmp"
+                mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
+            fi
+            deleted_count=$((deleted_count + 1))
+            log_action "Auto-deleted expired account: $client_name ($password)"
+        else
+            # Akun masih aktif, simpan kembali
+            echo "$password:$expiry_timestamp:$client_name" >> "$temp_file"
+        fi
+    done < "$USER_DB"
+    
+    # Ganti file database dengan yang baru
+    mv "$temp_file" "$USER_DB"
+    
+    if [ $deleted_count -gt 0 ]; then
+        # Restart service jika ada akun yang dihapus
+        systemctl restart zivpn.service > /dev/null 2>&1
+        log_action "Auto-deleted $deleted_count expired accounts"
+    fi
 }
 
 # Restart service
@@ -630,13 +751,14 @@ auto_backup_setup() {
 # Main loop
 main_menu() {
     while true; do
+        check_expired_accounts
+      
         show_info_panel
         show_main_menu
-        
         echo ""
         read -p "Pilih menu (0-7): " choice
-        
         case $choice in
+            
             1)
                 create_account
                 ;;
