@@ -5,6 +5,7 @@
 # TELEGRAM : @bendakerep
 # EMAIL    : redzall55@gmail.com
 # ══════════════════════════════
+# Validasi warna
 RED='\033[0;31m'
 GREEN='\033[0;92m'
 YELLOW='\033[0;93m'
@@ -114,7 +115,7 @@ show_info_panel() {
     # Banner panel & figlet
     echo ""
     echo -e "${BLUE}"
-    figlet -f small "PONDOK VPN" | lolcat
+    figlet -f small "PONDOK - VPN" | lolcat
     echo -e "${NC}"
     echo -e "${BLUE}╔════════════════════════════════════════════════════╗${NC}"
     echo -e "${BLUE}║${WHITE}  IP VPS : ${CYAN}$(printf '%-15s' "$IP_ADDRESS")${WHITE}        HOST : ${CYAN}$(printf '%-20s' "$HOST_NAME")${NC}"
@@ -128,13 +129,13 @@ show_info_panel() {
 show_main_menu() {
     echo -e "${BLUE}╔════════════════════════════════════════════════════╗${NC}"
     echo -e "${BLUE}║                                                    ║${NC}"
-    echo -e "${BLUE}║${YELLOW}  1)${CYAN} BUAT AKUN ZIVPN${YELLOW}            5)${CYAN} BOT SETTING${WHITE}      ${BLUE}║${NC}"
+    echo -e "${BLUE}║${GREEN}  1)${CYAN} BUAT AKUN ZIVPN${GREEN}            5)${CYAN} BOT SETTING${WHITE}      ${BLUE}║${NC}"
     echo -e "${BLUE}║                                                    ║${NC}"
-    echo -e "${BLUE}║${YELLOW}  2)${CYAN} BUAT AKUN TRIAL${YELLOW}            6)${CYAN} BACK/REST${WHITE}        ${BLUE}║${NC}"
+    echo -e "${BLUE}║${GREEN}  2)${CYAN} BUAT AKUN TRIAL${GREEN}            6)${CYAN} FEATURES${WHITE}         ${BLUE}║${NC}"
     echo -e "${BLUE}║                                                    ║${NC}"
-    echo -e "${BLUE}║${YELLOW}  3)${CYAN} RENEW AKUN${YELLOW}                 7)${CYAN} HAPUS AKUN${WHITE}       ${BLUE}║${NC}"
+    echo -e "${BLUE}║${GREEN}  3)${CYAN} RENEW AKUN${GREEN}                 7)${CYAN} HAPUS AKUN${WHITE}       ${BLUE}║${NC}"
     echo -e "${BLUE}║                                                    ║${NC}"
-    echo -e "${BLUE}║${YELLOW}  4)${CYAN} RESTART SERVIS${YELLOW}             0)${CYAN} EXIT${WHITE}             ${BLUE}║${NC}"
+    echo -e "${BLUE}║${GREEN}  4)${CYAN} RESTART SERVIS${GREEN}             0)${CYAN} EXIT${WHITE}             ${BLUE}║${NC}"
     echo -e "${BLUE}║                                                    ║${NC}"
     echo -e "${BLUE}╚════════════════════════════════════════════════════╝${NC}"
 }
@@ -328,11 +329,10 @@ renew_account() {
     echo -e "${WHITE}No.   Nama Client           Password          Expired${NC}"
     echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
     
-    # Display accounts dengan format tabel rapi
     count=1
     while IFS=':' read -r password expiry_timestamp client_name; do
         if [ -n "$password" ]; then
-            expiry_date=$(date -d "@$expiry_timestamp" +"%m-%d-%Y")
+            expiry_date=$(date -d "@$expiry_timestamp" +"%m-%d-%Y") # 一═✦⌠𝗣𝗢𝗡𝗗𝗢𝗞 𝗩𝗣𝗡⌡✦═一
             printf "${WHITE}%-4s  ${CYAN}%-20s${WHITE}  %-15s  %-10s${NC}\n" "$count." "$client_name" "$password" "$expiry_date"
             count=$((count + 1))
         fi
@@ -671,7 +671,7 @@ check_multi_login() {
     done
     
     if [ $blocked_count -gt 0 ] && [ "$mode" = "STRICT" ]; then
-        # Restart service untuk apply blocking
+        # Restart service untuk apply Block 一═✦⌠𝗣𝗢𝗡𝗗𝗢𝗞 𝗩𝗣𝗡⌡✦═一 
         systemctl restart zivpn.service > /dev/null 2>&1
         log_action "Blocked $blocked_count accounts for multi-login"
     fi
@@ -691,7 +691,7 @@ auto_block_setup() {
     
     echo ""
     echo -e "${CYAN}Pilihan mode auto block:${NC}"
-    echo "1. Strict Mode (Block langsung saat multi login)"
+    echo "1. Block langsung saat multi login"
     echo "2. Warning Mode (Hanya log, tidak block)"
     echo "3. Nonaktifkan Auto Block"
     echo ""
@@ -728,7 +728,7 @@ view_blocked_log() {
     echo -e "${NC}"
     
     echo -e "${BLUE}╔═════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║${WHITE}                  DAFTAR AKUN TERBLOKIR               ${BLUE}║${NC}"
+    echo -e "${BLUE}║${WHITE}                  DAFTAR AKUN TERBLOKIR              ${BLUE}║${NC}"
     echo -e "${BLUE}╚═════════════════════════════════════════════════════╝${NC}"
     
     if [ ! -f "$CONFIG_DIR/blocked.log" ] || [ ! -s "$CONFIG_DIR/blocked.log" ]; then
@@ -831,21 +831,21 @@ backup_restore() {
     clear
     echo ""
     echo -e "${BLUE}"
-    figlet -f digital "BACKUP/RESTORE" | lolcat
+    figlet -f digital "FEATURES MENU" | lolcat
     echo -e "${NC}"
     
     echo -e "${BLUE}╔═══════════════════════════╗${NC}"
-    echo -e "${WHITE}    💾 BACKUP & RESTORE${NC}"
+    echo -e "${WHITE}    💾 MANAGEMENT SUB MENU${NC}"
     echo -e "${BLUE}╚═══════════════════════════╝${NC}"
     echo -e "${BLUE}╔═══════════════════════════╗${NC}"
     echo ""
-    echo -e "${YELLOW}  1)${CYAN}     Backup Data${NC}"
-    echo -e "${YELLOW}  2)${CYAN}     Restore Data${NC}"
-    echo -e "${YELLOW}  3)${CYAN}     Auto Backup${NC}"
-    echo -e "${YELLOW}  4)${CYAN}     Auto Delete Setup${NC}"
-    echo -e "${YELLOW}  5)${CYAN}     Auto Block Setup${NC}"
-    echo -e "${YELLOW}  6)${CYAN}     View Blocked Log${NC}"
-    echo -e "${YELLOW}  0)${CYAN}     Kembali${NC}"
+    echo -e "${GREEN}  1)${CYAN}     BACKUP DATA${NC}"
+    echo -e "${GREEN}  2)${CYAN}     RESTORE DATA${NC}"
+    echo -e "${GREEN}  3)${CYAN}     AUTO BACKUP SETUP${NC}"
+    echo -e "${GREEN}  4)${CYAN}     AUTO DELETE SETUP${NC}"
+    echo -e "${GREEN}  5)${CYAN}     AUTO BLOCK SETUP${NC}"
+    echo -e "${GREEN}  6)${CYAN}     VIEW BLOCKED LOG${NC}"
+    echo -e "${GREEN}  0)${CYAN}     BACK TO MAIN MENU${NC}"
     echo ""
     echo -e "${BLUE}╚═══════════════════════════╝${NC}"
     read -p "Pilih menu [0-6]: " choice
@@ -905,7 +905,7 @@ backup_data() {
 restore_data() {
     echo -e "${YELLOW}Restoring data...${NC}"
     
-    # List available backups
+    # List available backup 一═✦⌠𝗣𝗢𝗡𝗗𝗢𝗞 𝗩𝗣𝗡⌡✦═一
     backups=($(ls -1t "${BACKUP_DIR}/zivpn_backup_"*.tar.gz 2>/dev/null))
     
     if [ ${#backups[@]} -eq 0 ]; then
@@ -1026,7 +1026,7 @@ main_menu() {
                 clear
                 echo ""
                 figlet -f small "PONDOK VPN" | lolcat
-                echo -e "${CYAN}Terima kasih telah menggunakan ZIVPN!${NC}"
+                echo -e "${CYAN}YA ALLAH AMPUNILAH DOSAKU${NC}"
                 echo -e "${WHITE}Telegram: @bendakerep${NC}"
                 echo ""
                 exit 0
@@ -1039,19 +1039,17 @@ main_menu() {
     done
 }
 
-# Check if running as root
 if [ "$(id -u)" -ne 0 ]; then
     echo -e "${RED}Script harus dijalankan sebagai root!${NC}"
     echo -e "${YELLOW}Gunakan: sudo bash $0${NC}"
     exit 1
 fi
 
-# Check if ZIVPN is installed
 if [ ! -f "/etc/systemd/system/zivpn.service" ]; then
     echo -e "${RED}ZIVPN belum terinstall!${NC}"
     echo -e "${YELLOW}Jalankan install_zivpn.sh terlebih dahulu${NC}"
     exit 1
 fi
 
-# Start main menu
+# 一═✦⌠𝗣𝗢𝗡𝗗𝗢𝗞 𝗩𝗣𝗡⌡✦═一
 main_menu
