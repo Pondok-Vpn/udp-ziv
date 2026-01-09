@@ -991,7 +991,7 @@ auto_backup_setup() {
 main_menu() {
     while true; do
         # 1. Cek expired accounts (real-time)
-        check_expired_accounts
+        #check_expired_accounts
         
         # 2. Cek multi login (jika auto-block aktif)
         check_multi_login
