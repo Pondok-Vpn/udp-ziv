@@ -57,6 +57,72 @@ function send_telegram_notification() {
     fi
 }
 
+# ============================================
+# FUNGSI DELETE EXPIRED ACCOUNTS
+# ============================================
+
+function delete_expired_accounts() {
+    echo "--- Delete Expired Accounts ---"
+    
+    USER_DB="${CONFIG_DIR}/users.db"
+    CONFIG_FILE="${CONFIG_DIR}/config.json"
+    LOG_FILE="/var/log/zivpn_menu.log"
+    
+    if [ ! -f "$USER_DB" ] || [ ! -s "$USER_DB" ]; then
+        echo "No accounts found"
+        return 0
+    fi
+    
+    current_timestamp=$(date +%s)
+    temp_file=$(mktemp)
+    deleted_count=0
+    
+    echo "Checking expired accounts..."
+    
+    while IFS=':' read -r password expiry_timestamp client_name; do
+        if [ -n "$password" ] && [ "$expiry_timestamp" -lt "$current_timestamp" ]; then
+            # Hapus dari config.json
+            if [ -f "$CONFIG_FILE" ]; then
+                current_config=$(cat "$CONFIG_FILE")
+                echo "$current_config" | jq --arg pass "$password" 'del(.auth.config[] | select(. == $pass))' > "$CONFIG_FILE.tmp"
+                mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
+            fi
+            deleted_count=$((deleted_count + 1))
+            echo "[$(date '+%Y-%m-%d %H:%M:%S')] Cron: Deleted $client_name ($password)" >> "$LOG_FILE"
+            echo "✓ Deleted: $client_name"
+        else
+            echo "$password:$expiry_timestamp:$client_name" >> "$temp_file"
+        fi
+    done < "$USER_DB"
+    
+    mv "$temp_file" "$USER_DB"
+    
+    if [ $deleted_count -gt 0 ]; then
+        systemctl restart zivpn.service > /dev/null 2>&1
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] Cron: Deleted $deleted_count expired accounts" >> "$LOG_FILE"
+        echo "✅ Deleted $deleted_count expired accounts"
+        
+        # Send notification if Telegram is configured
+        if [ -f "$TELEGRAM_CONF" ]; then
+            source "$TELEGRAM_CONF" 2>/dev/null
+            if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
+                local message="🗑️ *Auto Delete Expired Accounts*
+                
+Deleted: $deleted_count accounts
+Time: $(date +'%H:%M:%S')
+Server: $(get_host)"
+                send_telegram_notification "$message"
+            fi
+        fi
+    else
+        echo "✅ No expired accounts found"
+    fi
+}
+
+# ============================================
+# CORE FUNGSI LAIN
+# ============================================
+
 # Core Functions
 function setup_telegram() {
     echo "--- Konfigurasi Notifikasi Telegram ---"
@@ -280,7 +346,10 @@ function auto_backup() {
     fi
 }
 
-# Main
+# ============================================
+# BY : PONDOK VPN
+# ============================================
+
 case "$1" in
     "setup")
         setup_telegram
@@ -293,6 +362,9 @@ case "$1" in
         ;;
     "auto-backup")
         auto_backup
+        ;;
+    "delete_expired")
+        delete_expired_accounts
         ;;
     "notify")
         if [ "$2" == "expiry" ] && [ $# -eq 7 ]; then
@@ -321,12 +393,13 @@ case "$1" in
         ;;
     *)
         echo "ZIVPN Helper - Simple Version"
-        echo "Usage: $0 {setup|backup|restore|notify|test|auto-backup}"
+        echo "Usage: $0 {setup|backup|restore|notify|test|auto-backup|delete_expired}"
         echo ""
         echo "Examples:"
         echo "  $0 setup              # Setup Telegram"
         echo "  $0 backup             # Backup to Telegram"
         echo "  $0 restore            # Restore from Telegram"
+        echo "  $0 delete_expired     # Delete expired accounts"
         echo "  $0 notify custom 'Hello'  # Send custom message"
         echo "  $0 test               # Test Telegram connection"
         ;;
