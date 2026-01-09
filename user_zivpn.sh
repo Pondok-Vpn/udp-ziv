@@ -1,9 +1,9 @@
 #!/bin/bash
 # ══════════════════════════════
 # UDP ZIVPN MODULE MANAGER SHELL
-# BY : PONDOK VPN (C) 2026 9 januari
+# CREATED  : PONDOK VPN (C) 2026-01-06
 # TELEGRAM : @bendakerep
-# EMAIL : redzall55@gmail.com
+# EMAIL    : redzall55@gmail.com
 # ══════════════════════════════
 RED='\033[0;31m'
 GREEN='\033[0;92m'
