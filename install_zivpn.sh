@@ -1,11 +1,13 @@
 #!/bin/bash
 # ===========================================
-# ZIVPN HYBRID INSTALLER
-# GitHub: https://github.com/Pondok-Vpn/udp-ziv
-# Telegram: @bendakerep
+# Install  : ZIVPN HYBRID INSTALLER
+# Github   : https://github.com/Pondok-Vpn/
+# Created  : PONDOK VPN (C) 2026-01-06
+# Telegram : @bendakerep
+# Email    : redzall55@gmail.com
 # ===========================================
 
-# Colors
+# == VALIDASI WARNA ===
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -18,22 +20,20 @@ REPO_URL="https://raw.githubusercontent.com/Pondok-Vpn"
 LICENSE_URL="$REPO_URL/Pondok-Vpn/main/DAFTAR"
 MENU_SCRIPT="/usr/local/bin/zivpn-menu"
 
-# Simple log function
 log() {
     echo -e "[$(date '+%H:%M:%S')] $1"
 }
 
-# Show banner
 show_banner() {
     clear
-    echo -e "${BLUE}========================================${NC}"
-    echo -e "${BLUE}        ZIVPN HYBRID INSTALLER         ${NC}"
-    echo -e "${BLUE}========================================${NC}"
+    echo -e "${YELLOW}========================================${NC}"
+    echo -e "${YELLOW}        ZIVPN HYBRID INSTALLER         ${NC}"
+    echo -e "${YELLOW}========================================${NC}"
     echo ""
 }
 
 # ===========================================
-# LICENSE CHECK FUNCTION (TAMBAHKAN INI)
+#          LICENSE CHECK FUNCTION
 # ===========================================
 check_license() {
     log "${YELLOW}Checking license...${NC}"
@@ -97,8 +97,9 @@ check_license() {
     echo ""
 }
 # ===========================================
+#            一═⌊✦⌉ 𝗣𝗢𝗡𝗗𝗢𝗞 𝗩𝗣𝗡 ⌊✦⌉═一
+# ===========================================
 
-# Check root
 check_root() {
     if [[ $EUID -ne 0 ]]; then
         echo -e "${RED}Script must be run as root!${NC}"
@@ -107,18 +108,15 @@ check_root() {
     fi
 }
 
-# Setup swap - OPTIMIZED for 1GB RAM
+# Setup swap 2GB - for 1GB RAM
 setup_swap() {
     log "${YELLOW}Setting up swap for 1GB RAM...${NC}"
     
     if ! swapon --show | grep -q "/swapfile"; then
-        # Create 2GB swap
         fallocate -l 2G /swapfile 2>/dev/null || dd if=/dev/zero of=/swapfile bs=1M count=2048
         chmod 600 /swapfile
         mkswap /swapfile
         swapon /swapfile
-        
-        # Make permanent
         echo '/swapfile none swap sw 0 0' >> /etc/fstab
         echo "vm.swappiness=30" >> /etc/sysctl.conf
         sysctl -p
@@ -130,26 +128,21 @@ setup_swap() {
     echo ""
 }
 
-# Install minimal dependencies
+# Install dependencies
 install_deps() {
     log "${YELLOW}Installing minimal dependencies...${NC}"
-    
-    # Stop apt processes
     pkill apt 2>/dev/null || true
     pkill dpkg 2>/dev/null || true
-    
-    # Update
     apt-get update -y
     apt-get upgrade -y
-    
-    # Install only what we need
     apt-get install -y wget curl openssl net-tools iptables
-    
-    echo -e "${GREEN}✓ Dependencies installed${NC}"
+        echo -e "${GREEN}========================================${NC}"
+        echo -e "${GREEN}   ✅ Dependencies installed${NC}"
+        echo -e "${GREEN}========================================${NC}"
     echo ""
 }
 
-# Download binary - SIMPLE & RELIABLE
+# Download binary
 download_binary() {
     log "${YELLOW}Detecting architecture...${NC}"
     
@@ -207,19 +200,16 @@ download_binary() {
     exit 1
 }
 
-# Setup directories and config
 setup_config() {
     log "${YELLOW}Creating configuration...${NC}"
     
     mkdir -p /etc/zivpn
     
-    # Generate SSL
     openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 \
         -subj "/C=US/ST=California/L=Los Angeles/O=Example Corp/OU=IT Department/CN=zivpn" \
         -keyout "/etc/zivpn/zivpn.key" \
         -out "/etc/zivpn/zivpn.crt"
     
-    # Create config.json
     cat > /etc/zivpn/config.json << 'EOF'
 {
   "listen": ":5667",
@@ -246,7 +236,7 @@ EOF
     echo ""
 }
 
-# Create systemd service - SIMPLE like Zahid
+# Create systemd service
 create_service() {
     log "${YELLOW}Creating systemd service...${NC}"
     
@@ -278,7 +268,7 @@ EOF
     echo ""
 }
 
-# Setup firewall - SAFE (won't lock SSH)
+# Setup firewall
 setup_firewall() {
     log "${YELLOW}Setting up firewall...${NC}"
     
@@ -315,7 +305,6 @@ setup_firewall() {
     echo ""
 }
 
-# Optional: Port forwarding
 ask_port_forward() {
     echo ""
     read -p "Enable port forwarding 6000-19999? (y/n): " -n 1 -r
@@ -335,7 +324,6 @@ ask_port_forward() {
     echo ""
 }
 
-# Start service
 start_service() {
     log "${YELLOW}Starting ZIVPN service...${NC}"
     
@@ -359,7 +347,6 @@ start_service() {
     echo ""
 }
 
-# Download menu manager
 install_menu() {
     log "${YELLOW}Installing menu manager...${NC}"
     
@@ -371,7 +358,7 @@ install_menu() {
             echo "alias menu='zivpn-menu'" >> /root/.bashrc
         fi
         
-        echo -e "${GREEN}✓ Menu manager installed${NC}"
+        echo -e "${GREEN}✅ Menu manager installed${NC}"
         echo -e "${CYAN}Type 'menu' to open management menu${NC}"
         return 0
     else
@@ -382,12 +369,11 @@ install_menu() {
     echo ""
 }
 
-# Show final summary
 show_summary() {
     echo ""
-    echo -e "${BLUE}========================================${NC}"
-    echo -e "${GREEN}        ZIVPN INSTALLATION COMPLETE!  ${NC}"
-    echo -e "${BLUE}========================================${NC}"
+    echo -e "${GREEN}========================================${NC}"
+    echo -e "${GREEN}    ✅  ZIVPN INSTALLATION COMPLETE!  ${NC}"
+    echo -e "${GREEN}========================================${NC}"
     echo ""
     
     echo -e "${YELLOW}📦 SERVER INFORMATION:${NC}"
@@ -412,7 +398,6 @@ show_summary() {
     echo -e "  Service file : /etc/systemd/system/zivpn.service"
     echo ""
     
-    # Show license info if exists
     if [ -f /etc/zivpn/.license_info ]; then
         LICENSE_USER=$(head -1 /etc/zivpn/.license_info 2>/dev/null)
         LICENSE_EXP=$(tail -1 /etc/zivpn/.license_info 2>/dev/null)
@@ -423,12 +408,11 @@ show_summary() {
     fi
     
     echo -e "${BLUE}========================================${NC}"
-    echo -e "${GREEN}        Telegram: @bendakerep        ${NC}"
+    echo -e "${BLUE}        Telegram: @bendakerep        ${NC}"
     echo -e "${BLUE}========================================${NC}"
     echo ""
 }
 
-# Auto start menu
 auto_start_menu() {
     if [ -f "$MENU_SCRIPT" ]; then
         echo -e "${YELLOW}Menu will open in 3 seconds...${NC}"
@@ -451,47 +435,23 @@ auto_start_menu() {
 # Main installation flow
 main() {
     show_banner
-    
-    # Check root
     check_root
-    
-    # CHECK LICENSE (TAMBAHKAN DI SINI)
     check_license
-    
-    # Setup swap FIRST
     setup_swap
-    
-    # Install dependencies
     install_deps
-    
-    # Download binary (STOP if fails)
     download_binary
-    
-    # Setup config
     setup_config
-    
-    # Create service
     create_service
-    
-    # Setup firewall
     setup_firewall
-    
-    # Optional port forward
     ask_port_forward
     
-    # Start service
     if ! start_service; then
         echo -e "${RED}Service failed to start! Check logs above.${NC}"
         echo ""
     fi
     
-    # Install menu
     install_menu
-    
-    # Show summary
     show_summary
-    
-    # Auto start menu
     auto_start_menu
 }
 
