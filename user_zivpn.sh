@@ -5,7 +5,7 @@
 # TELEGRAM : @bendakerep
 # EMAIL    : redzall55@gmail.com
 # ══════════════════════════════
-# Validasi warna
+# ═══( Validasi warna )═══
 RED='\033[0;31m'
 GREEN='\033[0;92m'
 YELLOW='\033[0;93m'
@@ -25,12 +25,12 @@ LOG_FILE="/var/log/zivpn_menu.log"
 TELEGRAM_CONF="$CONFIG_DIR/telegram.conf"
 BACKUP_DIR="/var/backups/zivpn"
 
-# Logging
+# ═══( Logging )═══
 log_action() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
 }
 
-# Check and install figlet & lolcat
+# ═══( install figlet & lolcat )═══
 check_and_install_figlet() {
     if ! command -v figlet &> /dev/null; then
         echo -e "${YELLOW}Installing figlet...${NC}"
@@ -44,7 +44,7 @@ check_and_install_figlet() {
     fi
 }
 
-# Get system info
+# ═══( Get system info )═══
 get_system_info() {
     # IP Address
     IP_ADDRESS=$(curl -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
@@ -104,15 +104,13 @@ get_system_info() {
     fi
 }
 
-# Display info panel
+# ═══( Display info panel )═══
 show_info_panel() {
     get_system_info
     
     clear
     
     check_and_install_figlet
-    
-    # Banner panel & figlet
     echo ""
     echo -e "${BLUE}"
     figlet -f small "PONDOK - VPN" | lolcat
@@ -125,22 +123,22 @@ show_info_panel() {
     echo -e "${BLUE}╚════════════════════════════════════════════════════╝${NC}"
     echo -e "                    ${WHITE}Status : ${SERVICE_STATUS}${NC}"
 }
-
+# ═══( Main menu )═══
 show_main_menu() {
     echo -e "${BLUE}╔════════════════════════════════════════════════════╗${NC}"
     echo -e "${BLUE}║                                                    ║${NC}"
-    echo -e "${BLUE}║${GLOL}  1)${CYAN}➥ BUAT AKUN ZIVPN${GREEN}           5)${CYAN}➥ BOT SETTING${WHITE}     ${BLUE}║${NC}"
+    echo -e "${BLUE}║${GOLD}  1)${CYAN} BUAT AKUN ZIVPN${GOLD}           5)${CYAN} BOT SETTING${WHITE}      ${BLUE}║${NC}"
     echo -e "${BLUE}║                                                    ║${NC}"
-    echo -e "${BLUE}║${GOLD}  2)${CYAN}➥ BUAT AKUN TRIAL${GREEN}           6)${CYAN}➥ FEATURES${WHITE}        ${BLUE}║${NC}"
+    echo -e "${BLUE}║${GOLD}  2)${CYAN} BUAT AKUN TRIAL${GOLD}           6)${CYAN} FEATURES${WHITE}         ${BLUE}║${NC}"
     echo -e "${BLUE}║                                                    ║${NC}"
-    echo -e "${BLUE}║${GOLD}  3)${CYAN}➥ RENEW AKUN${GREEN}                7)${CYAN}➥ HAPUS AKUN${WHITE}      ${BLUE}║${NC}"
+    echo -e "${BLUE}║${GOLD}  3)${CYAN} RENEW AKUN${GOLD}                7)${CYAN} HAPUS AKUN${WHITE}       ${BLUE}║${NC}"
     echo -e "${BLUE}║                                                    ║${NC}"
-    echo -e "${BLUE}║${GOLD}  4)${CYAN}➥ RESTART SERVIS${GREEN}            0)${CYAN}➥ EXIT${WHITE}            ${BLUE}║${NC}"
+    echo -e "${BLUE}║${GOLD}  4)${CYAN} RESTART SERVIS${GOLD}            0)${CYAN} EXIT${WHITE}             ${BLUE}║${NC}"
     echo -e "${BLUE}║                                                    ║${NC}"
     echo -e "${BLUE}╚════════════════════════════════════════════════════╝${NC}"
 }
 
-# Create account function
+# ═══( Create account )═══
 create_account() {
     clear
     echo ""
@@ -229,7 +227,7 @@ create_account() {
     read -p "Tekan Enter untuk kembali ke menu..."
 }
 
-# Create trial account
+# ═══( Create trial Account )═══
 create_trial_account() {
     clear
     echo ""
@@ -307,7 +305,7 @@ create_trial_account() {
     read -p "Tekan Enter untuk kembali ke menu..."
 }
 
-# Renew account
+# ═══( Renew Account )═══
 renew_account() {
     clear
     echo ""
@@ -382,7 +380,8 @@ log_action "Renewed account: $password, added $add_days days"
 
 read -p "Tekan Enter untuk kembali ke menu..."
 }
-# Delete account
+
+# ═══( Delete Account )═══
 delete_account() {
     clear
     echo ""
@@ -464,7 +463,7 @@ log_action "Deleted account: $client_name ($password)"
 read -p "Tekan Enter untuk kembali ke menu..."
 }
 
-# Function to check and delete expired accounts
+# ═══( check and delete expired accounts )═══
 check_expired_accounts() {
     if [ ! -f "$USER_DB" ] || [ ! -s "$USER_DB" ]; then
         return
@@ -485,22 +484,19 @@ check_expired_accounts() {
             deleted_count=$((deleted_count + 1))
             log_action "Auto-deleted expired account: $client_name ($password)"
         else
-            # Akun masih aktif, simpan kembali
             echo "$password:$expiry_timestamp:$client_name" >> "$temp_file"
         fi
     done < "$USER_DB"
     
-    # Ganti file database dengan yang baru
     mv "$temp_file" "$USER_DB"
     
     if [ $deleted_count -gt 0 ]; then
-        # Restart service jika ada akun yang dihapus
         systemctl restart zivpn.service > /dev/null 2>&1
         log_action "Auto-deleted $deleted_count expired accounts"
     fi
 }
 
-# Function untuk cron job delete expired
+# ═══( Cron job delete expired )═══
 delete_expired_cron() {
     if [ ! -f "$USER_DB" ] || [ ! -s "$USER_DB" ]; then
         return
@@ -533,7 +529,7 @@ delete_expired_cron() {
     fi
 }
 
-# Setup auto delete via cron
+# ═══( Setup auto delete via cron )═══
 auto_delete_setup() {
     echo -e "${YELLOW}Setup auto delete expired accounts...${NC}"
     
@@ -578,7 +574,7 @@ auto_delete_setup() {
     read -p "Tekan Enter untuk kembali..."
 }
 
-# Restart service
+# ═══ Restart service )═══
 restart_service() {
     clear
     echo ""
@@ -602,28 +598,31 @@ restart_service() {
     read -p "Tekan Enter untuk kembali ke menu..."
 }
 
-# Function to check and block multi-login
+# ═══( Check and block multi-login )═══
 check_multi_login() {
-    if [ ! -f "$CONFIG_FILE" ] || [ ! -f "$CONFIG_DIR/.auto_block" ]; then
-        return
+    # Cek apakah file konfigurasi ada
+    if [ ! -f "$CONFIG_FILE" ]; then
+        return 0
+    fi
+    
+    # Cek apakah auto-block aktif
+    if [ ! -f "$CONFIG_DIR/.auto_block" ]; then
+        return 0
     fi
     
     mode=$(cat "$CONFIG_DIR/.auto_block" 2>/dev/null)
     if [ "$mode" != "STRICT" ] && [ "$mode" != "WARNING" ]; then
-        return
+        return 0
     fi
     
-    # Path untuk log aktifitas login
     LOGIN_LOG="$CONFIG_DIR/login.log"
-    
     # Buat file log jika belum ada
-    touch "$LOGIN_LOG"
+    touch "$LOGIN_LOG" 2>/dev/null
     
-    # Ambil daftar user aktif dari config.json
+    # Ambil daftar user aktif dari config.json dengan error handling
     users=$(jq -r '.auth.config[]?' "$CONFIG_FILE" 2>/dev/null)
-    
-    if [ -z "$users" ]; then
-        return
+    if [ -z "$users" ] || [ "$users" = "null" ]; then
+        return 0
     fi
     
     blocked_count=0
@@ -635,49 +634,49 @@ check_multi_login() {
             IFS=':' read -r password expiry_timestamp client_name <<< "$user_info"
             
             # Cek log login terakhir untuk user ini
-            last_log=$(grep "LOGIN:$user:" "$LOGIN_LOG" | tail -1)
+            last_log=$(grep "LOGIN:$user:" "$LOGIN_LOG" 2>/dev/null | tail -1)
             
             if [ -n "$last_log" ]; then
                 # Ekstrak IP dari log
-                last_ip=$(echo "$last_log" | cut -d':' -f4)
+                last_ip=$(echo "$last_log" | cut -d':' -f4 2>/dev/null)
                 current_ip=$(curl -s ifconfig.me 2>/dev/null || echo "UNKNOWN")
                 
                 # Jika IP berbeda, blokir akun (hanya di STRICT mode)
                 if [ "$last_ip" != "$current_ip" ] && [ "$last_ip" != "UNKNOWN" ] && [ "$current_ip" != "UNKNOWN" ]; then
                     if [ "$mode" = "STRICT" ]; then
                         # Hapus user dari config.json
-                        current_config=$(cat "$CONFIG_FILE")
-                        echo "$current_config" | jq --arg pass "$user" 'del(.auth.config[] | select(. == $pass))' > "$CONFIG_FILE.tmp"
-                        mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
+                        current_config=$(cat "$CONFIG_FILE" 2>/dev/null)
+                        if [ -n "$current_config" ]; then
+                            echo "$current_config" | jq --arg pass "$user" 'del(.auth.config[] | select(. == $pass))' > "$CONFIG_FILE.tmp" 2>/dev/null
+                            mv "$CONFIG_FILE.tmp" "$CONFIG_FILE" 2>/dev/null
+                        fi
                         
                         # Log aksi blocking
-                        echo "[$(date '+%Y-%m-%d %H:%M:%S')] BLOCKED: $client_name ($user) - Multi login detected. IP: $last_ip -> $current_ip" >> "$LOGIN_LOG"
-                        log_action "Blocked multi-login: $client_name ($user) from IP: $current_ip"
+                        echo "[$(date '+%Y-%m-%d %H:%M:%S')] BLOCKED: $client_name ($user) - Multi login. IP: $last_ip -> $current_ip" >> "$LOGIN_LOG"
+                        log_action "Blocked multi-login: $client_name ($user)"
                         
                         blocked_count=$((blocked_count + 1))
-                        
-                        # Tambahkan ke daftar blocked
-                        echo "$current_ip:$user:$(date +%s):MULTI_LOGIN" >> "$CONFIG_DIR/blocked.log"
+                        echo "$current_ip:$user:$(date +%s):MULTI_LOGIN" >> "$CONFIG_DIR/blocked.log" 2>/dev/null
                     else
                         # WARNING mode: hanya log
-                        echo "[$(date '+%Y-%m-%d %H:%M:%S')] WARNING: $client_name ($user) - Multi login detected. IP: $last_ip -> $current_ip" >> "$LOGIN_LOG"
+                        echo "[$(date '+%Y-%m-%d %H:%M:%S')] WARNING: $client_name ($user) - Multi login. IP: $last_ip -> $current_ip" >> "$LOGIN_LOG"
                     fi
                 fi
             fi
             
             # Log login saat ini
-            echo "[$(date '+%Y-%m-%d %H:%M:%S')] LOGIN:$user:$(hostname):$current_ip:$client_name" >> "$LOGIN_LOG"
+            echo "[$(date '+%Y-%m-%d %H:%M:%S')] LOGIN:$user:$(hostname 2>/dev/null):$current_ip:$client_name" >> "$LOGIN_LOG" 2>/dev/null
         fi
     done
     
     if [ $blocked_count -gt 0 ] && [ "$mode" = "STRICT" ]; then
-        # Restart service untuk apply Block 一═✦⌠𝗣𝗢𝗡𝗗𝗢𝗞 𝗩𝗣𝗡⌡✦═一 
+        # Restart service untuk apply blocking
         systemctl restart zivpn.service > /dev/null 2>&1
         log_action "Blocked $blocked_count accounts for multi-login"
     fi
 }
 
-# Function untuk setup auto-block
+# ═══( setup auto-Block )═══
 auto_block_setup() {
     clear
     echo ""
@@ -719,7 +718,7 @@ auto_block_setup() {
     read -p "Tekan Enter untuk kembali..."
 }
 
-# Function untuk lihat log blocked accounts
+# ═══( lihat log blocked )═══
 view_blocked_log() {
     clear
     echo ""
@@ -751,7 +750,7 @@ view_blocked_log() {
     read -p "Tekan Enter untuk kembali..."
 }
 
-# Bot setting (Telegram setup)
+# ═══( Telegram setup )═══
 bot_setting() {
     clear
     echo ""
@@ -809,7 +808,7 @@ bot_setting() {
     # Send test message
     echo -e "${YELLOW}Mengirim pesan test...${NC}"
     
-    message="✅ ZiVPN Telegram Bot Connected!
+    message="✅ ZIVPN Telegram Bot Connected!
 📅 $(date '+%Y-%m-%d %H:%M:%S')
 🤖 Bot: @${bot_name}
 📱 Ready to receive notifications!"
@@ -826,7 +825,7 @@ bot_setting() {
     read -p "Tekan Enter untuk kembali ke menu..."
 }
 
-# Backup/Restore menu
+# ═══ Backup/Restore/Features )═══
 backup_restore() {
     clear
     echo ""
@@ -879,7 +878,7 @@ backup_restore() {
     esac
 }
 
-# Backup data
+# ═══( Backup data )═══
 backup_data() {
     echo -e "${YELLOW}Membuat backup...${NC}"
     
@@ -901,7 +900,7 @@ backup_data() {
     read -p "Tekan Enter untuk kembali..."
 }
 
-# Restore data
+# ═══( Restore data )═══
 restore_data() {
     echo -e "${YELLOW}Restoring data...${NC}"
     
@@ -954,7 +953,7 @@ restore_data() {
     read -p "Tekan Enter untuk kembali..."
 }
 
-# Auto backup setup
+# ═══( Auto backup setup )═══
 auto_backup_setup() {
     echo -e "${YELLOW}Setup auto backup...${NC}"
     
@@ -987,15 +986,12 @@ auto_backup_setup() {
     read -p "Tekan Enter untuk kembali..."
 }
 
-# Main loop
+# ═══( Main loop )═══
 main_menu() {
     while true; do
-        # 1. Cek expired accounts (real-time)
-        #check_expired_accounts
         
-        # 2. Cek multi login (jika auto-block aktif)
+        check_expired_accounts
         check_multi_login
-      
         show_info_panel
         show_main_menu
         echo ""
