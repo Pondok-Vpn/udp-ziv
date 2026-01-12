@@ -692,7 +692,7 @@ check_multi_login() {
     fi
 }
 
-# ═══( setup auto-Block )═══
+# ═══( Setup auto-Block )═══
 auto_block_setup() {
     clear
     echo ""
@@ -705,9 +705,15 @@ auto_block_setup() {
     echo -e "${BLUE}╚═══════════════════════════╝${NC}"
     
     echo ""
-    echo -e "${CYAN}Pilihan mode auto block:${NC}"
-    echo "1. Block langsung saat multi login"
-    echo "2. Warning Mode (Hanya log, tidak block)"
+    echo -e "${YELLOW}CATATAN:${NC}"
+    echo -e "• ${CYAN}STRICT Mode:${NC} Blokir otomatis jika >1 IP terdeteksi"
+    echo -e "• ${CYAN}WARNING Mode:${NC} Hanya log, tidak memblokir"
+    echo -e "• ${CYAN}Nonaktifkan:${NC} Tidak ada pengecekan multi-login"
+    echo ""
+    
+    echo -e "${CYAN}Pilih mode auto block:${NC}"
+    echo "1. STRICT Mode (Block multi login)"
+    echo "2. WARNING Mode (Hanya log)"
     echo "3. Nonaktifkan Auto Block"
     echo ""
     
@@ -717,10 +723,12 @@ auto_block_setup() {
         1)
             echo "STRICT" > "$CONFIG_DIR/.auto_block"
             echo -e "${GREEN}✅ Strict Mode diaktifkan${NC}"
+            echo -e "${YELLOW}Info:${NC} Akan memblokir IP ke-2 dan seterusnya"
             ;;
         2)
             echo "WARNING" > "$CONFIG_DIR/.auto_block"
             echo -e "${GREEN}✅ Warning Mode diaktifkan${NC}"
+            echo -e "${YELLOW}Info:${NC} Hanya mencatat log, tidak memblokir"
             ;;
         3)
             rm -f "$CONFIG_DIR/.auto_block"
