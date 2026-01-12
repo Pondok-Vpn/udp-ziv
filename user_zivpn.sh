@@ -598,26 +598,10 @@ restart_service() {
     read -p "Tekan Enter untuk kembali ke menu..."
 }
 
-# ═══( Cleanup old iptables rules )═══
-cleanup_iptables() {
-    local RULES_TO_REMOVE=$(iptables -L INPUT --line-numbers | grep "udp dpt:5667" | grep "DROP" | tail -n +10)
-    
-    if [ -n "$RULES_TO_REMOVE" ]; then
-        echo "$RULES_TO_REMOVE" | while read line; do
-            rule_num=$(echo "$line" | awk '{print $1}')
-            iptables -D INPUT "$rule_num" 2>/dev/null
-        done
-    fi
-}
-
-# ═══( Check and block multi-login - REAL IP LIMIT )═══
+# ═══( Check and block multi-login )═══
 check_multi_login() {
-    local CONFIG_FILE="$CONFIG_DIR/config.json"
-    local USER_DB="$CONFIG_DIR/users.db"
-    local BLOCKED_LOG="$CONFIG_DIR/blocked.log"
-    
     # Cek apakah file konfigurasi ada
-    if [ ! -f "$CONFIG_FILE" ] || [ ! -f "$USER_DB" ]; then
+    if [ ! -f "$CONFIG_FILE" ]; then
         return 0
     fi
     
@@ -631,7 +615,11 @@ check_multi_login() {
         return 0
     fi
     
-    # Ambil daftar user aktif dari config.json
+    LOGIN_LOG="$CONFIG_DIR/login.log"
+    # Buat file log jika belum ada
+    touch "$LOGIN_LOG" 2>/dev/null
+    
+    # Ambil daftar user aktif dari config.json dengan error handling
     users=$(jq -r '.auth.config[]?' "$CONFIG_FILE" 2>/dev/null)
     if [ -z "$users" ] || [ "$users" = "null" ]; then
         return 0
@@ -639,59 +627,54 @@ check_multi_login() {
     
     blocked_count=0
     
-    for password in $users; do
-        # Cek di database untuk mendapatkan informasi user
-        user_info=$(grep "^$password:" "$USER_DB" 2>/dev/null)
+    for user in $users; do
+        # Cek di database
+        user_info=$(grep "^$user:" "$USER_DB" 2>/dev/null)
         if [ -n "$user_info" ]; then
             IFS=':' read -r password expiry_timestamp client_name <<< "$user_info"
-                        
-            PORT="5667"
-            MAX_IP=1  # Default limit 1 IP per user
-                        
-            # 1. Cek semua koneksi UDP ke port 5667
-            active_ips=$(conntrack -L -p udp --dport "$PORT" 2>/dev/null \
-                | grep -E "dport=$PORT.*dst=[^ ]*" \
-                | awk '{for(i=1;i<=NF;i++) if ($i ~ /^src=/) print $i}' \
-                | cut -d= -f2 | sort -u)
             
-            ip_count=$(echo "$active_ips" | grep -c .)
+            # Cek log login terakhir untuk user ini
+            last_log=$(grep "LOGIN:$user:" "$LOGIN_LOG" 2>/dev/null | tail -1)
             
-            # Jika lebih dari MAX_IP, blokir IP kelebihan
-            if [ "$ip_count" -gt "$MAX_IP" ]; then
-                echo "$(date '+%Y-%m-%d %H:%M:%S') MULTI-IP DETECTED user=$client_name port=$PORT ips=$ip_count" \
-                    >> "$BLOCKED_LOG"
+            if [ -n "$last_log" ]; then
+                # Ekstrak IP dari log
+                last_ip=$(echo "$last_log" | cut -d':' -f4 2>/dev/null)
+                current_ip=$(curl -s ifconfig.me 2>/dev/null || echo "UNKNOWN")
                 
-                if [ "$mode" = "STRICT" ]; then
-                    # Blokir IP kelebihan (mulai dari IP ke-2 dst)
-                    counter=0
-                    echo "$active_ips" | while read ip; do
-                        counter=$((counter + 1))
-                        if [ $counter -gt "$MAX_IP" ]; then
-                            # Cek apakah sudah ada rule
-                            iptables -C INPUT -s "$ip" -p udp --dport "$PORT" -j DROP 2>/dev/null || \
-                            iptables -A INPUT -s "$ip" -p udp --dport "$PORT" -j DROP
-                            
-                            # Log blokir
-                            echo "[$(date '+%Y-%m-%d %H:%M:%S')] BLOCKED: $client_name - Multi login from $ip" \
-                                >> "$CONFIG_DIR/login.log"
+                # Jika IP berbeda, blokir akun (hanya di STRICT mode)
+                if [ "$last_ip" != "$current_ip" ] && [ "$last_ip" != "UNKNOWN" ] && [ "$current_ip" != "UNKNOWN" ]; then
+                    if [ "$mode" = "STRICT" ]; then
+                        # Hapus user dari config.json
+                        current_config=$(cat "$CONFIG_FILE" 2>/dev/null)
+                        if [ -n "$current_config" ]; then
+                            echo "$current_config" | jq --arg pass "$user" 'del(.auth.config[] | select(. == $pass))' > "$CONFIG_FILE.tmp" 2>/dev/null
+                            mv "$CONFIG_FILE.tmp" "$CONFIG_FILE" 2>/dev/null
                         fi
-                    done
-                    
-                    blocked_count=$((blocked_count + 1))
-                else
-                    # WARNING mode: hanya log
-                    echo "[$(date '+%Y-%m-%d %H:%M:%S')] WARNING: $client_name - Multi login detected ($ip_count IPs)" \
-                        >> "$CONFIG_DIR/login.log"
+                        
+                        # Log aksi blocking
+                        echo "[$(date '+%Y-%m-%d %H:%M:%S')] BLOCKED: $client_name ($user) - Multi login. IP: $last_ip -> $current_ip" >> "$LOGIN_LOG"
+                        log_action "Blocked multi-login: $client_name ($user)"
+                        
+                        blocked_count=$((blocked_count + 1))
+                        echo "$current_ip:$user:$(date +%s):MULTI_LOGIN" >> "$CONFIG_DIR/blocked.log" 2>/dev/null
+                    else
+                        # WARNING mode: hanya log
+                        echo "[$(date '+%Y-%m-%d %H:%M:%S')] WARNING: $client_name ($user) - Multi login. IP: $last_ip -> $current_ip" >> "$LOGIN_LOG"
+                    fi
                 fi
             fi
+            
+            # Log login saat ini
+            echo "[$(date '+%Y-%m-%d %H:%M:%S')] LOGIN:$user:$(hostname 2>/dev/null):$current_ip:$client_name" >> "$LOGIN_LOG" 2>/dev/null
         fi
     done
     
     if [ $blocked_count -gt 0 ] && [ "$mode" = "STRICT" ]; then
-        log_action "Blocked $blocked_count IPs for multi-login"
+        # Restart service untuk apply blocking
+        systemctl restart zivpn.service > /dev/null 2>&1
+        log_action "Blocked $blocked_count accounts for multi-login"
     fi
 }
-
 # ═══( Setup auto-Block )═══
 auto_block_setup() {
     clear
@@ -1013,7 +996,7 @@ auto_backup_setup() {
 # ═══( Main loop )═══
 main_menu() {
     while true; do
-        cleanup_iptables
+        
         check_expired_accounts
         check_multi_login
         show_info_panel
