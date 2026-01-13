@@ -414,7 +414,7 @@ auto_start_menu() {
     clear
     echo ""
     echo -e "${BLUE}╔═════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║${GREEN}                  ✅ INSTALLASI SELESAI                  ${BLUE}║${NC}"
+    echo -e "${BLUE}║${GREEN}                ✅ INSTALLASI SELESAI                ${BLUE}║${NC}"
     echo -e "${BLUE}╚═════════════════════════════════════════════════════╝${NC}"
     echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
     echo -e "${GREEN}                KETIK 'ziv' UNTUK KE MENU                   ${NC}"
