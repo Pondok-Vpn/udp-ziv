@@ -224,7 +224,7 @@ setup_config() {
 EOF
     
     # Create user database
-    echo "pondok123:9999999999:2:Admin" > /etc/zivpn/users.db
+    echo "pondok123:9999999999:PondokVpn" > /etc/zivpn/users.db
     touch /etc/zivpn/devices.db
     touch /etc/zivpn/locked.db
     
@@ -354,8 +354,8 @@ install_menu() {
         chmod +x "$MENU_SCRIPT"  
         
         # Add alias
-        if ! grep -q "alias menu=" /root/.bashrc; then
-            echo "alias menu='zivpn-menu'" >> /root/.bashrc
+        if ! grep -q "alias ziv=" /root/.bashrc; then
+            echo "alias ziv='zivpn-menu'" >> /root/.bashrc
         fi
         
         echo -e "${GREEN}✅ Menu manager installed${NC}"
@@ -423,7 +423,7 @@ auto_start_menu() {
         echo "PONDOK VPN"
     fi
     echo -e "${BLUE}╔═════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║${GREEN}                    ✅ INSTALLASI SELESAI                    ${BLUE}║${NC}"
+    echo -e "${BLUE}║${GREEN}                  ✅ INSTALLASI SELESAI                  ${BLUE}║${NC}"
     echo -e "${BLUE}╚═════════════════════════════════════════════════════╝${NC}"
     echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
     echo -e "${GREEN}                    KETIK -ZIV- UNTUK KEMENU                    ${NC}"
