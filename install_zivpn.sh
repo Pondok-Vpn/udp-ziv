@@ -351,7 +351,7 @@ install_menu() {
     log "${YELLOW}Installing menu manager...${NC}"
     
     if wget -q "$REPO_URL/udp-ziv/main/user_zivpn.sh" -O "$MENU_SCRIPT"; then
-        chmod +x "$MENU_SCRIPT"
+        chmod +x "$MENU_SCRIPT"  
         
         # Add alias
         if ! grep -q "alias menu=" /root/.bashrc; then
@@ -388,7 +388,7 @@ show_summary() {
     echo -e "  View logs    : ${GREEN}journalctl -u zivpn -f${NC}"
     
     if [ -f "$MENU_SCRIPT" ]; then
-        echo -e "  Open menu    : ${GREEN}menu${NC}"
+        echo -e "  Open menu    : ${GREEN}ziv${NC}"
     fi
     
     echo ""
@@ -414,22 +414,23 @@ show_summary() {
 }
 
 auto_start_menu() {
-    if [ -f "$MENU_SCRIPT" ]; then
-        echo -e "${YELLOW}Menu will open in 3 seconds...${NC}"
-        echo -e "${YELLOW}Press Ctrl+C to cancel${NC}"
-        echo ""
-        
-        for i in {3..1}; do
-            echo -ne "${YELLOW}Starting in $i seconds...\033[0K\r${NC}"
-            sleep 1
-        done
-        
-        echo ""
-        "$MENU_SCRIPT"
+    clear
+    echo ""
+    echo -e "${BLUE}"
+    if command -v figlet &> /dev/null; then
+        figlet -f small "PONDOK VPN"
     else
-        echo -e "${YELLOW}Type 'systemctl status zivpn' to check service${NC}"
-        echo ""
+        echo "PONDOK VPN"
     fi
+    echo -e "${BLUE}╔═════════════════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║${GREEN}                    ✅ INSTALLASI SELESAI                    ${BLUE}║${NC}"
+    echo -e "${BLUE}╚═════════════════════════════════════════════════════╝${NC}"
+    echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
+    echo -e "${GREEN}                    KETIK -ZIV- UNTUK KEMENU                    ${NC}"
+    echo -e "${GREEN}                        BOT : @bendakerep                       ${NC}"
+    echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
+    echo ""
+    exit 0
 }
 
 # Main installation flow
