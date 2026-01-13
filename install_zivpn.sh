@@ -352,14 +352,12 @@ install_menu() {
     
     if wget -q "$REPO_URL/udp-ziv/main/user_zivpn.sh" -O "$MENU_SCRIPT"; then
         chmod +x "$MENU_SCRIPT"  
-        
-        # Add alias
         if ! grep -q "alias ziv=" /root/.bashrc; then
-            echo "alias ziv='zivpn-menu'" >> /root/.bashrc
+            echo "alias ziv='bash /usr/local/bin/zivpn-menu'" >> /root/.bashrc
         fi
-        
+        ln -sf /usr/local/bin/zivpn-menu /usr/local/bin/ziv 2>/dev/null || true
         echo -e "${GREEN}✅ Menu manager installed${NC}"
-        echo -e "${CYAN}Type 'menu' to open management menu${NC}"
+        echo -e "${CYAN}Type 'ziv' to open management menu${NC}"
         return 0
     else
         echo -e "${YELLOW}⚠️  Menu manager download failed${NC}"
@@ -368,7 +366,6 @@ install_menu() {
     fi
     echo ""
 }
-
 show_summary() {
     echo ""
     echo -e "${GREEN}========================================${NC}"
@@ -416,8 +413,6 @@ show_summary() {
 auto_start_menu() {
     clear
     echo ""
-    command -v figlet >/dev/null 2>&1 && figlet -f slant "PONDOK VPN" | command -v lolcat >/dev/null 2>&1 && lolcat || echo "========== PONDOK VPN =========="
-    
     echo -e "${BLUE}╔═════════════════════════════════════════════════════╗${NC}"
     echo -e "${BLUE}║${GREEN}                  ✅ INSTALLASI SELESAI                  ${BLUE}║${NC}"
     echo -e "${BLUE}╚═════════════════════════════════════════════════════╝${NC}"
