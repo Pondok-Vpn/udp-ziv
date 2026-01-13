@@ -416,12 +416,7 @@ show_summary() {
 auto_start_menu() {
     clear
     echo ""
-    echo -e "${BLUE}"
-    if command -v figlet &> /dev/null; then
-        figlet -f small "PONDOK VPN"
-    else
-        echo "PONDOK VPN"
-    fi
+    figlet -f small "PONDOK VPN" | lolcat
     echo -e "${BLUE}╔═════════════════════════════════════════════════════╗${NC}"
     echo -e "${BLUE}║${GREEN}                  ✅ INSTALLASI SELESAI                  ${BLUE}║${NC}"
     echo -e "${BLUE}╚═════════════════════════════════════════════════════╝${NC}"
