@@ -416,13 +416,14 @@ show_summary() {
 auto_start_menu() {
     clear
     echo ""
-    figlet -f small "PONDOK VPN" | lolcat
+    command -v figlet >/dev/null 2>&1 && figlet -f slant "PONDOK VPN" | command -v lolcat >/dev/null 2>&1 && lolcat || echo "========== PONDOK VPN =========="
+    
     echo -e "${BLUE}╔═════════════════════════════════════════════════════╗${NC}"
     echo -e "${BLUE}║${GREEN}                  ✅ INSTALLASI SELESAI                  ${BLUE}║${NC}"
     echo -e "${BLUE}╚═════════════════════════════════════════════════════╝${NC}"
     echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
-    echo -e "${GREEN}                    KETIK -ZIV- UNTUK KEMENU                    ${NC}"
-    echo -e "${GREEN}                        BOT : @bendakerep                       ${NC}"
+    echo -e "${GREEN}                KETIK 'ziv' UNTUK KE MENU                   ${NC}"
+    echo -e "${GREEN}                     BOT : @bendakerep                      ${NC}"
     echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
     echo ""
     exit 0
