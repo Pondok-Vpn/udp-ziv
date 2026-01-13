@@ -224,7 +224,7 @@ setup_config() {
 EOF
     
     # Create user database
-    echo "pondok123:9999999999:PondokVpn" > /etc/zivpn/users.db
+    echo "pondok123:9999999999:2:Admin" > /etc/zivpn/users.db
     touch /etc/zivpn/devices.db
     touch /etc/zivpn/locked.db
     
@@ -351,13 +351,15 @@ install_menu() {
     log "${YELLOW}Installing menu manager...${NC}"
     
     if wget -q "$REPO_URL/udp-ziv/main/user_zivpn.sh" -O "$MENU_SCRIPT"; then
-        chmod +x "$MENU_SCRIPT"  
-        if ! grep -q "alias ziv=" /root/.bashrc; then
-            echo "alias ziv='bash /usr/local/bin/zivpn-menu'" >> /root/.bashrc
+        chmod +x "$MENU_SCRIPT"
+        
+        # Add alias
+        if ! grep -q "alias menu=" /root/.bashrc; then
+            echo "alias menu='zivpn-menu'" >> /root/.bashrc
         fi
-        ln -sf /usr/local/bin/zivpn-menu /usr/local/bin/ziv 2>/dev/null || true
+        
         echo -e "${GREEN}✅ Menu manager installed${NC}"
-        echo -e "${CYAN}Type 'ziv' to open management menu${NC}"
+        echo -e "${CYAN}Type 'menu' to open management menu${NC}"
         return 0
     else
         echo -e "${YELLOW}⚠️  Menu manager download failed${NC}"
@@ -366,6 +368,7 @@ install_menu() {
     fi
     echo ""
 }
+
 show_summary() {
     echo ""
     echo -e "${GREEN}========================================${NC}"
@@ -385,7 +388,7 @@ show_summary() {
     echo -e "  View logs    : ${GREEN}journalctl -u zivpn -f${NC}"
     
     if [ -f "$MENU_SCRIPT" ]; then
-        echo -e "  Open menu    : ${GREEN}ziv${NC}"
+        echo -e "  Open menu    : ${GREEN}menu${NC}"
     fi
     
     echo ""
@@ -411,17 +414,22 @@ show_summary() {
 }
 
 auto_start_menu() {
-    clear
-    echo ""
-    echo -e "${BLUE}╔═════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║${GREEN}                ✅ INSTALLASI SELESAI                ${BLUE}║${NC}"
-    echo -e "${BLUE}╚═════════════════════════════════════════════════════╝${NC}"
-    echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
-    echo -e "${GREEN}                KETIK 'ziv' UNTUK KE MENU                   ${NC}"
-    echo -e "${GREEN}                     BOT : @bendakerep                      ${NC}"
-    echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
-    echo ""
-    exit 0
+    if [ -f "$MENU_SCRIPT" ]; then
+        echo -e "${YELLOW}Menu will open in 3 seconds...${NC}"
+        echo -e "${YELLOW}Press Ctrl+C to cancel${NC}"
+        echo ""
+        
+        for i in {3..1}; do
+            echo -ne "${YELLOW}Starting in $i seconds...\033[0K\r${NC}"
+            sleep 1
+        done
+        
+        echo ""
+        "$MENU_SCRIPT"
+    else
+        echo -e "${YELLOW}Type 'systemctl status zivpn' to check service${NC}"
+        echo ""
+    fi
 }
 
 # Main installation flow
