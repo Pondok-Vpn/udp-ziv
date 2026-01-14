@@ -12,10 +12,11 @@
 - UBUNTU 20 / 24 / 25
 - DEBIAN 12 / 13
 ### INSTALL SCRIPT
-<pre><code>apt update -y && apt upgrade -y
+'''
+apt update -y && apt upgrade -y
 wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/install_zivpn.sh
 chmod +x install_zivpn.sh
-./install_zivpn.sh</pre></code>
+./install_zivpn.sh
 ### UNISTAL SCRIPT
 <pre><code>wget -O uninstall.sh https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/uninstall_zivpn.sh
 bash uninstall.sh</pre></code>
