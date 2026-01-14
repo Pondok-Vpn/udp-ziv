@@ -589,7 +589,7 @@ main() {
     echo -e "${WHITE}           Kami melakukan ini bukan karena kami mampu           ${NC}"
     echo -e "${WHITE}                 Tapi karena kami tidak mampu.                  ${NC}"
     echo ""
-    echo -e "${WHITE}                  Dosa tanggung jawab masing"                   ${NC}"
+    echo -e "${WHITE}                  Dosa tanggung jawab masing2                   ${NC}"
     echo -e "${WHITE}                Gunakan script ini dengan bijak                 ${NC}"
     echo -e "${YELLOW}                             AUTOR :                            ${NC}"
     echo -e "${YELLOW}                   PONDOK VPN - @BENDAKEREP                     ${NC}"
