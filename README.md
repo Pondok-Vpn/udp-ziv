@@ -5,6 +5,9 @@
 wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/install_zivpn.sh
 chmod +x install_zivpn.sh
 ./install_zivpn.sh</pre></code>
+### UNISTAL SCRIPT
+<pre><code>wget -O uninstall.sh https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/uninstall_zivpn.sh
+bash uninstall.sh</pre></code>
 ### REBUILD UBUNTU 20.204
 <pre><code>curl -O https://raw.githubusercontent.com/bin456789/reinstall/main/reinstall.sh && bash reinstall.sh ubuntu 20.04 && reboot</code></pre>
 
