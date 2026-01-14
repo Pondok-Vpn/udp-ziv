@@ -28,8 +28,8 @@ bash uninstall.sh</pre></code>
 ### REBUILD UBUNTU 24.04
 <pre><code>curl -O https://raw.githubusercontent.com/bin456789/reinstall/main/reinstall.sh && bash reinstall.sh Ubuntu 24.04 && reboot</code></pre>
 
-### 一═✦⌠Author⌡✦═一
+### Author :
 
-PONDOK VPN :
+# PONDOK VPN
 
 <a href="https://t.me/bendakerep" target=”_blank”><img src="https://img.shields.io/static/v1?style=for-the-badge&logo=Telegram&label=Telegram&message=Click%20Here&color=blue"></a><br>
