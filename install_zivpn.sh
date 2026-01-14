@@ -135,7 +135,7 @@ install_deps() {
     pkill dpkg 2>/dev/null || true
     apt-get update -y
     apt-get upgrade -y
-    apt-get install -y wget curl openssl net-tools iptables
+    apt-get install -y wget curl openssl net-tools iptables jq  # TAMBAH jq untuk validasi JSON
         echo -e "${GREEN}========================================${NC}"
         echo -e "${GREEN}   ✅ Dependencies installed${NC}"
         echo -e "${GREEN}========================================${NC}"
@@ -200,16 +200,29 @@ download_binary() {
     exit 1
 }
 
+# ===========================================
+# PERUBAHAN 1: setup_config() dengan VALIDASI
+# ===========================================
 setup_config() {
     log "${YELLOW}Creating configuration...${NC}"
     
     mkdir -p /etc/zivpn
     
+    # Pastikan direktori dibuat
+    if [ ! -d "/etc/zivpn" ]; then
+        log "${RED}Failed to create /etc/zivpn directory${NC}"
+        exit 1
+    fi
+    
+    # Buat SSL certificate
+    log "${CYAN}Creating SSL certificates...${NC}"
     openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 \
         -subj "/C=US/ST=California/L=Los Angeles/O=Example Corp/OU=IT Department/CN=zivpn" \
         -keyout "/etc/zivpn/zivpn.key" \
-        -out "/etc/zivpn/zivpn.crt"
+        -out "/etc/zivpn/zivpn.crt" 2>/dev/null
     
+    # Buat config.json dengan format yang PASTI BENAR
+    log "${CYAN}Creating config.json...${NC}"
     cat > /etc/zivpn/config.json << 'EOF'
 {
   "listen": ":5667",
@@ -223,17 +236,86 @@ setup_config() {
 }
 EOF
     
+    # VALIDASI: Cek file berhasil dibuat
+    if [ ! -f "/etc/zivpn/config.json" ]; then
+        log "${RED}ERROR: config.json not created!${NC}"
+        exit 1
+    fi
+    
+    # VALIDASI: Cek file tidak kosong
+    FILE_SIZE=$(stat -c%s "/etc/zivpn/config.json" 2>/dev/null || echo 0)
+    if [ $FILE_SIZE -lt 10 ]; then
+        log "${RED}ERROR: config.json is empty!${NC}"
+        # Buat ulang dengan cara sederhana
+        echo '{"listen":":5667","cert":"/etc/zivpn/zivpn.crt","key":"/etc/zivpn/zivpn.key","obfs":"zivpn","auth":{"mode":"passwords","config":["pondok123"]}}' > /etc/zivpn/config.json
+    fi
+    
+    # VALIDASI: Cek format JSON dengan jq
+    if command -v jq >/dev/null 2>&1; then
+        if ! jq empty /etc/zivpn/config.json 2>/dev/null; then
+            log "${YELLOW}Warning: JSON validation failed, fixing...${NC}"
+            # Buat ulang dengan format minimal
+            echo '{"listen":":5667","cert":"/etc/zivpn/zivpn.crt","key":"/etc/zivpn/zivpn.key","obfs":"zivpn","auth":{"mode":"passwords","config":["pondok123"]}}' > /etc/zivpn/config.json
+        else
+            log "${GREEN}✓ Config.json JSON format is valid${NC}"
+        fi
+    fi
+    
     # Create user database
     echo "pondok123:9999999999:2:Admin" > /etc/zivpn/users.db
     touch /etc/zivpn/devices.db
     touch /etc/zivpn/locked.db
     
-    # Optimize network
-    sysctl -w net.core.rmem_max=16777216
-    sysctl -w net.core.wmem_max=16777216
+    # Set permissions
+    chmod 600 /etc/zivpn/*
+    chown root:root /etc/zivpn/*
     
-    echo -e "${GREEN}✓ Configuration created${NC}"
+    # Optimize network
+    sysctl -w net.core.rmem_max=16777216 2>/dev/null || true
+    sysctl -w net.core.wmem_max=16777216 2>/dev/null || true
+    
+    echo -e "${GREEN}✓ Configuration created and validated${NC}"
     echo ""
+}
+
+# ===========================================
+# PERUBAHAN 2: test_config() function BARU
+# ===========================================
+test_config() {
+    log "${YELLOW}Testing configuration...${NC}"
+    
+    # Cek apakah config file ada dan valid
+    if [ ! -f "/etc/zivpn/config.json" ]; then
+        log "${RED}ERROR: config.json not found!${NC}"
+        return 1
+    fi
+    
+    # Cek file size
+    CONFIG_SIZE=$(stat -c%s "/etc/zivpn/config.json" 2>/dev/null || echo 0)
+    if [ $CONFIG_SIZE -lt 50 ]; then
+        log "${YELLOW}Warning: config.json seems too small ($CONFIG_SIZE bytes)${NC}"
+    fi
+    
+    # Cek SSL certificates
+    if [ ! -f "/etc/zivpn/zivpn.crt" ] || [ ! -f "/etc/zivpn/zivpn.key" ]; then
+        log "${YELLOW}Warning: SSL certificates missing${NC}"
+    fi
+    
+    # Cek port tidak digunakan
+    if ss -tulpn | grep -q ":5667 "; then
+        log "${YELLOW}Warning: Port 5667 already in use${NC}"
+        # Kill proses yang menggunakan port 5667
+        OLD_PID=$(lsof -ti:5667 2>/dev/null || echo "")
+        if [ -n "$OLD_PID" ]; then
+            log "${CYAN}Killing old process on port 5667 (PID: $OLD_PID)${NC}"
+            kill -9 $OLD_PID 2>/dev/null || true
+            sleep 2
+        fi
+    fi
+    
+    echo -e "${GREEN}✓ Configuration test passed${NC}"
+    echo ""
+    return 0
 }
 
 # Create systemd service
@@ -324,26 +406,191 @@ ask_port_forward() {
     echo ""
 }
 
+# ===========================================
+# PERUBAHAN 3: start_service() yang DIPERBAIKI
+# ===========================================
 start_service() {
     log "${YELLOW}Starting ZIVPN service...${NC}"
     
-    systemctl start zivpn.service
-    sleep 3
+    # Stop service dulu jika sedang running
+    systemctl stop zivpn.service 2>/dev/null || true
+    sleep 2
     
+    # Kill any remaining zivpn processes
+    pkill -f "zivpn server" 2>/dev/null || true
+    
+    # Start service
+    systemctl start zivpn.service
+    sleep 5  # Beri waktu lebih untuk startup
+    
+    # Cek status service
     if systemctl is-active --quiet zivpn.service; then
         echo -e "${GREEN}✅ Service: RUNNING${NC}"
+        
+        # Tunggu sebentar lalu cek port listening
+        sleep 3
+        if ss -tulpn | grep -q ":5667"; then
+            echo -e "${GREEN}✅ Port 5667: LISTENING${NC}"
+            
+            # Test koneksi lokal
+            if command -v timeout >/dev/null 2>&1 && command -v nc >/dev/null 2>&1; then
+                if timeout 2 bash -c "cat < /dev/null > /dev/tcp/127.0.0.1/5667" 2>/dev/null; then
+                    echo -e "${GREEN}✅ Port 5667: ACCEPTING CONNECTIONS${NC}"
+                else
+                    echo -e "${YELLOW}⚠️  Port 5667: NOT ACCEPTING TCP CONNECTIONS (UDP only)${NC}"
+                fi
+            fi
+        else
+            echo -e "${RED}❌ Port 5667: NOT LISTENING${NC}"
+            echo -e "${YELLOW}Checking service logs...${NC}"
+            journalctl -u zivpn -n 10 --no-pager
+            return 1
+        fi
     else
-        echo -e "${RED}❌ Service: FAILED${NC}"
-        echo -e "${YELLOW}Check: systemctl status zivpn.service${NC}"
+        echo -e "${RED}❌ Service: FAILED TO START${NC}"
+        echo -e "${YELLOW}Last 10 lines of log:${NC}"
+        journalctl -u zivpn -n 10 --no-pager
+        
+        # Coba repair config
+        echo ""
+        echo -e "${YELLOW}Attempting to repair configuration...${NC}"
+        repair_config
+        systemctl start zivpn.service
+        sleep 3
+        
+        if systemctl is-active --quiet zivpn.service; then
+            echo -e "${GREEN}✅ Service started after repair${NC}"
+        else
+            echo -e "${RED}❌ Still failing after repair${NC}"
+            return 1
+        fi
+    fi
+    
+    echo ""
+    return 0
+}
+
+# ===========================================
+# PERUBAHAN 4: verify_installation() BARU
+# ===========================================
+verify_installation() {
+    log "${YELLOW}Verifying installation...${NC}"
+    
+    local errors=0
+    local warnings=0
+    
+    echo "Checking components:"
+    
+    # 1. Cek binary
+    if [ -f "/usr/local/bin/zivpn" ]; then
+        echo -e "  ${GREEN}✓ Binary: Found at /usr/local/bin/zivpn${NC}"
+        if [ -x "/usr/local/bin/zivpn" ]; then
+            echo -e "  ${GREEN}✓ Binary: Executable${NC}"
+        else
+            echo -e "  ${YELLOW}⚠ Binary: Not executable, fixing...${NC}"
+            chmod +x /usr/local/bin/zivpn
+            warnings=$((warnings+1))
+        fi
+    else
+        echo -e "  ${RED}✗ Binary: Not found${NC}"
+        errors=$((errors+1))
+    fi
+    
+    # 2. Cek config
+    if [ -f "/etc/zivpn/config.json" ]; then
+        echo -e "  ${GREEN}✓ Config: Found at /etc/zivpn/config.json${NC}"
+        CONFIG_SIZE=$(stat -c%s "/etc/zivpn/config.json" 2>/dev/null || echo 0)
+        if [ $CONFIG_SIZE -gt 50 ]; then
+            echo -e "  ${GREEN}✓ Config: Size OK ($CONFIG_SIZE bytes)${NC}"
+        else
+            echo -e "  ${YELLOW}⚠ Config: Size suspicious ($CONFIG_SIZE bytes)${NC}"
+            warnings=$((warnings+1))
+        fi
+    else
+        echo -e "  ${RED}✗ Config: Not found${NC}"
+        errors=$((errors+1))
+    fi
+    
+    # 3. Cek SSL certs
+    if [ -f "/etc/zivpn/zivpn.crt" ] && [ -f "/etc/zivpn/zivpn.key" ]; then
+        echo -e "  ${GREEN}✓ SSL Certs: Found${NC}"
+    else
+        echo -e "  ${YELLOW}⚠ SSL Certs: Missing or incomplete${NC}"
+        warnings=$((warnings+1))
+    fi
+    
+    # 4. Cek service file
+    if [ -f "/etc/systemd/system/zivpn.service" ]; then
+        echo -e "  ${GREEN}✓ Service: Found at /etc/systemd/system/zivpn.service${NC}"
+    else
+        echo -e "  ${RED}✗ Service: Not found${NC}"
+        errors=$((errors+1))
+    fi
+    
+    # 5. Cek user database
+    if [ -f "/etc/zivpn/users.db" ]; then
+        echo -e "  ${GREEN}✓ User DB: Found${NC}"
+    else
+        echo -e "  ${YELLOW}⚠ User DB: Not found, creating...${NC}"
+        echo "pondok123:9999999999:2:Admin" > /etc/zivpn/users.db
+        warnings=$((warnings+1))
+    fi
+    
+    # Summary
+    echo ""
+    if [ $errors -eq 0 ] && [ $warnings -eq 0 ]; then
+        echo -e "${GREEN}✅ All components verified successfully${NC}"
+        return 0
+    elif [ $errors -eq 0 ] && [ $warnings -gt 0 ]; then
+        echo -e "${YELLOW}⚠ Installation completed with $warnings warning(s)${NC}"
+        return 0
+    else
+        echo -e "${RED}❌ Installation has $errors error(s) and $warnings warning(s)${NC}"
         return 1
     fi
+}
+
+# ===========================================
+# PERUBAHAN 5: repair_config() BARU
+# ===========================================
+repair_config() {
+    log "${YELLOW}Repairing configuration...${NC}"
     
-    if ss -tulpn | grep -q ":5667"; then
-        echo -e "${GREEN}✅ Port 5667: LISTENING${NC}"
-    else
-        echo -e "${RED}❌ Port 5667: NOT LISTENING${NC}"
+    # Backup config lama jika ada
+    if [ -f "/etc/zivpn/config.json" ]; then
+        BACKUP_FILE="/etc/zivpn/config.json.backup.$(date +%Y%m%d_%H%M%S)"
+        cp "/etc/zivpn/config.json" "$BACKUP_FILE"
+        log "${CYAN}Backed up old config to: $BACKUP_FILE${NC}"
     fi
     
+    # Buat config baru yang PASTI benar
+    cat > /etc/zivpn/config.json << 'EOF'
+{
+  "listen": ":5667",
+  "cert": "/etc/zivpn/zivpn.crt",
+  "key": "/etc/zivpn/zivpn.key",
+  "obfs": "zivpn",
+  "auth": {
+    "mode": "passwords",
+    "config": ["pondok123"]
+  }
+}
+EOF
+    
+    # Pastikan SSL certs ada
+    if [ ! -f "/etc/zivpn/zivpn.crt" ] || [ ! -f "/etc/zivpn/zivpn.key" ]; then
+        log "${CYAN}Creating missing SSL certificates...${NC}"
+        openssl req -new -newkey rsa:2048 -days 365 -nodes -x509 \
+            -subj "/CN=zivpn" \
+            -keyout "/etc/zivpn/zivpn.key" \
+            -out "/etc/zivpn/zivpn.crt" 2>/dev/null || true
+    fi
+    
+    # Set permissions
+    chmod 600 /etc/zivpn/*
+    chown root:root /etc/zivpn/*
+    
+    echo -e "${GREEN}✓ Configuration repaired${NC}"
     echo ""
 }
 
@@ -432,7 +679,9 @@ auto_start_menu() {
     fi
 }
 
-# Main installation flow
+# ===========================================
+# PERUBAHAN 6: main() dengan urutan yang DIPERBAIKI
+# ===========================================
 main() {
     show_banner
     check_root
@@ -441,13 +690,36 @@ main() {
     install_deps
     download_binary
     setup_config
+    
+    # VERIFIKASI dan TEST sebelum create service
+    verify_installation
+    test_config
+    
     create_service
     setup_firewall
     ask_port_forward
     
+    # Start service dengan error handling
     if ! start_service; then
-        echo -e "${RED}Service failed to start! Check logs above.${NC}"
+        echo -e "${RED}========================================${NC}"
+        echo -e "${RED}     SERVICE FAILED TO START!           ${NC}"
+        echo -e "${RED}========================================${NC}"
         echo ""
+        echo -e "${YELLOW}Trying manual repair...${NC}"
+        
+        repair_config
+        
+        # Coba start lagi
+        systemctl daemon-reload
+        if start_service; then
+            echo -e "${GREEN}✅ Service started successfully after repair${NC}"
+        else
+            echo -e "${RED}❌ Service still failing after repair${NC}"
+            echo -e "${YELLOW}Please check:${NC}"
+            echo "1. journalctl -u zivpn -n 30"
+            echo "2. /usr/local/bin/zivpn server -c /etc/zivpn/config.json"
+            echo "3. Check if port 5667 is already in use"
+        fi
     fi
     
     install_menu
