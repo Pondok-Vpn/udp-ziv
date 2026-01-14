@@ -1,10 +1,10 @@
-╔═════════❈═════════╗
+╔═════════❈════╗
 ###   ZIVPN INSTALLER
-╚═══════════════════╝
+╚══════════════╝
 
 ### TESTED ON OS
 - UBUNTU 20 / 24 / 25
-- 
+- DEBIAN 12 / 13
 ### INSTALL SCRIPT
 <pre><code>apt update -y && apt upgrade -y
 wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/install_zivpn.sh
