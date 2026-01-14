@@ -1,22 +1,25 @@
-### 一═✦⌠𝗣𝗢𝗡𝗗𝗢𝗞 𝗩𝗣𝗡⌡✦═一
+╔═════════❈═════════╗
+###   ZIVPN INSTALLER
+╚═══════════════════╝
 
-### 一═✦⌠TESTED ON OS⌡✦═一
+### TESTED ON OS
 - UBUNTU 20 / 24 / 25
-### 一═✦⌠INSTALL SCRIPT⌡✦═一
+- 
+### INSTALL SCRIPT
 <pre><code>apt update -y && apt upgrade -y
 wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/install_zivpn.sh
 chmod +x install_zivpn.sh
 ./install_zivpn.sh</pre></code>
-### 一═✦⌠UNISTAL SCRIPT⌡✦═一
+### UNISTAL SCRIPT
 <pre><code>wget -O uninstall.sh https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/uninstall_zivpn.sh
 bash uninstall.sh</pre></code>
-### 一═✦⌠REBUILD UBUNTU 20.204⌡✦═一
+### REBUILD UBUNTU 20.204
 <pre><code>curl -O https://raw.githubusercontent.com/bin456789/reinstall/main/reinstall.sh && bash reinstall.sh ubuntu 20.04 && reboot</code></pre>
 
-### 一═✦⌠REBUILD DEBIAN 12⌡✦═一
+### REBUILD DEBIAN 12
 <pre><code>curl -O https://raw.githubusercontent.com/bin456789/reinstall/main/reinstall.sh && bash reinstall.sh Debian 12 && reboot</code></pre>
 
-### 一═✦⌠REBUILD UBUNTU 24.04⌡✦═一
+### REBUILD UBUNTU 24.04
 <pre><code>curl -O https://raw.githubusercontent.com/bin456789/reinstall/main/reinstall.sh && bash reinstall.sh Ubuntu 24.04 && reboot</code></pre>
 
 ### 一═✦⌠Author⌡✦═一
