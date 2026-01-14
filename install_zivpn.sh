@@ -6,8 +6,9 @@
 # Telegram : @bendakerep
 # Email    : redzall55@gmail.com
 # ===========================================
-
-# == VALIDASI WARNA ===
+if [ ! -f "/usr/local/bin/ziv" ]; then
+    ln -sf "$0" /usr/local/bin/ziv 2>/dev/null || true
+fi
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -505,7 +506,7 @@ show_summary() {
     echo -e "  View logs    : ${GREEN}journalctl -u zivpn -f${NC}"
     
     if [ -f "$MENU_SCRIPT" ]; then
-        echo -e "  Open menu    : ${GREEN}menu${NC}"
+        echo -e "  Open menu    : ${GREEN}ziv${NC}"
     fi
     
     echo ""
@@ -529,23 +530,22 @@ show_summary() {
     echo -e "${BLUE}========================================${NC}"
     echo ""
 }
-
-auto_start_menu() {
-    if [ -f "$MENU_SCRIPT" ]; then
-        echo -e "${YELLOW}Menu will open in 3 seconds...${NC}"
-        echo -e "${YELLOW}Press Ctrl+C to cancel${NC}"
-        echo ""
-        for i in {3..1}; do
-            echo -ne "${YELLOW}Starting in $i seconds...\033[0K\r${NC}"
-            sleep 1
-        done
-        echo ""
-        "$MENU_SCRIPT"
-    else
-        echo -e "${YELLOW}Type 'systemctl status zivpn' to check service${NC}"
-        echo ""
-    fi
-}
+#auto_start_menu() {
+#    if [ -f "$MENU_SCRIPT" ]; then
+#        echo -e "${YELLOW}Menu will open in 3 seconds...${NC}"
+#        echo -e "${YELLOW}Press Ctrl+C to cancel${NC}"
+#        echo ""
+#        for i in {3..1}; do
+#            echo -ne "${YELLOW}Starting in $i seconds...\033[0K\r${NC}"
+#            sleep 1
+#        done
+#        echo ""
+#        "$MENU_SCRIPT"
+#    else
+#        echo -e "${YELLOW}Type 'systemctl status zivpn' to check service${NC}"
+#        echo ""
+#    fi
+#}
 # ===========================================
 #         一═⌊✦⌉ 𝗣𝗢𝗡𝗗𝗢𝗞 𝗩𝗣𝗡 ⌊✦⌉═一
 # ===========================================
@@ -583,6 +583,19 @@ main() {
     fi
     install_menu
     show_summary
-    auto_start_menu
+    #auto_start_menu
+    echo -e "${BLUE}╔═════════════════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║${WHITE}                 𝐊𝐄𝐓𝐈𝐊 𝐳𝐢𝐯 𝐔𝐍𝐓𝐔𝐊 𝐊𝐄 𝐌𝐄𝐍𝐔                ${BLUE}║${NC}"
+    echo -e "${BLUE}╚═════════════════════════════════════════════════════╝${NC}"
+    echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
+    echo -e "${WHITE}           Kami melakukan ini bukan karena kami mampu           ${NC}"
+    echo -e "${WHITE}                 Tapi karena kami tidak mampu.                  ${NC}"
+    echo ""
+    echo -e "${WHITE}                  Dosa tanggung jawab masing"                   ${NC}"
+    echo -e "${WHITE}                Gunakan script ini dengan bijak                 ${NC}"
+    echo -e "${YELLOW}                             AUTOR :                            ${NC}"
+    echo -e "${YELLOW}                   PONDOK VPN - @BENDAKEREP                     ${NC}"
+    echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
+
 }
 main
