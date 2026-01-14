@@ -6,14 +6,12 @@
 # Telegram : @bendakerep
 # Email    : redzall55@gmail.com
 # ===========================================
-if [ ! -f "/usr/local/bin/ziv" ]; then
-    ln -sf "$0" /usr/local/bin/ziv 2>/dev/null || true
-fi
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 CYAN='\033[0;36m'
+WHITE='\033[1;37m'
 NC='\033[0m'
 REPO_URL="https://raw.githubusercontent.com/Pondok-Vpn"
 LICENSE_URL="$REPO_URL/Pondok-Vpn/main/DAFTAR"
@@ -474,8 +472,8 @@ install_menu() {
     log "${YELLOW}Installing menu manager...${NC}"
     if wget -q "$REPO_URL/udp-ziv/main/user_zivpn.sh" -O "$MENU_SCRIPT"; then
         chmod +x "$MENU_SCRIPT"
-        if ! grep -q "alias menu=" /root/.bashrc; then
-            echo "alias menu='zivpn-menu'" >> /root/.bashrc
+        if ! grep -q "alias ziv=" /root/.bashrc; then
+            echo "alias ziv='zivpn-menu'" >> /root/.bashrc
         fi
         echo -e "${GREEN}✅ Menu manager installed${NC}"
         echo -e "${CYAN}Type 'menu' to open management menu${NC}"
