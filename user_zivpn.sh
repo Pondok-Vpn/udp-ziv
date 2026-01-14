@@ -5,6 +5,9 @@
 # TELEGRAM : @bendakerep
 # EMAIL    : redzall55@gmail.com
 # ══════════════════════════════
+if [ ! -f "/usr/local/bin/ziv" ]; then
+    ln -sf "$0" /usr/local/bin/ziv 2>/dev/null || true
+fi
 # ═══( Validasi warna )═══
 RED='\033[0;31m'
 GREEN='\033[0;92m'
