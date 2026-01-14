@@ -21,14 +21,12 @@ log() {
 }
 show_banner() {
     clear
-    echo -e "${YELLOW}========================================${NC}"
-    echo -e "${YELLOW}        ZIVPN HYBRID INSTALLER         ${NC}"
-    echo -e "${YELLOW}========================================${NC}"
-    echo ""
+echo -e "${BLUE}╔═════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}                      ZIVPN HYBRID INSTALLER                     ${NC}"
+echo -e "${BLUE}╚═════════════════════════════════════════════════════╝${NC}"
+echo ""
 }
-# ===========================================
-#          LICENSE CHECK FUNCTION
-# ===========================================
+
 check_license() {
     log "${YELLOW}Checking license...${NC}"
     SERVER_IP=$(curl -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
@@ -41,49 +39,46 @@ check_license() {
             EXPIRY_DATE=$(echo "$LICENSE_INFO" | awk '{print $3}')
             CURRENT_DATE=$(date +%Y-%m-%d)
             if [[ "$CURRENT_DATE" > "$EXPIRY_DATE" ]]; then
-                echo -e "${RED}========================================${NC}"
-                echo -e "${RED}           LICENSE EXPIRED!            ${NC}"
-                echo -e "${RED}========================================${NC}"
-                echo ""
-                echo -e "${YELLOW}IP: $SERVER_IP${NC}"
-                echo -e "${YELLOW}Expired: $EXPIRY_DATE${NC}"
-                echo ""
-                echo -e "${CYAN}Contact @bendakerep for renewal${NC}"
+echo -e "${RED}╔═════════════════════════════════════════════════════╗${NC}"
+echo -e "${RED}                         LICENSE EXPIRED!                       ${NC}"
+echo -e "${RED}╚═════════════════════════════════════════════════════╝${NC}"
+echo ""
+echo -e "${YELLOW}IP: $SERVER_IP${NC}"
+echo -e "${YELLOW}Expired: $EXPIRY_DATE${NC}"
+echo ""
+echo -e "${CYAN}Contact @bendakerep for renewal${NC}"
                 rm -f "$LICENSE_FILE"
                 exit 1
             fi  
-            echo -e "${GREEN}✓ License valid for: $USER_NAME${NC}"
-            echo -e "${CYAN}✓ Expiry date: $EXPIRY_DATE${NC}"
+echo -e "${GREEN}✓ License valid for: $USER_NAME${NC}"
+echo -e "${CYAN}✓ Expiry date: $EXPIRY_DATE${NC}"
             mkdir -p /etc/zivpn
-            echo "$USER_NAME" > /etc/zivpn/.license_info
-            echo "$EXPIRY_DATE" >> /etc/zivpn/.license_info
+echo "$USER_NAME" > /etc/zivpn/.license_info
+echo "$EXPIRY_DATE" >> /etc/zivpn/.license_info
         else
-            echo -e "${RED}========================================${NC}"
-            echo -e "${RED}     UNAUTHORIZED INSTALLATION!        ${NC}"
-            echo -e "${RED}========================================${NC}"
-            echo ""
-            echo -e "${YELLOW}Your IP ($SERVER_IP) is not registered${NC}"
-            echo ""
-            echo -e "${CYAN}Contact @bendakerep for license${NC}"
+echo -e "${RED}========================================${NC}"
+echo -e "${RED}     UNAUTHORIZED INSTALLATION!        ${NC}"
+echo -e "${RED}========================================${NC}"
+echo ""
+echo -e "${YELLOW}Your IP ($SERVER_IP) is not registered${NC}"
+echo ""
+echo -e "${CYAN}Contact @bendakerep for license${NC}"
             rm -f "$LICENSE_FILE"
             exit 1
         fi
         rm -f "$LICENSE_FILE"
     else
-        echo -e "${YELLOW}⚠️  Cannot connect to license server${NC}"
-        echo -e "${YELLOW}Running in evaluation mode...${NC}"
+echo -e "${YELLOW}⚠️  Cannot connect to license server${NC}"
+echo -e "${YELLOW}Running in evaluation mode...${NC}"
         sleep 3
     fi  
     echo ""
 }
-# ===========================================
-#            一═⌊✦⌉ 𝗣𝗢𝗡𝗗𝗢𝗞 𝗩𝗣𝗡 ⌊✦⌉═一
-# ===========================================
 
 check_root() {
     if [[ $EUID -ne 0 ]]; then
-        echo -e "${RED}Script must be run as root!${NC}"
-        echo -e "${YELLOW}Use: sudo bash $0${NC}"
+echo -e "${RED}Script must be run as root!${NC}"
+echo -e "${YELLOW}Use: sudo bash $0${NC}"
         exit 1
     fi
 }
@@ -96,13 +91,13 @@ setup_swap() {
         chmod 600 /swapfile
         mkswap /swapfile
         swapon /swapfile
-        echo '/swapfile none swap sw 0 0' >> /etc/fstab
-        echo "vm.swappiness=30" >> /etc/sysctl.conf
+echo '/swapfile none swap sw 0 0' >> /etc/fstab
+echo "vm.swappiness=30" >> /etc/sysctl.conf
         sysctl -p
         
-        echo -e "${GREEN}✓ 2GB swap created${NC}"
+echo -e "${GREEN}✓ 2GB swap created${NC}"
     else
-        echo -e "${GREEN}✓ Swap already exists${NC}"
+echo -e "${GREEN}✓ Swap already exists${NC}"
     fi
     echo ""
 }
@@ -113,10 +108,10 @@ install_deps() {
     apt-get update -y
     apt-get upgrade -y
     apt-get install -y wget curl openssl net-tools iptables jq  # TAMBAH jq untuk validasi JSON
-        echo -e "${GREEN}========================================${NC}"
-        echo -e "${GREEN}   ✅ Dependencies installed${NC}"
-        echo -e "${GREEN}========================================${NC}"
-    echo ""
+echo -e "${GREEN}========================================${NC}"
+echo -e "${GREEN}   ✅ Dependencies installed${NC}"
+echo -e "${GREEN}========================================${NC}"
+echo ""
 }
 download_binary() {
     log "${YELLOW}Detecting architecture...${NC}"
@@ -147,7 +142,7 @@ download_binary() {
                 FILE_SIZE=$(stat -c%s /usr/local/bin/zivpn 2>/dev/null || echo 0)
                 if [ $FILE_SIZE -gt 1000000 ]; then
                     chmod +x /usr/local/bin/zivpn
-                    echo -e "${GREEN}✓ Binary downloaded ($((FILE_SIZE/1024/1024))MB)${NC}"
+echo -e "${GREEN}✓ Binary downloaded ($((FILE_SIZE/1024/1024))MB)${NC}"
                     return 0
                 fi
             fi
@@ -155,23 +150,20 @@ download_binary() {
         rm -f /usr/local/bin/zivpn 2>/dev/null
     done
     log "${RED}❌ FATAL: Cannot download binary!${NC}"
-    echo ""
-    echo -e "${YELLOW}Please download manually:${NC}"
-    echo "----------------------------------------"
-    echo "cd /usr/local/bin"
+echo ""
+echo -e "${YELLOW}Please download manually:${NC}"
+echo "----------------------------------------"
+echo "cd /usr/local/bin"
     if [[ "$ARCH" == "x86_64" ]] || [[ "$ARCH" == "amd64" ]]; then
-        echo "wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/udp-zivpn-linux-amd64 -O zivpn"
+echo "wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/udp-zivpn-linux-amd64 -O zivpn"
     else
-        echo "wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/udp-zivpn-linux-arm64 -O zivpn"
+echo "wget https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/udp-zivpn-linux-arm64 -O zivpn"
     fi
-    echo "chmod +x zivpn"
-    echo "systemctl restart zivpn"
-    echo "----------------------------------------"
+echo "chmod +x zivpn"
+echo "systemctl restart zivpn"
+echo "----------------------------------------"
     exit 1
 }
-# ===========================================
-#          一═⌊✦⌉ 𝗣𝗢𝗡𝗗𝗢𝗞 𝗩𝗣𝗡 ⌊✦⌉═一
-# ===========================================
 setup_config() {
     log "${YELLOW}Creating configuration...${NC}"
     
@@ -205,19 +197,17 @@ EOF
     FILE_SIZE=$(stat -c%s "/etc/zivpn/config.json" 2>/dev/null || echo 0)
     if [ $FILE_SIZE -lt 10 ]; then
         log "${RED}ERROR: config.json is empty!${NC}"
-        # Buat ulang dengan cara sederhana
         echo '{"listen":":5667","cert":"/etc/zivpn/zivpn.crt","key":"/etc/zivpn/zivpn.key","obfs":"zivpn","auth":{"mode":"passwords","config":["pondok123"]}}' > /etc/zivpn/config.json
     fi
     if command -v jq >/dev/null 2>&1; then
         if ! jq empty /etc/zivpn/config.json 2>/dev/null; then
             log "${YELLOW}Warning: JSON validation failed, fixing...${NC}"
-            # Buat ulang dengan format minimal
-            echo '{"listen":":5667","cert":"/etc/zivpn/zivpn.crt","key":"/etc/zivpn/zivpn.key","obfs":"zivpn","auth":{"mode":"passwords","config":["pondok123"]}}' > /etc/zivpn/config.json
+echo '{"listen":":5667","cert":"/etc/zivpn/zivpn.crt","key":"/etc/zivpn/zivpn.key","obfs":"zivpn","auth":{"mode":"passwords","config":["pondok123"]}}' > /etc/zivpn/config.json
         else
             log "${GREEN}✓ Config.json JSON format is valid${NC}"
         fi
     fi
-    echo "pondok123:9999999999:2:Admin" > /etc/zivpn/users.db
+echo "pondok123:9999999999:2:Admin" > /etc/zivpn/users.db
     touch /etc/zivpn/devices.db
     touch /etc/zivpn/locked.db
     chmod 600 /etc/zivpn/*
@@ -225,12 +215,9 @@ EOF
     sysctl -w net.core.rmem_max=16777216 2>/dev/null || true
     sysctl -w net.core.wmem_max=16777216 2>/dev/null || true
     
-    echo -e "${GREEN}✓ Configuration created and validated${NC}"
-    echo ""
+echo -e "${GREEN}✓ Configuration created and validated${NC}"
+echo ""
 }
-# ===========================================
-#          一═⌊✦⌉ 𝗣𝗢𝗡𝗗𝗢𝗞 𝗩𝗣𝗡 ⌊✦⌉═一
-# ===========================================
 test_config() {
     log "${YELLOW}Testing configuration...${NC}"
     if [ ! -f "/etc/zivpn/config.json" ]; then
@@ -253,8 +240,8 @@ test_config() {
             sleep 2
         fi
     fi
-    echo -e "${GREEN}✓ Configuration test passed${NC}"
-    echo ""
+echo -e "${GREEN}✓ Configuration test passed${NC}"
+echo ""
     return 0
 }
 create_service() {
@@ -284,8 +271,8 @@ EOF
     systemctl daemon-reload
     systemctl enable zivpn.service
     
-    echo -e "${GREEN}✓ Service created${NC}"
-    echo ""
+echo -e "${GREEN}✓ Service created${NC}"
+echo ""
 }
 setup_firewall() {
     log "${YELLOW}Setting up firewall...${NC}"
@@ -302,11 +289,11 @@ setup_firewall() {
     if command -v netfilter-persistent >/dev/null 2>&1; then
         netfilter-persistent save 2>/dev/null || true
     fi
-    echo -e "${GREEN}✓ Firewall configured (SSH port: $SSH_PORT)${NC}"
-    echo ""
+echo -e "${GREEN}✓ Firewall configured (SSH port: $SSH_PORT)${NC}"
+echo ""
 }
 ask_port_forward() {
-    echo ""
+echo ""
     read -p "Enable port forwarding 6000-19999? (y/n): " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -316,14 +303,12 @@ ask_port_forward() {
             iptables -t nat -A PREROUTING -i $INTERFACE -p udp --dport 6000:19999 -j DNAT --to-destination :5667
             iptables -A INPUT -p udp --dport 6000:19999 -j ACCEPT
             iptables-save > /etc/iptables/rules.v4
-            echo -e "${GREEN}✓ Port forwarding 6000-19999 enabled${NC}"
+echo -e "${GREEN}✓ Port forwarding 6000-19999 enabled${NC}"
         fi
     fi
     echo ""
 }
-# ===========================================
-#        一═⌊✦⌉ 𝗣𝗢𝗡𝗗𝗢𝗞 𝗩𝗣𝗡 ⌊✦⌉═一
-# ===========================================
+
 start_service() {
     log "${YELLOW}Starting ZIVPN service...${NC}"
     systemctl stop zivpn.service 2>/dev/null || true
@@ -332,86 +317,84 @@ start_service() {
     systemctl start zivpn.service
     sleep 5
     if systemctl is-active --quiet zivpn.service; then
-        echo -e "${GREEN}✅ Service: RUNNING${NC}"
+echo -e "${GREEN}✅ Service: RUNNING${NC}"
         sleep 3
         if ss -tulpn | grep -q ":5667"; then
-            echo -e "${GREEN}✅ Port 5667: LISTENING${NC}"
+echo -e "${GREEN}✅ Port 5667: LISTENING${NC}"
             if command -v timeout >/dev/null 2>&1 && command -v nc >/dev/null 2>&1; then
                 if timeout 2 bash -c "cat < /dev/null > /dev/tcp/127.0.0.1/5667" 2>/dev/null; then
-                    echo -e "${GREEN}✅ Port 5667: ACCEPTING CONNECTIONS${NC}"
+echo -e "${GREEN}✅ Port 5667: ACCEPTING CONNECTIONS${NC}"
                 else
-                    echo -e "${YELLOW}⚠️  Port 5667: NOT ACCEPTING TCP CONNECTIONS (UDP only)${NC}"
+echo -e "${YELLOW}⚠️  Port 5667: NOT ACCEPTING TCP CONNECTIONS (UDP only)${NC}"
                 fi
             fi
         else
-            echo -e "${RED}❌ Port 5667: NOT LISTENING${NC}"
-            echo -e "${YELLOW}Checking service logs...${NC}"
+echo -e "${RED}❌ Port 5667: NOT LISTENING${NC}"
+echo -e "${YELLOW}Checking service logs...${NC}"
             journalctl -u zivpn -n 10 --no-pager
             return 1
         fi
     else
-        echo -e "${RED}❌ Service: FAILED TO START${NC}"
-        echo -e "${YELLOW}Last 10 lines of log:${NC}"
+echo -e "${RED}❌ Service: FAILED TO START${NC}"
+echo -e "${YELLOW}Last 10 lines of log:${NC}"
         journalctl -u zivpn -n 10 --no-pager
-        echo ""
-        echo -e "${YELLOW}Attempting to repair configuration...${NC}"
+echo ""
+echo -e "${YELLOW}Attempting to repair configuration...${NC}"
         repair_config
         systemctl start zivpn.service
         sleep 3
         if systemctl is-active --quiet zivpn.service; then
-            echo -e "${GREEN}✅ Service started after repair${NC}"
+echo -e "${GREEN}✅ Service started after repair${NC}"
         else
-            echo -e "${RED}❌ Still failing after repair${NC}"
+echo -e "${RED}❌ Still failing after repair${NC}"
             return 1
         fi
     fi
-    echo ""
+echo ""
     return 0
 }
-# ===========================================
-#        一═⌊✦⌉ 𝗣𝗢𝗡𝗗𝗢𝗞 𝗩𝗣𝗡 ⌊✦⌉═一
-# ===========================================
+
 verify_installation() {
     log "${YELLOW}Verifying installation...${NC}"
     local errors=0
     local warnings=0
-    echo "Checking components:"
+echo "Checking components:"
     if [ -f "/usr/local/bin/zivpn" ]; then
-        echo -e "  ${GREEN}✓ Binary: Found at /usr/local/bin/zivpn${NC}"
+echo -e "  ${GREEN}✓ Binary: Found at /usr/local/bin/zivpn${NC}"
         if [ -x "/usr/local/bin/zivpn" ]; then
-            echo -e "  ${GREEN}✓ Binary: Executable${NC}"
+echo -e "  ${GREEN}✓ Binary: Executable${NC}"
         else
-            echo -e "  ${YELLOW}⚠ Binary: Not executable, fixing...${NC}"
+echo -e "  ${YELLOW}⚠ Binary: Not executable, fixing...${NC}"
             chmod +x /usr/local/bin/zivpn
             warnings=$((warnings+1))
         fi
     else
-        echo -e "  ${RED}✗ Binary: Not found${NC}"
+echo -e "  ${RED}✗ Binary: Not found${NC}"
         errors=$((errors+1))
     fi
     if [ -f "/etc/zivpn/config.json" ]; then
-        echo -e "  ${GREEN}✓ Config: Found at /etc/zivpn/config.json${NC}"
+echo -e "  ${GREEN}✓ Config: Found at /etc/zivpn/config.json${NC}"
         CONFIG_SIZE=$(stat -c%s "/etc/zivpn/config.json" 2>/dev/null || echo 0)
         if [ $CONFIG_SIZE -gt 50 ]; then
-            echo -e "  ${GREEN}✓ Config: Size OK ($CONFIG_SIZE bytes)${NC}"
+echo -e "  ${GREEN}✓ Config: Size OK ($CONFIG_SIZE bytes)${NC}"
         else
-            echo -e "  ${YELLOW}⚠ Config: Size suspicious ($CONFIG_SIZE bytes)${NC}"
+echo -e "  ${YELLOW}⚠ Config: Size suspicious ($CONFIG_SIZE bytes)${NC}"
             warnings=$((warnings+1))
         fi
     else
-        echo -e "  ${RED}✗ Config: Not found${NC}"
+echo -e "  ${RED}✗ Config: Not found${NC}"
         errors=$((errors+1))
     fi
     if [ -f "/etc/zivpn/zivpn.crt" ] && [ -f "/etc/zivpn/zivpn.key" ]; then
-        echo -e "  ${GREEN}✓ SSL Certs: Found${NC}"
+echo -e "  ${GREEN}✓ SSL Certs: Found${NC}"
     else
-        echo -e "  ${YELLOW}⚠ SSL Certs: Missing or incomplete${NC}"
+echo -e "  ${YELLOW}⚠ SSL Certs: Missing or incomplete${NC}"
         warnings=$((warnings+1))
     fi
     if [ -f "/etc/systemd/system/zivpn.service" ]; then
-        echo -e "  ${GREEN}✓ Service: Found at /etc/systemd/system/zivpn.service${NC}"
+echo -e "  ${GREEN}✓ Service: Found at /etc/systemd/system/zivpn.service${NC}"
     else
-        echo -e "  ${RED}✗ Service: Not found${NC}"
+echo -e "  ${RED}✗ Service: Not found${NC}"
         errors=$((errors+1))
     fi
     if [ -f "/etc/zivpn/users.db" ]; then
@@ -434,9 +417,6 @@ verify_installation() {
     fi
 }
 
-# ===========================================
-#          一═⌊✦⌉ 𝗣𝗢𝗡𝗗𝗢𝗞 𝗩𝗣𝗡 ⌊✦⌉═一
-# ===========================================
 repair_config() {
     log "${YELLOW}Repairing configuration...${NC}"
     if [ -f "/etc/zivpn/config.json" ]; then
@@ -487,9 +467,9 @@ install_menu() {
 }
 show_summary() {
     echo ""
-    echo -e "${GREEN}========================================${NC}"
-    echo -e "${GREEN}    ✅  ZIVPN INSTALLATION COMPLETE!  ${NC}"
-    echo -e "${GREEN}========================================${NC}"
+    echo -e "${YELLOW}╔═════════════════════════════════════════════════════╗${NC}"
+    echo -e "${YELLOW}║${YELLOW}             ✅ UDP ZIVPN BERHASIL TERINSTALL             ${YELLOW}║${NC}"
+    echo -e "${YELLOW}╚═════════════════════════════════════════════════════╝${NC}"
     echo ""
     
     echo -e "${YELLOW}📦 SERVER INFORMATION:${NC}"
@@ -523,9 +503,9 @@ show_summary() {
         echo ""
     fi
     
-    echo -e "${BLUE}========================================${NC}"
-    echo -e "${BLUE}        Telegram: @bendakerep        ${NC}"
-    echo -e "${BLUE}========================================${NC}"
+    echo -e "${YELLOW}╔═════════════════════════════════════════════════════╗${NC}"
+    echo -e "${YELLOW}║${YELLOW}             一═⌊✦⌉ 𝗣𝗢𝗡𝗗𝗢𝗞 𝗩𝗣𝗡 ⌊✦⌉═一             ${YELLOW}║${NC}"
+    echo -e "${YELLOW}╚═════════════════════════════════════════════════════╝${NC}"
     echo ""
 }
 #auto_start_menu() {
@@ -544,9 +524,7 @@ show_summary() {
 #        echo ""
 #    fi
 #}
-# ===========================================
-#         一═⌊✦⌉ 𝗣𝗢𝗡𝗗𝗢𝗞 𝗩𝗣𝗡 ⌊✦⌉═一
-# ===========================================
+
 main() {
     show_banner
     check_root
@@ -561,9 +539,9 @@ main() {
     setup_firewall
     ask_port_forward
     if ! start_service; then
-        echo -e "${RED}========================================${NC}"
-        echo -e "${RED}     SERVICE FAILED TO START!           ${NC}"
-        echo -e "${RED}========================================${NC}"
+        echo -e "${RED}╔═════════════════════════════════════════════════════╗${NC}"
+        echo -e "${RED}║${RED}           SERVICE FAILED TO START!           ${RED}║${NC}"
+        echo -e "${RED}╚═════════════════════════════════════════════════════╝${NC}"
         echo ""
         echo -e "${YELLOW}Trying manual repair...${NC}"
         
@@ -583,7 +561,7 @@ main() {
     show_summary
     #auto_start_menu
     echo -e "${BLUE}╔═════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║${WHITE}                 𝐊𝐄𝐓𝐈𝐊 𝐳𝐢𝐯 𝐔𝐍𝐓𝐔𝐊 𝐊𝐄 𝐌𝐄𝐍𝐔                ${BLUE}║${NC}"
+    echo -e "${BLUE}║${WHITE}           𝐊𝐄𝐓𝐈𝐊 𝐳𝐢𝐯 𝐔𝐍𝐓𝐔𝐊 𝐊𝐄 𝐌𝐄𝐍𝐔           ${BLUE}║${NC}"
     echo -e "${BLUE}╚═════════════════════════════════════════════════════╝${NC}"
     echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
     echo -e "${WHITE}           Kami melakukan ini bukan karena kami mampu           ${NC}"
