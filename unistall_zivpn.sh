@@ -1,9 +1,12 @@
 #!/bin/bash
 # ===========================================
-# ZIVPN UNINSTALLER
+# Unistall : Unistall all servis
+# Github   : https://github.com/Pondok-Vpn/
+# Created  : PONDOK VPN (C) 2026-01-06
+# Telegram : @bendakerep
+# Email    : redzall55@gmail.com
 # ===========================================
 
-# Colors
 RED='\033[0;31m'
 GREEN='\033[0;92m'
 YELLOW='\033[0;93m'
