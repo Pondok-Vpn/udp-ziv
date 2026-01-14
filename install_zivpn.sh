@@ -14,7 +14,7 @@ CYAN='\033[0;36m'
 WHITE='\033[1;37m'
 NC='\033[0m'
 REPO_URL="https://raw.githubusercontent.com/Pondok-Vpn"
-LICENSE_URL="$REPO_URL/Pondok-Vpn/main/DAFTAR"
+LICENSE_URL="$REPO_URL/pondokvip/main/DAFTAR"
 MENU_SCRIPT="/usr/local/bin/zivpn-menu"
 log() {
     echo -e "[$(date '+%H:%M:%S')] $1"
