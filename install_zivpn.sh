@@ -329,13 +329,13 @@ echo -e "${YELLOW}     ⚠️  Port 5667: NOT ACCEPTING TCP CONNECTIONS (UDP onl
                 fi
             fi
         else
-echo -e "${RED}❌ Port 5667: NOT LISTENING${NC}"
+echo -e "${RED}     ❌ Port 5667: NOT LISTENING${NC}"
 echo -e "${YELLOW}Checking service logs...${NC}"
             journalctl -u zivpn -n 10 --no-pager
             return 1
         fi
     else
-echo -e "${RED}❌ Service: FAILED TO START${NC}"
+echo -e "${RED}     ❌ Service: FAILED TO START${NC}"
 echo -e "${YELLOW}Last 10 lines of log:${NC}"
         journalctl -u zivpn -n 10 --no-pager
 echo ""
@@ -344,9 +344,9 @@ echo -e "${YELLOW}Attempting to repair configuration...${NC}"
         systemctl start zivpn.service
         sleep 3
         if systemctl is-active --quiet zivpn.service; then
-echo -e "${GREEN}✅ Service started after repair${NC}"
+echo -e "${GREEN}     ✅ Service started after repair${NC}"
         else
-echo -e "${RED}❌ Still failing after repair${NC}"
+echo -e "${RED}     ❌ Still failing after repair${NC}"
             return 1
         fi
     fi
@@ -406,13 +406,13 @@ echo -e "  ${RED}✗ Service: Not found${NC}"
     fi
     echo ""
     if [ $errors -eq 0 ] && [ $warnings -eq 0 ]; then
-        echo -e "${GREEN}✅ All components verified successfully${NC}"
+    echo -e "${GREEN}     ✅ All components verified successfully${NC}"
         return 0
     elif [ $errors -eq 0 ] && [ $warnings -gt 0 ]; then
-        echo -e "${YELLOW}⚠ Installation completed with $warnings warning(s)${NC}"
+    echo -e "${YELLOW}     ⚠️ Installation completed with $warnings warning(s)${NC}"
         return 0
     else
-        echo -e "${RED}❌ Installation has $errors error(s) and $warnings warning(s)${NC}"
+    echo -e "${RED}     ❌ Installation has $errors error(s) and $warnings warning(s)${NC}"
         return 1
     fi
 }
@@ -431,8 +431,8 @@ repair_config() {
   "key": "/etc/zivpn/zivpn.key",
   "obfs": "zivpn",
   "auth": {
-    "mode": "passwords",
-    "config": ["pondok123"]
+  "mode": "passwords",
+  "config": ["pondok123"]
   }
 }
 EOF
@@ -445,68 +445,68 @@ EOF
     fi
     chmod 600 /etc/zivpn/*
     chown root:root /etc/zivpn/*
-    echo -e "${GREEN}✓ Configuration repaired${NC}"
-    echo ""
+echo -e "${GREEN}✓ Configuration repaired${NC}"
+echo ""
 }
 install_menu() {
     log "${YELLOW}Installing menu manager...${NC}"
     if wget -q "$REPO_URL/udp-ziv/main/user_zivpn.sh" -O "$MENU_SCRIPT"; then
         chmod +x "$MENU_SCRIPT"
-        if ! grep -q "alias ziv=" /root/.bashrc; then
-            echo "alias ziv='zivpn-menu'" >> /root/.bashrc
-        fi
-        echo -e "${GREEN}✅ Menu manager installed${NC}"
-        echo -e "${CYAN}Type 'menu' to open management menu${NC}"
+    if ! grep -q "alias ziv=" /root/.bashrc; then
+echo "alias ziv='zivpn-menu'" >> /root/.bashrc
+    fi
+echo -e "${GREEN}     ✅ Menu manager installed${NC}"
+echo -e "${CYAN}Type 'menu' to open management menu${NC}"
         return 0
     else
-        echo -e "${YELLOW}⚠️  Menu manager download failed${NC}"
-        echo -e "${YELLOW}You can download it later manually${NC}"
+echo -e "${YELLOW}     ⚠️  Menu manager download failed${NC}"
+echo -e "${YELLOW}You can download it later manually${NC}"
         return 1
     fi
-    echo ""
+echo ""
 }
 show_summary() {
-    echo ""
-    echo -e "${BLUE}  ╔═════════════════════════════════════════════════════╗${NC}"
-    echo -e "${WHITE}             ✅ UDP ZIVPN BERHASIL TERINSTALL                ${NC}"
-    echo -e "${BLUE}  ╚═════════════════════════════════════════════════════╝${NC}"
-    echo ""
+echo ""
+echo -e "${BLUE}  ╔═════════════════════════════════════════════════════╗${NC}"
+echo -e "${WHITE}             ✅ UDP ZIVPN BERHASIL TERINSTALL                ${NC}"
+echo -e "${BLUE}  ╚═════════════════════════════════════════════════════╝${NC}"
+echo ""
     
-    echo -e "${YELLOW}     📦 SERVER INFORMATION:${NC}"
-    echo -e "       IP Address     : $SERVER_IP"
-    echo -e "       Port           : 5667 UDP"
-    echo -e "       Password       : pondok123"
-    echo ""
+echo -e "${YELLOW}     📦 SERVER INFORMATION:${NC}"
+echo -e "       IP Address     : $SERVER_IP"
+echo -e "       Port           : 5667 UDP"
+echo -e "       Password       : pondok123"
+echo ""
     
-    echo -e "${YELLOW}     🚀 QUICK COMMANDS:${NC}"
-    echo -e "       Check status    : ${GREEN}systemctl status zivpn${NC}"
-    echo -e "       Restart         : ${GREEN}systemctl restart zivpn${NC}"
-    echo -e "       View logs       : ${GREEN}journalctl -u zivpn -f${NC}"
+echo -e "${YELLOW}     🚀 QUICK COMMANDS:${NC}"
+echo -e "       Check status    : ${GREEN}systemctl status zivpn${NC}"
+echo -e "       Restart         : ${GREEN}systemctl restart zivpn${NC}"
+echo -e "       View logs       : ${GREEN}journalctl -u zivpn -f${NC}"
     
     if [ -f "$MENU_SCRIPT" ]; then
-    echo -e "       Open menu       : ${GREEN}ziv${NC}"
+echo -e "       Open menu       : ${GREEN}ziv${NC}"
     fi
     
-    echo ""
-    echo -e "${YELLOW}     🔧 CONFIGURATION:${NC}"
-    echo -e "       Config dir      : /etc/zivpn/"
-    echo -e "       Binary          : /usr/local/bin/zivpn"
-    echo -e "       Service file    : /etc/systemd/system/zivpn.service"
-    echo ""
+echo ""
+echo -e "${YELLOW}     🔧 CONFIGURATION:${NC}"
+echo -e "       Config dir      : /etc/zivpn/"
+echo -e "       Binary          : /usr/local/bin/zivpn"
+echo -e "       Service file    : /etc/systemd/system/zivpn.service"
+echo ""
     
     if [ -f /etc/zivpn/.license_info ]; then
         LICENSE_USER=$(head -1 /etc/zivpn/.license_info 2>/dev/null)
         LICENSE_EXP=$(tail -1 /etc/zivpn/.license_info 2>/dev/null)
-    echo -e "${CYAN}     📝 LICENSE INFORMATION:${NC}"
-    echo -e "       User           : $LICENSE_USER"
-    echo -e "       Expiry         : $LICENSE_EXP"
-    echo ""
+echo -e "${CYAN}     📝 LICENSE INFORMATION:${NC}"
+echo -e "       User           : $LICENSE_USER"
+echo -e "       Expiry         : $LICENSE_EXP"
+echo ""
     fi
     
-    echo -e "${BLUE}  ╔═════════════════════════════════════════════════════╗${NC}"
-    echo -e "${WHITE}              一═⌊✦⌉ 𝗣𝗢𝗡𝗗𝗢𝗞 𝗩𝗣𝗡 ⌊✦⌉═一                        ${NC}"
-    echo -e "${BLUE}  ╚═════════════════════════════════════════════════════╝${NC}"
-    echo ""
+echo -e "${BLUE}  ╔═════════════════════════════════════════════════════╗${NC}"
+echo -e "${WHITE}              一═⌊✦⌉ 𝗣𝗢𝗡𝗗𝗢𝗞 𝗩𝗣𝗡 ⌊✦⌉═一                        ${NC}"
+echo -e "${BLUE}  ╚═════════════════════════════════════════════════════╝${NC}"
+echo ""
 }
 #auto_start_menu() {
 #    if [ -f "$MENU_SCRIPT" ]; then
@@ -539,39 +539,39 @@ main() {
     setup_firewall
     ask_port_forward
     if ! start_service; then
-        echo -e "${RED}  ╔═════════════════════════════════════════════════════╗${NC}"
-        echo -e "${RED}                SERVICE FAILED TO START!                    ${NC}"
-        echo -e "${RED}  ╚═════════════════════════════════════════════════════╝${NC}"
-        echo ""
-        echo -e "${YELLOW}Trying manual repair...${NC}"
+echo -e "${RED}  ╔═════════════════════════════════════════════════════╗${NC}"
+echo -e "${RED}                SERVICE FAILED TO START!                    ${NC}"
+echo -e "${RED}  ╚═════════════════════════════════════════════════════╝${NC}"
+echo ""
+echo -e "${YELLOW}Trying manual repair...${NC}"
         
         repair_config
         systemctl daemon-reload
-        if start_service; then
-            echo -e "${GREEN}✅ Service started successfully after repair${NC}"
-        else
-            echo -e "${RED}❌ Service still failing after repair${NC}"
-            echo -e "${YELLOW}Please check:${NC}"
-            echo "1. journalctl -u zivpn -n 30"
-            echo "2. /usr/local/bin/zivpn server -c /etc/zivpn/config.json"
-            echo "3. Check if port 5667 is already in use"
-        fi
+    if start_service; then
+echo -e "${GREEN}     ✅ Service started successfully after repair${NC}"
+    else
+echo -e "${RED}     ❌ Service still failing after repair${NC}"
+echo -e "${YELLOW}Please check:${NC}"
+echo "1. journalctl -u zivpn -n 30"
+echo "2. /usr/local/bin/zivpn server -c /etc/zivpn/config.json"
+echo "3. Check if port 5667 is already in use"
+    fi
     fi
     install_menu
     show_summary
     #auto_start_menu
-    echo -e "${BLUE}  ╔═════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}  ║${YELLOW}            𝐊𝐄𝐓𝐈𝐊 𝐳𝐢𝐯 𝐔𝐍𝐓𝐔𝐊 𝐊𝐄 𝐌𝐄𝐍𝐔                        ${NC}"
-    echo -e "${BLUE}  ╚═════════════════════════════════════════════════════╝${NC}"
-    echo -e "${BLUE}  ═══════════════════════════════════════════════════════${NC}"
-    echo -e "${WHITE}        Kami melakukan ini bukan karena kami mampu           ${NC}"
-    echo -e "${WHITE}              Tapi karena kami tidak mampu.                  ${NC}"
-    echo ""
-    echo -e "${WHITE}               Dosa tanggung jawab masing2                   ${NC}"
-    echo -e "${WHITE}             Gunakan script ini dengan bijak                 ${NC}"
-    echo -e "${YELLOW}                          AUTOR :                            ${NC}"
-    echo -e "${YELLOW}                PONDOK VPN - @BENDAKEREP                     ${NC}"
-    echo -e "${BLUE}  ═══════════════════════════════════════════════════════${NC}"
+echo -e "${BLUE}  ╔═════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}  ║${YELLOW}            𝐊𝐄𝐓𝐈𝐊 𝐳𝐢𝐯 𝐔𝐍𝐓𝐔𝐊 𝐊𝐄 𝐌𝐄𝐍𝐔              ${NC}"
+echo -e "${BLUE}  ╚═════════════════════════════════════════════════════╝${NC}"
+echo -e "${BLUE}  ═══════════════════════════════════════════════════════${NC}"
+echo -e "${WHITE}        Kami melakukan ini bukan karena kami mampu           ${NC}"
+echo -e "${WHITE}              Tapi karena kami tidak mampu.                  ${NC}"
+echo ""
+echo -e "${WHITE}               Dosa tanggung jawab masing2                   ${NC}"
+echo -e "${WHITE}             Gunakan script ini dengan bijak                 ${NC}"
+echo -e "${YELLOW}                          AUTOR :                            ${NC}"
+echo -e "${YELLOW}                PONDOK VPN - @BENDAKEREP                     ${NC}"
+echo -e "${BLUE}  ═══════════════════════════════════════════════════════${NC}"
 
 }
 main
