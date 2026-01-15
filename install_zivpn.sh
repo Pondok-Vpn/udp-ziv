@@ -448,21 +448,39 @@ EOF
 echo -e "${GREEN}✓ Configuration repaired${NC}"
 echo ""
 }
+
 install_menu() {
-    log "${YELLOW}Installing menu manager...${NC}"
-    if wget -q "$REPO_URL/udp-ziv/main/user_zivpn.sh" -O "$MENU_SCRIPT"; then
-        chmod +x "$MENU_SCRIPT"
-    if ! grep -q "alias ziv=" /root/.bashrc; then
+      log "${YELLOW}Installing menu manager...${NC}"
+if wget -q "$REPO_URL/udp-ziv/main/user_zivpn.sh" -O "$MENU_SCRIPT"; then
+      chmod +x "$MENU_SCRIPT"
+      log "${YELLOW}Installing menu dependencies...${NC}"
+      apt-get install -y figlet > /dev/null 2>&1
+   if ! command -v lolcat &> /dev/null; then
+   if apt-get install -y lolcat 2>/dev/null; then
+      log "${GREEN}✓ lolcat installed via apt${NC}"
+   else
+   if apt-get install -y ruby 2>/dev/null && gem install lolcat 2>/dev/null; then
+      log "${GREEN}✓ lolcat installed via gem${NC}"
+   else
+   if apt-get install -y python3-pip 2>/dev/null && pip3 install lolcat 2>/dev/null; then
+      log "${GREEN}✓ lolcat installed via pip${NC}"
+   else
+      log "${YELLOW}  ⚠️ lolcat installation failed${NC}"
+   fi
+   fi
+   fi
+   fi
+   if ! grep -q "alias ziv=" /root/.bashrc; then
 echo "alias ziv='zivpn-menu'" >> /root/.bashrc
-    fi
+   fi
 echo -e "${GREEN}   ✅ Menu manager installed${NC}"
 echo -e "${CYAN}    Type 'ziv' to open management menu${NC}"
-        return 0
-    else
+return 0
+   else
 echo -e "${YELLOW}   ⚠️  Menu manager download failed${NC}"
 echo -e "${YELLOW}You can download it later manually${NC}"
-        return 1
-    fi
+return 1
+   fi
 echo ""
 }
 show_summary() {
