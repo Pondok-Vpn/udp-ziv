@@ -90,18 +90,12 @@ get_system_info() {
 
 # ═══( Display info panel )═══
 show_info_panel() {
-get_system_info
-clear
-echo ""
-echo -e "${BLUE}"
-   if command -v figlet &> /dev/null && command -v lolcat &> /dev/null; then
-      figlet -f small "PONDOK - VPN" | lolcat
-   elif command -v figlet &> /dev/null; then
-      figlet -f small "PONDOK - VPN"
-   else
-echo "PONDOK - VPN"
-   fi
-echo -e "${NC}"
+    get_system_info
+    clear
+    echo ""
+    echo -e "${BLUE}"
+    figlet -f small "PONDOK - VPN" | lolcat
+    echo -e "${NC}"
     echo -e "${BLUE}╔════════════════════════════════════════════════════╗${NC}"
     echo -e "${BLUE}║${WHITE}  IP VPS : ${CYAN}$(printf '%-15s' "$IP_ADDRESS")${WHITE}        HOST : ${CYAN}$(printf '%-20s' "$HOST_NAME")${NC}"
     echo -e "${BLUE}║${WHITE}  OS     : ${CYAN}$(printf '%-15s' "$OS_SHORT")${WHITE}        EXP  : ${CYAN}$(printf '%-20s' "$LICENSE_EXP")${NC}"
