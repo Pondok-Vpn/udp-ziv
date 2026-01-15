@@ -21,9 +21,9 @@ log() {
 }
 show_banner() {
     clear
-echo -e "${BLUE}╔═════════════════════════════════════════════════════╗${NC}"
-echo -e "${WHITE}                      ZIVPN HYBRID INSTALLER                     ${NC}"
-echo -e "${BLUE}╚═════════════════════════════════════════════════════╝${NC}"
+echo -e "${BLUE}  ╔═════════════════════════════════════════════════════╗${NC}"
+echo -e "${WHITE}                  ZIVPN HYBRID INSTALLER                     ${NC}"
+echo -e "${BLUE}  ╚═════════════════════════════════════════════════════╝${NC}"
 echo ""
 }
 
@@ -39,9 +39,9 @@ check_license() {
             EXPIRY_DATE=$(echo "$LICENSE_INFO" | awk '{print $3}')
             CURRENT_DATE=$(date +%Y-%m-%d)
             if [[ "$CURRENT_DATE" > "$EXPIRY_DATE" ]]; then
-echo -e "${RED}╔═════════════════════════════════════════════════════╗${NC}"
+echo -e "${RED}  ╔═════════════════════════════════════════════════════╗${NC}"
 echo -e "${RED}                     LICENSE EXPIRED!                         ${NC}"
-echo -e "${RED}╚═════════════════════════════════════════════════════╝${NC}"
+echo -e "${RED}  ╚═════════════════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "${YELLOW}IP: $SERVER_IP${NC}"
 echo -e "${YELLOW}Expired: $EXPIRY_DATE${NC}"
@@ -56,9 +56,9 @@ echo -e "${CYAN}✓ Expiry date: $EXPIRY_DATE${NC}"
 echo "$USER_NAME" > /etc/zivpn/.license_info
 echo "$EXPIRY_DATE" >> /etc/zivpn/.license_info
         else
-echo -e "${RED}╔═════════════════════════════════════════════════════╗${NC}"
+echo -e "${RED}  ╔═════════════════════════════════════════════════════╗${NC}"
 echo -e "${RED}                  UNAUTHORIZED INSTALLATION!                 ${NC}"
-echo -e "${RED}╚═════════════════════════════════════════════════════╝${NC}"
+echo -e "${RED}  ╚═════════════════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "${YELLOW}Your IP ($SERVER_IP) is not registered${NC}"
 echo ""
@@ -108,9 +108,9 @@ install_deps() {
     apt-get update -y
     apt-get upgrade -y
     apt-get install -y wget curl openssl net-tools iptables jq  # TAMBAH jq untuk validasi JSON
-echo -e "${BLUE}╔═════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}  ╔═════════════════════════════════════════════════════╗${NC}"
 echo -e "${WHITE}                 ✅ DEPENDENCIES INSTALLED                  ${NC}"
-echo -e "${BLUE}╚═════════════════════════════════════════════════════╝${NC}"
+echo -e "${BLUE}  ╚═════════════════════════════════════════════════════╝${NC}"
 echo ""
 }
 download_binary() {
@@ -317,15 +317,15 @@ start_service() {
     systemctl start zivpn.service
     sleep 5
     if systemctl is-active --quiet zivpn.service; then
-echo -e "${GREEN}✅ Service: RUNNING${NC}"
+echo -e "${GREEN}     ✅ Service: RUNNING${NC}"
         sleep 3
         if ss -tulpn | grep -q ":5667"; then
-echo -e "${GREEN}✅ Port 5667: LISTENING${NC}"
+echo -e "${GREEN}     ✅ Port 5667: LISTENING${NC}"
             if command -v timeout >/dev/null 2>&1 && command -v nc >/dev/null 2>&1; then
                 if timeout 2 bash -c "cat < /dev/null > /dev/tcp/127.0.0.1/5667" 2>/dev/null; then
-echo -e "${GREEN}✅ Port 5667: ACCEPTING CONNECTIONS${NC}"
+echo -e "${GREEN}     ✅ Port 5667: ACCEPTING CONNECTIONS${NC}"
                 else
-echo -e "${YELLOW}⚠️  Port 5667: NOT ACCEPTING TCP CONNECTIONS (UDP only)${NC}"
+echo -e "${YELLOW}     ⚠️  Port 5667: NOT ACCEPTING TCP CONNECTIONS (UDP only)${NC}"
                 fi
             fi
         else
@@ -467,9 +467,9 @@ install_menu() {
 }
 show_summary() {
     echo ""
-    echo -e "${BLUE}╔═════════════════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}  ╔═════════════════════════════════════════════════════╗${NC}"
     echo -e "${WHITE}             ✅ UDP ZIVPN BERHASIL TERINSTALL                ${NC}"
-    echo -e "${BLUE}╚═════════════════════════════════════════════════════╝${NC}"
+    echo -e "${BLUE}  ╚═════════════════════════════════════════════════════╝${NC}"
     echo ""
     
     echo -e "${YELLOW}     📦 SERVER INFORMATION:${NC}"
@@ -503,9 +503,9 @@ show_summary() {
     echo ""
     fi
     
-    echo -e "${BLUE}╔═════════════════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}  ╔═════════════════════════════════════════════════════╗${NC}"
     echo -e "${WHITE}              一═⌊✦⌉ 𝗣𝗢𝗡𝗗𝗢𝗞 𝗩𝗣𝗡 ⌊✦⌉═一                        ${NC}"
-    echo -e "${BLUE}╚═════════════════════════════════════════════════════╝${NC}"
+    echo -e "${BLUE}  ╚═════════════════════════════════════════════════════╝${NC}"
     echo ""
 }
 #auto_start_menu() {
@@ -539,9 +539,9 @@ main() {
     setup_firewall
     ask_port_forward
     if ! start_service; then
-        echo -e "${RED}╔═════════════════════════════════════════════════════╗${NC}"
+        echo -e "${RED}  ╔═════════════════════════════════════════════════════╗${NC}"
         echo -e "${RED}                SERVICE FAILED TO START!                    ${NC}"
-        echo -e "${RED}╚═════════════════════════════════════════════════════╝${NC}"
+        echo -e "${RED}  ╚═════════════════════════════════════════════════════╝${NC}"
         echo ""
         echo -e "${YELLOW}Trying manual repair...${NC}"
         
@@ -560,18 +560,18 @@ main() {
     install_menu
     show_summary
     #auto_start_menu
-    echo -e "${BLUE}╔═════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║${RED}         𝐊𝐄𝐓𝐈𝐊 𝐳𝐢𝐯 𝐔𝐍𝐓𝐔𝐊 𝐊𝐄 𝐌𝐄𝐍𝐔                        ${NC}"
-    echo -e "${BLUE}╚═════════════════════════════════════════════════════╝${NC}"
-    echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
-    echo -e "${WHITE}         Kami melakukan ini bukan karena kami mampu           ${NC}"
-    echo -e "${WHITE}               Tapi karena kami tidak mampu.                  ${NC}"
+    echo -e "${BLUE}  ╔═════════════════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}  ║${YELLOW}            𝐊𝐄𝐓𝐈𝐊 𝐳𝐢𝐯 𝐔𝐍𝐓𝐔𝐊 𝐊𝐄 𝐌𝐄𝐍𝐔                        ${NC}"
+    echo -e "${BLUE}  ╚═════════════════════════════════════════════════════╝${NC}"
+    echo -e "${BLUE}  ═══════════════════════════════════════════════════════${NC}"
+    echo -e "${WHITE}        Kami melakukan ini bukan karena kami mampu           ${NC}"
+    echo -e "${WHITE}              Tapi karena kami tidak mampu.                  ${NC}"
     echo ""
-    echo -e "${WHITE}                Dosa tanggung jawab masing2                   ${NC}"
-    echo -e "${WHITE}              Gunakan script ini dengan bijak                 ${NC}"
-    echo -e "${YELLOW}                           AUTOR :                            ${NC}"
-    echo -e "${YELLOW}                 PONDOK VPN - @BENDAKEREP                     ${NC}"
-    echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
+    echo -e "${WHITE}               Dosa tanggung jawab masing2                   ${NC}"
+    echo -e "${WHITE}             Gunakan script ini dengan bijak                 ${NC}"
+    echo -e "${YELLOW}                          AUTOR :                            ${NC}"
+    echo -e "${YELLOW}                PONDOK VPN - @BENDAKEREP                     ${NC}"
+    echo -e "${BLUE}  ═══════════════════════════════════════════════════════${NC}"
 
 }
 main
