@@ -456,7 +456,7 @@ install_menu() {
 echo "alias ziv='zivpn-menu'" >> /root/.bashrc
     fi
 echo -e "${GREEN}   ✅ Menu manager installed${NC}"
-echo -e "${CYAN}Type 'menu' to open management menu${NC}"
+echo -e "${CYAN}    Type 'ziv' to open management menu${NC}"
         return 0
     else
 echo -e "${YELLOW}   ⚠️  Menu manager download failed${NC}"
