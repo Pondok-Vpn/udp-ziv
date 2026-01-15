@@ -506,22 +506,22 @@ echo ""
 echo -e "${BLUE}  ╚═════════════════════════════════════════════════════╝${NC}"
 echo ""
 }
-#auto_start_menu() {
-#    if [ -f "$MENU_SCRIPT" ]; then
-#        echo -e "${YELLOW}Menu will open in 3 seconds...${NC}"
-#        echo -e "${YELLOW}Press Ctrl+C to cancel${NC}"
-#        echo ""
-#        for i in {3..1}; do
-#            echo -ne "${YELLOW}Starting in $i seconds...\033[0K\r${NC}"
-#            sleep 1
-#        done
-#        echo ""
-#        "$MENU_SCRIPT"
-#    else
-#        echo -e "${YELLOW}Type 'systemctl status zivpn' to check service${NC}"
-#        echo ""
-#    fi
-#}
+auto_start_menu() {
+    if [ -f "$MENU_SCRIPT" ]; then
+        echo -e "${YELLOW}Menu will open in 3 seconds...${NC}"
+        echo -e "${YELLOW}Press Ctrl+C to cancel${NC}"
+        echo ""
+        for i in {3..1}; do
+            echo -ne "${YELLOW}Starting in $i seconds...\033[0K\r${NC}"
+            sleep 1
+        done
+        echo ""
+        "$MENU_SCRIPT"
+    else
+        echo -e "${YELLOW}Type 'systemctl status zivpn' to check service${NC}"
+        echo ""
+    fi
+}
 
 main() {
     show_banner
@@ -557,19 +557,19 @@ echo "3. Check if port 5667 is already in use"
     fi
     install_menu
     show_summary
-    #auto_start_menu
-echo -e "${BLUE}  ╔═════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}  ║${YELLOW}             𝐊𝐄𝐓𝐈𝐊 𝐳𝐢𝐯 𝐔𝐍𝐓𝐔𝐊 𝐊𝐄 𝐌𝐄𝐍𝐔              ${NC}"
-echo -e "${BLUE}  ╚═════════════════════════════════════════════════════╝${NC}"
-echo -e "${BLUE}  ═══════════════════════════════════════════════════════${NC}"
-echo -e "${WHITE}        Kami melakukan ini bukan karena kami mampu           ${NC}"
-echo -e "${WHITE}              Tapi karena kami tidak mampu.                  ${NC}"
-echo ""
-echo -e "${WHITE}               Dosa tanggung jawab masing2                   ${NC}"
-echo -e "${WHITE}             Gunakan script ini dengan bijak                 ${NC}"
-echo -e "${YELLOW}                          AUTOR :                            ${NC}"
-echo -e "${YELLOW}                PONDOK VPN - @BENDAKEREP                     ${NC}"
-echo -e "${BLUE}  ═══════════════════════════════════════════════════════${NC}"
+    auto_start_menu
+#echo -e "${BLUE}  ╔═════════════════════════════════════════════════════╗${NC}"
+#echo -e "${BLUE}  ║${YELLOW}             𝐊𝐄𝐓𝐈𝐊 𝐳𝐢𝐯 𝐔𝐍𝐓𝐔𝐊 𝐊𝐄 𝐌𝐄𝐍𝐔              ${NC}"
+#echo -e "${BLUE}  ╚═════════════════════════════════════════════════════╝${NC}"
+#echo -e "${BLUE}  ═══════════════════════════════════════════════════════${NC}"
+#echo -e "${WHITE}        Kami melakukan ini bukan karena kami mampu           ${NC}"
+#echo -e "${WHITE}              Tapi karena kami tidak mampu.                  ${NC}"
+#echo ""
+#echo -e "${WHITE}               Dosa tanggung jawab masing2                   ${NC}"
+#echo -e "${WHITE}             Gunakan script ini dengan bijak                 ${NC}"
+#echo -e "${YELLOW}                          AUTOR :                            ${NC}"
+#echo -e "${YELLOW}                PONDOK VPN - @BENDAKEREP                     ${NC}"
+#echo -e "${BLUE}  ═══════════════════════════════════════════════════════${NC}"
 
 }
 main
