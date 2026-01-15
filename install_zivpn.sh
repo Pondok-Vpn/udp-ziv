@@ -22,7 +22,7 @@ log() {
 show_banner() {
     clear
 echo -e "${BLUE}╔═════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}                      ZIVPN HYBRID INSTALLER                     ${NC}"
+echo -e "${WHITE}                      ZIVPN HYBRID INSTALLER                     ${NC}"
 echo -e "${BLUE}╚═════════════════════════════════════════════════════╝${NC}"
 echo ""
 }
@@ -40,7 +40,7 @@ check_license() {
             CURRENT_DATE=$(date +%Y-%m-%d)
             if [[ "$CURRENT_DATE" > "$EXPIRY_DATE" ]]; then
 echo -e "${RED}╔═════════════════════════════════════════════════════╗${NC}"
-echo -e "${RED}                        LICENSE EXPIRED!                         ${NC}"
+echo -e "${RED}                     LICENSE EXPIRED!                         ${NC}"
 echo -e "${RED}╚═════════════════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "${YELLOW}IP: $SERVER_IP${NC}"
@@ -57,7 +57,7 @@ echo "$USER_NAME" > /etc/zivpn/.license_info
 echo "$EXPIRY_DATE" >> /etc/zivpn/.license_info
         else
 echo -e "${RED}╔═════════════════════════════════════════════════════╗${NC}"
-echo -e "${RED}                      UNAUTHORIZED INSTALLATION!                 ${NC}"
+echo -e "${RED}                  UNAUTHORIZED INSTALLATION!                 ${NC}"
 echo -e "${RED}╚═════════════════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "${YELLOW}Your IP ($SERVER_IP) is not registered${NC}"
@@ -108,9 +108,9 @@ install_deps() {
     apt-get update -y
     apt-get upgrade -y
     apt-get install -y wget curl openssl net-tools iptables jq  # TAMBAH jq untuk validasi JSON
-echo -e "${YELLOW}╔═════════════════════════════════════════════════════╗${NC}"
-echo -e "${YELLOW}                      ✅ DEPENDENCIES INSTALLED                  ${NC}"
-echo -e "${YELLOW}╚═════════════════════════════════════════════════════╝${NC}"
+echo -e "${BLUE}╔═════════════════════════════════════════════════════╗${NC}"
+echo -e "${WHITE}                 ✅ DEPENDENCIES INSTALLED                  ${NC}"
+echo -e "${BLUE}╚═════════════════════════════════════════════════════╝${NC}"
 echo ""
 }
 download_binary() {
@@ -467,45 +467,45 @@ install_menu() {
 }
 show_summary() {
     echo ""
-    echo -e "${YELLOW}╔═════════════════════════════════════════════════════╗${NC}"
-    echo -e "${YELLOW}                 ✅ UDP ZIVPN BERHASIL TERINSTALL                ${NC}"
-    echo -e "${YELLOW}╚═════════════════════════════════════════════════════╝${NC}"
+    echo -e "${BLUE}╔═════════════════════════════════════════════════════╗${NC}"
+    echo -e "${WHITE}             ✅ UDP ZIVPN BERHASIL TERINSTALL                ${NC}"
+    echo -e "${BLUE}╚═════════════════════════════════════════════════════╝${NC}"
     echo ""
     
-    echo -e "${YELLOW}📦 SERVER INFORMATION:${NC}"
-    echo -e "  IP Address  : $SERVER_IP"
-    echo -e "  Port        : 5667 UDP"
-    echo -e "  Password    : pondok123"
+    echo -e "${YELLOW}     📦 SERVER INFORMATION:${NC}"
+    echo -e "       IP Address     : $SERVER_IP"
+    echo -e "       Port           : 5667 UDP"
+    echo -e "       Password       : pondok123"
     echo ""
     
-    echo -e "${YELLOW}🚀 QUICK COMMANDS:${NC}"
-    echo -e "  Check status : ${GREEN}systemctl status zivpn${NC}"
-    echo -e "  Restart      : ${GREEN}systemctl restart zivpn${NC}"
-    echo -e "  View logs    : ${GREEN}journalctl -u zivpn -f${NC}"
+    echo -e "${YELLOW}     🚀 QUICK COMMANDS:${NC}"
+    echo -e "       Check status    : ${GREEN}systemctl status zivpn${NC}"
+    echo -e "       Restart         : ${GREEN}systemctl restart zivpn${NC}"
+    echo -e "       View logs       : ${GREEN}journalctl -u zivpn -f${NC}"
     
     if [ -f "$MENU_SCRIPT" ]; then
-        echo -e "  Open menu    : ${GREEN}ziv${NC}"
+    echo -e "       Open menu       : ${GREEN}ziv${NC}"
     fi
     
     echo ""
-    echo -e "${YELLOW}🔧 CONFIGURATION:${NC}"
-    echo -e "  Config dir   : /etc/zivpn/"
-    echo -e "  Binary       : /usr/local/bin/zivpn"
-    echo -e "  Service file : /etc/systemd/system/zivpn.service"
+    echo -e "${YELLOW}     🔧 CONFIGURATION:${NC}"
+    echo -e "       Config dir      : /etc/zivpn/"
+    echo -e "       Binary          : /usr/local/bin/zivpn"
+    echo -e "       Service file    : /etc/systemd/system/zivpn.service"
     echo ""
     
     if [ -f /etc/zivpn/.license_info ]; then
         LICENSE_USER=$(head -1 /etc/zivpn/.license_info 2>/dev/null)
         LICENSE_EXP=$(tail -1 /etc/zivpn/.license_info 2>/dev/null)
-        echo -e "${CYAN}📝 LICENSE INFORMATION:${NC}"
-        echo -e "  User        : $LICENSE_USER"
-        echo -e "  Expiry      : $LICENSE_EXP"
-        echo ""
+    echo -e "${CYAN}     📝 LICENSE INFORMATION:${NC}"
+    echo -e "       User           : $LICENSE_USER"
+    echo -e "       Expiry         : $LICENSE_EXP"
+    echo ""
     fi
     
-    echo -e "${YELLOW}╔═════════════════════════════════════════════════════╗${NC}"
-    echo -e "${YELLOW}                   一═⌊✦⌉ 𝗣𝗢𝗡𝗗𝗢𝗞 𝗩𝗣𝗡 ⌊✦⌉═一                        ${NC}"
-    echo -e "${YELLOW}╚═════════════════════════════════════════════════════╝${NC}"
+    echo -e "${BLUE}╔═════════════════════════════════════════════════════╗${NC}"
+    echo -e "${WHITE}              一═⌊✦⌉ 𝗣𝗢𝗡𝗗𝗢𝗞 𝗩𝗣𝗡 ⌊✦⌉═一                        ${NC}"
+    echo -e "${BLUE}╚═════════════════════════════════════════════════════╝${NC}"
     echo ""
 }
 #auto_start_menu() {
@@ -540,7 +540,7 @@ main() {
     ask_port_forward
     if ! start_service; then
         echo -e "${RED}╔═════════════════════════════════════════════════════╗${NC}"
-        echo -e "${RED}                     SERVICE FAILED TO START!                    ${NC}"
+        echo -e "${RED}                SERVICE FAILED TO START!                    ${NC}"
         echo -e "${RED}╚═════════════════════════════════════════════════════╝${NC}"
         echo ""
         echo -e "${YELLOW}Trying manual repair...${NC}"
@@ -561,7 +561,7 @@ main() {
     show_summary
     #auto_start_menu
     echo -e "${BLUE}╔═════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║${WHITE}           𝐊𝐄𝐓𝐈𝐊 𝐳𝐢𝐯 𝐔𝐍𝐓𝐔𝐊 𝐊𝐄 𝐌𝐄𝐍𝐔           ${BLUE}║${NC}"
+    echo -e "${BLUE}║${WHITE}         𝐊𝐄𝐓𝐈𝐊 𝐳𝐢𝐯 𝐔𝐍𝐓𝐔𝐊 𝐊𝐄 𝐌𝐄𝐍𝐔        ${BLUE}║${NC}"
     echo -e "${BLUE}╚═════════════════════════════════════════════════════╝${NC}"
     echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
     echo -e "${WHITE}           Kami melakukan ini bukan karena kami mampu           ${NC}"
