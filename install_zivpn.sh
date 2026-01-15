@@ -412,7 +412,7 @@ echo -e "  ${RED}✗ Service: Not found${NC}"
     echo -e "${YELLOW}     ⚠️ Installation completed with $warnings warning(s)${NC}"
         return 0
     else
-    echo -e "${RED}     ❌ Installation has $errors error(s) and $warnings warning(s)${NC}"
+    echo -e "${RED}❌ Installation has $errors error(s) and $warnings warning(s)${NC}"
         return 1
     fi
 }
@@ -504,7 +504,7 @@ echo ""
     fi
     
 echo -e "${BLUE}  ╔═════════════════════════════════════════════════════╗${NC}"
-echo -e "${WHITE}              一═⌊✦⌉ 𝗣𝗢𝗡𝗗𝗢𝗞 𝗩𝗣𝗡 ⌊✦⌉═一                        ${NC}"
+echo -e "${WHITE}                一═⌊✦⌉ 𝗣𝗢𝗡𝗗𝗢𝗞 𝗩𝗣𝗡 ⌊✦⌉═一                        ${NC}"
 echo -e "${BLUE}  ╚═════════════════════════════════════════════════════╝${NC}"
 echo ""
 }
@@ -561,7 +561,7 @@ echo "3. Check if port 5667 is already in use"
     show_summary
     #auto_start_menu
 echo -e "${BLUE}  ╔═════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}  ║${YELLOW}            𝐊𝐄𝐓𝐈𝐊 𝐳𝐢𝐯 𝐔𝐍𝐓𝐔𝐊 𝐊𝐄 𝐌𝐄𝐍𝐔              ${NC}"
+echo -e "${BLUE}  ║${YELLOW}             𝐊𝐄𝐓𝐈𝐊 𝐳𝐢𝐯 𝐔𝐍𝐓𝐔𝐊 𝐊𝐄 𝐌𝐄𝐍𝐔              ${NC}"
 echo -e "${BLUE}  ╚═════════════════════════════════════════════════════╝${NC}"
 echo -e "${BLUE}  ═══════════════════════════════════════════════════════${NC}"
 echo -e "${WHITE}        Kami melakukan ini bukan karena kami mampu           ${NC}"
