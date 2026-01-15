@@ -17,18 +17,12 @@ LIGHT_CYAN='\033[1;96m'
 WHITE='\033[1;37m'
 NC='\033[0m'
 
-# Paths
 CONFIG_DIR="/etc/zivpn"
 CONFIG_FILE="$CONFIG_DIR/config.json"
 USER_DB="$CONFIG_DIR/users.db"
 LOG_FILE="/var/log/zivpn_menu.log"
 TELEGRAM_CONF="$CONFIG_DIR/telegram.conf"
 BACKUP_DIR="/var/backups/zivpn"
-
-# ═══( Logging )═══
-log_action() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
-}
 
 # ═══( install figlet & lolcat )═══
 check_and_install_figlet() {
@@ -43,7 +37,10 @@ check_and_install_figlet() {
         apt-get install -y lolcat > /dev/null 2>&1
     fi
 }
-
+# ═══( Logging )═══
+log_action() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
+}
 # ═══( Get system info )═══
 get_system_info() {
     # IP Address
@@ -107,10 +104,7 @@ get_system_info() {
 # ═══( Display info panel )═══
 show_info_panel() {
     get_system_info
-    
     clear
-    
-    check_and_install_figlet
     echo ""
     echo -e "${BLUE}"
     figlet -f small "PONDOK - VPN" | lolcat
@@ -992,15 +986,13 @@ auto_backup_setup() {
     
     read -p "Tekan Enter untuk kembali..."
 }
-
 # ═══( Main loop )═══
 main_menu() {
     while true; do
-        
-        check_expired_accounts
-        check_multi_login
         show_info_panel
         show_main_menu
+        check_expired_accounts
+        check_multi_login
         echo ""
         read -p "Pilih menu (0-7): " choice
         case $choice in
