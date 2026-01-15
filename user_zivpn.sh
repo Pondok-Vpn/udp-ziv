@@ -24,19 +24,6 @@ LOG_FILE="/var/log/zivpn_menu.log"
 TELEGRAM_CONF="$CONFIG_DIR/telegram.conf"
 BACKUP_DIR="/var/backups/zivpn"
 
-# ═══( install figlet & lolcat )═══
-check_and_install_figlet() {
-    if ! command -v figlet &> /dev/null; then
-        echo -e "${YELLOW}Installing figlet...${NC}"
-        apt-get update > /dev/null 2>&1
-        apt-get install -y figlet > /dev/null 2>&1
-    fi
-    
-    if ! command -v lolcat &> /dev/null; then
-        echo -e "${YELLOW}Installing lolcat...${NC}"
-        apt-get install -y lolcat > /dev/null 2>&1
-    fi
-}
 # ═══( Logging )═══
 log_action() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
@@ -103,12 +90,18 @@ get_system_info() {
 
 # ═══( Display info panel )═══
 show_info_panel() {
-    get_system_info
-    clear
-    echo ""
-    echo -e "${BLUE}"
-    figlet -f small "PONDOK - VPN" | lolcat
-    echo -e "${NC}"
+get_system_info
+clear
+echo ""
+echo -e "${BLUE}"
+   if command -v figlet &> /dev/null && command -v lolcat &> /dev/null; then
+      figlet -f small "PONDOK - VPN" | lolcat
+   elif command -v figlet &> /dev/null; then
+      figlet -f small "PONDOK - VPN"
+   else
+echo "PONDOK - VPN"
+   fi
+echo -e "${NC}"
     echo -e "${BLUE}╔════════════════════════════════════════════════════╗${NC}"
     echo -e "${BLUE}║${WHITE}  IP VPS : ${CYAN}$(printf '%-15s' "$IP_ADDRESS")${WHITE}        HOST : ${CYAN}$(printf '%-20s' "$HOST_NAME")${NC}"
     echo -e "${BLUE}║${WHITE}  OS     : ${CYAN}$(printf '%-15s' "$OS_SHORT")${WHITE}        EXP  : ${CYAN}$(printf '%-20s' "$LICENSE_EXP")${NC}"
