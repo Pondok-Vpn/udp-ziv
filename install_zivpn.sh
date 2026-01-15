@@ -28,17 +28,17 @@ echo ""
 }
 
 check_license() {
-    log "${YELLOW}Checking license...${NC}"
-    SERVER_IP=$(curl -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
-    log "${CYAN}SERVER IP: $SERVER_IP${NC}"
-    LICENSE_FILE=$(mktemp)
+       log "${YELLOW}Checking license...${NC}"
+       SERVER_IP=$(curl -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
+       log "${CYAN}SERVER IP: $SERVER_IP${NC}"
+       LICENSE_FILE=$(mktemp)
     if curl -s "$LICENSE_URL" -o "$LICENSE_FILE" 2>/dev/null; then
-        if grep -q "^$SERVER_IP" "$LICENSE_FILE"; then
-            LICENSE_INFO=$(grep "^$SERVER_IP" "$LICENSE_FILE")
-            USER_NAME=$(echo "$LICENSE_INFO" | awk '{print $2}')
-            EXPIRY_DATE=$(echo "$LICENSE_INFO" | awk '{print $3}')
-            CURRENT_DATE=$(date +%Y-%m-%d)
-            if [[ "$CURRENT_DATE" > "$EXPIRY_DATE" ]]; then
+    if grep -q "^$SERVER_IP" "$LICENSE_FILE"; then
+       LICENSE_INFO=$(grep "^$SERVER_IP" "$LICENSE_FILE")
+       USER_NAME=$(echo "$LICENSE_INFO" | awk '{print $2}')
+       EXPIRY_DATE=$(echo "$LICENSE_INFO" | awk '{print $3}')
+       CURRENT_DATE=$(date +%Y-%m-%d)
+    if [[ "$CURRENT_DATE" > "$EXPIRY_DATE" ]]; then
 echo -e "${RED}  ╔═════════════════════════════════════════════════════╗${NC}"
 echo -e "${RED}                     LICENSE EXPIRED!                         ${NC}"
 echo -e "${RED}  ╚═════════════════════════════════════════════════════╝${NC}"
@@ -64,8 +64,8 @@ echo -e "${YELLOW}Your IP ($SERVER_IP) is not registered${NC}"
 echo ""
 echo -e "${CYAN}Contact @bendakerep for license${NC}"
             rm -f "$LICENSE_FILE"
-            exit 1
-        fi
+    exit 1
+    fi
         rm -f "$LICENSE_FILE"
     else
 echo -e "${YELLOW}⚠️  Cannot connect to license server${NC}"
@@ -137,16 +137,16 @@ download_binary() {
     for url in "${SOURCES[@]}"; do
         log "${CYAN}Trying: $(echo $url | cut -d'/' -f3)...${NC}"
         
-        if wget --timeout=30 -q "$url" -O /usr/local/bin/zivpn; then
-            if [ -f /usr/local/bin/zivpn ]; then
+    if wget --timeout=30 -q "$url" -O /usr/local/bin/zivpn; then
+    if [ -f /usr/local/bin/zivpn ]; then
                 FILE_SIZE=$(stat -c%s /usr/local/bin/zivpn 2>/dev/null || echo 0)
-                if [ $FILE_SIZE -gt 1000000 ]; then
+    if [ $FILE_SIZE -gt 1000000 ]; then
                     chmod +x /usr/local/bin/zivpn
 echo -e "${GREEN}✓ Binary downloaded ($((FILE_SIZE/1024/1024))MB)${NC}"
                     return 0
-                fi
-            fi
-        fi
+    fi
+    fi
+    fi
         rm -f /usr/local/bin/zivpn 2>/dev/null
     done
     log "${RED}❌ FATAL: Cannot download binary!${NC}"
