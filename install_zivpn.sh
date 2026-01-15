@@ -40,7 +40,7 @@ check_license() {
             CURRENT_DATE=$(date +%Y-%m-%d)
             if [[ "$CURRENT_DATE" > "$EXPIRY_DATE" ]]; then
 echo -e "${RED}╔═════════════════════════════════════════════════════╗${NC}"
-echo -e "${RED}                         LICENSE EXPIRED!                       ${NC}"
+echo -e "${RED}                        LICENSE EXPIRED!                         ${NC}"
 echo -e "${RED}╚═════════════════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "${YELLOW}IP: $SERVER_IP${NC}"
@@ -56,9 +56,9 @@ echo -e "${CYAN}✓ Expiry date: $EXPIRY_DATE${NC}"
 echo "$USER_NAME" > /etc/zivpn/.license_info
 echo "$EXPIRY_DATE" >> /etc/zivpn/.license_info
         else
-echo -e "${RED}========================================${NC}"
-echo -e "${RED}     UNAUTHORIZED INSTALLATION!        ${NC}"
-echo -e "${RED}========================================${NC}"
+echo -e "${RED}╔═════════════════════════════════════════════════════╗${NC}"
+echo -e "${RED}                      UNAUTHORIZED INSTALLATION!                 ${NC}"
+echo -e "${RED}╚═════════════════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "${YELLOW}Your IP ($SERVER_IP) is not registered${NC}"
 echo ""
@@ -108,9 +108,9 @@ install_deps() {
     apt-get update -y
     apt-get upgrade -y
     apt-get install -y wget curl openssl net-tools iptables jq  # TAMBAH jq untuk validasi JSON
-echo -e "${GREEN}========================================${NC}"
-echo -e "${GREEN}   ✅ Dependencies installed${NC}"
-echo -e "${GREEN}========================================${NC}"
+echo -e "${YELLOW}╔═════════════════════════════════════════════════════╗${NC}"
+echo -e "${YELLOW}                      ✅ DEPENDENCIES INSTALLED                  ${NC}"
+echo -e "${YELLOW}╚═════════════════════════════════════════════════════╝${NC}"
 echo ""
 }
 download_binary() {
@@ -468,7 +468,7 @@ install_menu() {
 show_summary() {
     echo ""
     echo -e "${YELLOW}╔═════════════════════════════════════════════════════╗${NC}"
-    echo -e "${YELLOW}║${YELLOW}             ✅ UDP ZIVPN BERHASIL TERINSTALL             ${YELLOW}║${NC}"
+    echo -e "${YELLOW}                 ✅ UDP ZIVPN BERHASIL TERINSTALL                ${NC}"
     echo -e "${YELLOW}╚═════════════════════════════════════════════════════╝${NC}"
     echo ""
     
@@ -504,7 +504,7 @@ show_summary() {
     fi
     
     echo -e "${YELLOW}╔═════════════════════════════════════════════════════╗${NC}"
-    echo -e "${YELLOW}║${YELLOW}             一═⌊✦⌉ 𝗣𝗢𝗡𝗗𝗢𝗞 𝗩𝗣𝗡 ⌊✦⌉═一             ${YELLOW}║${NC}"
+    echo -e "${YELLOW}                   一═⌊✦⌉ 𝗣𝗢𝗡𝗗𝗢𝗞 𝗩𝗣𝗡 ⌊✦⌉═一                        ${NC}"
     echo -e "${YELLOW}╚═════════════════════════════════════════════════════╝${NC}"
     echo ""
 }
@@ -540,7 +540,7 @@ main() {
     ask_port_forward
     if ! start_service; then
         echo -e "${RED}╔═════════════════════════════════════════════════════╗${NC}"
-        echo -e "${RED}║${RED}           SERVICE FAILED TO START!           ${RED}║${NC}"
+        echo -e "${RED}                     SERVICE FAILED TO START!                    ${NC}"
         echo -e "${RED}╚═════════════════════════════════════════════════════╝${NC}"
         echo ""
         echo -e "${YELLOW}Trying manual repair...${NC}"
