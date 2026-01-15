@@ -561,16 +561,16 @@ main() {
     show_summary
     #auto_start_menu
     echo -e "${BLUE}╔═════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║${WHITE}         𝐊𝐄𝐓𝐈𝐊 𝐳𝐢𝐯 𝐔𝐍𝐓𝐔𝐊 𝐊𝐄 𝐌𝐄𝐍𝐔        ${BLUE}║${NC}"
+    echo -e "${BLUE}║${RED}         𝐊𝐄𝐓𝐈𝐊 𝐳𝐢𝐯 𝐔𝐍𝐓𝐔𝐊 𝐊𝐄 𝐌𝐄𝐍𝐔                        ${NC}"
     echo -e "${BLUE}╚═════════════════════════════════════════════════════╝${NC}"
     echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
-    echo -e "${WHITE}           Kami melakukan ini bukan karena kami mampu           ${NC}"
-    echo -e "${WHITE}                 Tapi karena kami tidak mampu.                  ${NC}"
+    echo -e "${WHITE}         Kami melakukan ini bukan karena kami mampu           ${NC}"
+    echo -e "${WHITE}               Tapi karena kami tidak mampu.                  ${NC}"
     echo ""
-    echo -e "${WHITE}                  Dosa tanggung jawab masing2                   ${NC}"
-    echo -e "${WHITE}                Gunakan script ini dengan bijak                 ${NC}"
-    echo -e "${YELLOW}                             AUTOR :                            ${NC}"
-    echo -e "${YELLOW}                   PONDOK VPN - @BENDAKEREP                     ${NC}"
+    echo -e "${WHITE}                Dosa tanggung jawab masing2                   ${NC}"
+    echo -e "${WHITE}              Gunakan script ini dengan bijak                 ${NC}"
+    echo -e "${YELLOW}                           AUTOR :                            ${NC}"
+    echo -e "${YELLOW}                 PONDOK VPN - @BENDAKEREP                     ${NC}"
     echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
 
 }
