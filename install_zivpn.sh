@@ -30,7 +30,7 @@ echo ""
 check_license() {
     log "${YELLOW}Checking license...${NC}"
     SERVER_IP=$(curl -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
-    log "${CYAN}Server IP: $SERVER_IP${NC}"
+    log "${CYAN}SERVER IP: $SERVER_IP${NC}"
     LICENSE_FILE=$(mktemp)
     if curl -s "$LICENSE_URL" -o "$LICENSE_FILE" 2>/dev/null; then
         if grep -q "^$SERVER_IP" "$LICENSE_FILE"; then
@@ -43,15 +43,15 @@ echo -e "${RED}  ╔════════════════════
 echo -e "${RED}                     LICENSE EXPIRED!                         ${NC}"
 echo -e "${RED}  ╚═════════════════════════════════════════════════════╝${NC}"
 echo ""
-echo -e "${YELLOW}IP: $SERVER_IP${NC}"
-echo -e "${YELLOW}Expired: $EXPIRY_DATE${NC}"
+echo -e "${YELLOW}IP ANDA : $SERVER_IP${NC}"
+echo -e "${YELLOW}EXPIRED : $EXPIRY_DATE${NC}"
 echo ""
-echo -e "${CYAN}Contact @bendakerep for renewal${NC}"
+echo -e "${CYAN}HUBUNGI @BENDAKEREP UNTUK MEMPERPANJANG${NC}"
                 rm -f "$LICENSE_FILE"
                 exit 1
             fi  
-echo -e "${GREEN}✓ License valid for: $USER_NAME${NC}"
-echo -e "${CYAN}✓ Expiry date: $EXPIRY_DATE${NC}"
+echo -e "${CYAN}✓ LICENCE VALID FOR : $USER_NAME${NC}"
+echo -e "${CYAN}✓ EXPIRED SAMPAI TGL: $EXPIRY_DATE${NC}"
             mkdir -p /etc/zivpn
 echo "$USER_NAME" > /etc/zivpn/.license_info
 echo "$EXPIRY_DATE" >> /etc/zivpn/.license_info
@@ -317,25 +317,25 @@ start_service() {
     systemctl start zivpn.service
     sleep 5
     if systemctl is-active --quiet zivpn.service; then
-echo -e "${GREEN}     ✅ Service: RUNNING${NC}"
+echo -e "${GREEN}   ✅ Service: RUNNING${NC}"
         sleep 3
         if ss -tulpn | grep -q ":5667"; then
-echo -e "${GREEN}     ✅ Port 5667: LISTENING${NC}"
+echo -e "${GREEN}   ✅ Port 5667: LISTENING${NC}"
             if command -v timeout >/dev/null 2>&1 && command -v nc >/dev/null 2>&1; then
                 if timeout 2 bash -c "cat < /dev/null > /dev/tcp/127.0.0.1/5667" 2>/dev/null; then
-echo -e "${GREEN}     ✅ Port 5667: ACCEPTING CONNECTIONS${NC}"
+echo -e "${GREEN}   ✅ Port 5667: ACCEPTING CONNECTIONS${NC}"
                 else
-echo -e "${YELLOW}     ⚠️  Port 5667: NOT ACCEPTING TCP CONNECTIONS (UDP only)${NC}"
+echo -e "${YELLOW}   ⚠️  Port 5667: NOT ACCEPTING TCP CONNECTIONS (UDP only)${NC}"
                 fi
             fi
         else
-echo -e "${RED}     ❌ Port 5667: NOT LISTENING${NC}"
+echo -e "${RED}   ❌ Port 5667: NOT LISTENING${NC}"
 echo -e "${YELLOW}Checking service logs...${NC}"
             journalctl -u zivpn -n 10 --no-pager
             return 1
         fi
     else
-echo -e "${RED}     ❌ Service: FAILED TO START${NC}"
+echo -e "${RED}   ❌ Service: FAILED TO START${NC}"
 echo -e "${YELLOW}Last 10 lines of log:${NC}"
         journalctl -u zivpn -n 10 --no-pager
 echo ""
@@ -344,9 +344,9 @@ echo -e "${YELLOW}Attempting to repair configuration...${NC}"
         systemctl start zivpn.service
         sleep 3
         if systemctl is-active --quiet zivpn.service; then
-echo -e "${GREEN}     ✅ Service started after repair${NC}"
+echo -e "${GREEN}   ✅ Service started after repair${NC}"
         else
-echo -e "${RED}     ❌ Still failing after repair${NC}"
+echo -e "${RED}   ❌ Still failing after repair${NC}"
             return 1
         fi
     fi
@@ -406,10 +406,10 @@ echo -e "  ${RED}✗ Service: Not found${NC}"
     fi
     echo ""
     if [ $errors -eq 0 ] && [ $warnings -eq 0 ]; then
-    echo -e "${GREEN}     ✅ All components verified successfully${NC}"
+    echo -e "${GREEN}   ✅ All components verified successfully${NC}"
         return 0
     elif [ $errors -eq 0 ] && [ $warnings -gt 0 ]; then
-    echo -e "${YELLOW}     ⚠️ Installation completed with $warnings warning(s)${NC}"
+    echo -e "${YELLOW}   ⚠️ Installation completed with $warnings warning(s)${NC}"
         return 0
     else
     echo -e "${RED}❌ Installation has $errors error(s) and $warnings warning(s)${NC}"
@@ -455,11 +455,11 @@ install_menu() {
     if ! grep -q "alias ziv=" /root/.bashrc; then
 echo "alias ziv='zivpn-menu'" >> /root/.bashrc
     fi
-echo -e "${GREEN}     ✅ Menu manager installed${NC}"
+echo -e "${GREEN}   ✅ Menu manager installed${NC}"
 echo -e "${CYAN}Type 'menu' to open management menu${NC}"
         return 0
     else
-echo -e "${YELLOW}     ⚠️  Menu manager download failed${NC}"
+echo -e "${YELLOW}   ⚠️  Menu manager download failed${NC}"
 echo -e "${YELLOW}You can download it later manually${NC}"
         return 1
     fi
@@ -473,9 +473,9 @@ echo -e "${BLUE}  ╚═══════════════════�
 echo ""
     
 echo -e "${YELLOW}     📦 SERVER INFORMATION:${NC}"
-echo -e "       IP Address     : $SERVER_IP"
-echo -e "       Port           : 5667 UDP"
-echo -e "       Password       : pondok123"
+echo -e "       IP Address      : $SERVER_IP"
+echo -e "       Port            : 5667 UDP"
+echo -e "       Password        : pondok123"
 echo ""
     
 echo -e "${YELLOW}     🚀 QUICK COMMANDS:${NC}"
@@ -497,14 +497,12 @@ echo ""
     if [ -f /etc/zivpn/.license_info ]; then
         LICENSE_USER=$(head -1 /etc/zivpn/.license_info 2>/dev/null)
         LICENSE_EXP=$(tail -1 /etc/zivpn/.license_info 2>/dev/null)
-echo -e "${CYAN}     📝 LICENSE INFORMATION:${NC}"
-echo -e "       User           : $LICENSE_USER"
-echo -e "       Expiry         : $LICENSE_EXP"
+echo -e "${YELLOW}     📝 LICENSE INFORMATION:${NC}"
+echo -e "       User            : $LICENSE_USER"
+echo -e "       Expiry          : $LICENSE_EXP"
 echo ""
     fi
     
-echo -e "${BLUE}  ╔═════════════════════════════════════════════════════╗${NC}"
-echo -e "${WHITE}                一═⌊✦⌉ 𝗣𝗢𝗡𝗗𝗢𝗞 𝗩𝗣𝗡 ⌊✦⌉═一                        ${NC}"
 echo -e "${BLUE}  ╚═════════════════════════════════════════════════════╝${NC}"
 echo ""
 }
