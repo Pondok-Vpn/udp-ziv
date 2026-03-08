@@ -131,7 +131,7 @@ download_binary() {
     SOURCES=(
         "https://github.com/zahidbd2/udp-zivpn/releases/download/udp-zivpn_1.4.9/$BINARY_NAME"
         "https://cdn.jsdelivr.net/gh/zahidbd2/udp-zivpn@latest/$BINARY_NAME"
-        "https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/$BINARY_NAME"
+        "https://raw.githubusercontent.com/zahidbd2/udp-zivpn/main/$BINARY_NAME"
     )
     
     for url in "${SOURCES[@]}"; do
