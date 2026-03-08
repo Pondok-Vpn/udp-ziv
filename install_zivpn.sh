@@ -575,19 +575,24 @@ echo "3. Check if port 5667 is already in use"
     fi
     install_menu
     show_summary
-    auto_start_menu
-#echo -e "${BLUE}  ╔═════════════════════════════════════════════════════╗${NC}"
-#echo -e "${BLUE}  ║${YELLOW}             𝐊𝐄𝐓𝐈𝐊 𝐳𝐢𝐯 𝐔𝐍𝐓𝐔𝐊 𝐊𝐄 𝐌𝐄𝐍𝐔              ${NC}"
-#echo -e "${BLUE}  ╚═════════════════════════════════════════════════════╝${NC}"
-#echo -e "${BLUE}  ═══════════════════════════════════════════════════════${NC}"
-#echo -e "${WHITE}        Kami melakukan ini bukan karena kami mampu           ${NC}"
-#echo -e "${WHITE}              Tapi karena kami tidak mampu.                  ${NC}"
-#echo ""
-#echo -e "${WHITE}               Dosa tanggung jawab masing2                   ${NC}"
-#echo -e "${WHITE}             Gunakan script ini dengan bijak                 ${NC}"
-#echo -e "${YELLOW}                          AUTOR :                            ${NC}"
-#echo -e "${YELLOW}                PONDOK VPN - @BENDAKEREP                     ${NC}"
-#echo -e "${BLUE}  ═══════════════════════════════════════════════════════${NC}"
-
+echo ""
+echo -e "${BLUE}  ╔═════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}  ║${YELLOW}             ✅ INSTALASI SELESAI!              ${NC}"
+echo -e "${BLUE}  ╚═════════════════════════════════════════════════════╝${NC}"
+echo -e "${BLUE}  ═══════════════════════════════════════════════════════${NC}"
+echo -e "${WHITE}                Menu akan terbuka dalam 3 detik                 ${NC}"
+echo -e "${WHITE}           Ketik [ziv] jika menu tidak di temukan              ${NC}"
+echo ""
+echo -e "${WHITE}               Dosa tanggung jawab masing2                   ${NC}"
+echo -e "${WHITE}             Gunakan script ini dengan bijak                 ${NC}"
+echo -e "${YELLOW}                          AUTOR :                            ${NC}"
+echo -e "${YELLOW}                PONDOK VPN - @BENDAKEREP                     ${NC}"
+echo -e "${BLUE}  ═══════════════════════════════════════════════════════${NC}"
+    sleep 3
+    if [ -f "$MENU_SCRIPT" ]; then
+        "$MENU_SCRIPT"
+    else
+        echo -e "${RED}❌ Menu tidak ditemukan!${NC}"
+        echo -e "${YELLOW}Ketik manual: ${GREEN}ziv${NC}"
+    fi
 }
-main
