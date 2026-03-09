@@ -598,3 +598,4 @@ echo -e "${BLUE}  ════════════════════�
         echo -e "${YELLOW}Ketik manual: ${GREEN}ziv${NC}"
     fi
 }
+main
