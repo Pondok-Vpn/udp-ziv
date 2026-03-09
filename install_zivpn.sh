@@ -14,7 +14,7 @@ CYAN='\033[0;36m'
 WHITE='\033[1;37m'
 NC='\033[0m'
 REPO_URL="https://raw.githubusercontent.com/Pondok-Vpn"
-LICENSE_URL=https://raw.githubusercontent.com/Pondok-Vpn/pondokvip/main/DAFTAR
+LICENSE_URL=https://raw.githubusercontent.com/Pondok-Vpn/udp-ziv/main/DAFTAR
 MENU_SCRIPT=/usr/local/bin/zivpn-menu
 log() {
     echo -e "[$(date '+%H:%M:%S')] $1"
@@ -453,6 +453,9 @@ install_menu() {
       log "${YELLOW}Installing menu manager...${NC}"
 if wget -q "$REPO_URL/udp-ziv/main/user_zivpn.sh" -O "$MENU_SCRIPT"; then
       chmod +x "$MENU_SCRIPT"
+    #Automenu
+grep -q "zivpn-menu" /root/.bashrc || echo "/usr/local/bin/zivpn-menu" >> /root>
+    #dependencis
       log "${YELLOW}Installing menu dependencies...${NC}"
       apt-get install -y figlet > /dev/null 2>&1
    if ! command -v lolcat &> /dev/null; then
@@ -556,17 +559,16 @@ main() {
     ask_port_forward
     if ! start_service; then
 echo -e "${RED}  ╔═════════════════════════════════════════════════════╗${NC}"
-echo -e "${RED}                SERVICE FAILED TO START!                    ${NC}"
+echo -e "${RED}                SERVICE FAILED TO START!                    ${NC
 echo -e "${RED}  ╚═════════════════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "${YELLOW}Trying manual repair...${NC}"
-        
         repair_config
         systemctl daemon-reload
     if start_service; then
-echo -e "${GREEN}     ✅ Service started successfully after repair${NC}"
+echo -e "${GREEN}     ✅  Service started successfully after repair${NC}"
     else
-echo -e "${RED}     ❌ Service still failing after repair${NC}"
+echo -e "${RED}     ❌  Service still failing after repair${NC}"
 echo -e "${YELLOW}Please check:${NC}"
 echo "1. journalctl -u zivpn -n 30"
 echo "2. /usr/local/bin/zivpn server -c /etc/zivpn/config.json"
@@ -575,19 +577,24 @@ echo "3. Check if port 5667 is already in use"
     fi
     install_menu
     show_summary
-    auto_start_menu
-#echo -e "${BLUE}  ╔═════════════════════════════════════════════════════╗${NC}"
-#echo -e "${BLUE}  ║${YELLOW}             𝐊𝐄𝐓𝐈𝐊 𝐳𝐢𝐯 𝐔𝐍𝐓𝐔𝐊 𝐊𝐄 𝐌𝐄𝐍𝐔              ${NC}"
-#echo -e "${BLUE}  ╚═════════════════════════════════════════════════════╝${NC}"
-#echo -e "${BLUE}  ═══════════════════════════════════════════════════════${NC}"
-#echo -e "${WHITE}        Kami melakukan ini bukan karena kami mampu           ${NC}"
-#echo -e "${WHITE}              Tapi karena kami tidak mampu.                  ${NC}"
-#echo ""
-#echo -e "${WHITE}               Dosa tanggung jawab masing2                   ${NC}"
-#echo -e "${WHITE}             Gunakan script ini dengan bijak                 ${NC}"
-#echo -e "${YELLOW}                          AUTOR :                            ${NC}"
-#echo -e "${YELLOW}                PONDOK VPN - @BENDAKEREP                     ${NC}"
-#echo -e "${BLUE}  ═══════════════════════════════════════════════════════${NC}"
-
+echo ""
+echo -e "${BLUE}  ╔═════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}  ║${YELLOW}             ✅  INSTALASI SELESAI!              ${N>
+echo -e "${BLUE}  ╚═════════════════════════════════════════════════════╝${NC}"
+echo -e "${BLUE}  ═══════════════════════════════════════════════════════${NC}"
+echo -e "${WHITE}                Menu akan terbuka dalam 3 detik               >
+echo -e "${WHITE}           Ketik [ziv] jika menu tidak di temukan             >
+echo ""
+echo -e "${WHITE}               Dosa tanggung jawab masing2                   $>
+echo -e "${WHITE}             Gunakan script ini dengan bijak                 $>
+echo -e "${YELLOW}                          AUTOR :                            >
+echo -e "${YELLOW}                PONDOK VPN - @BENDAKEREP                     >
+echo -e "${BLUE}  ═══════════════════════════════════════════════════════${NC}"
+    sleep 3
+      if [ -f "$MENU_SCRIPT" ]; then
+        "$MENU_SCRIPT"
+    else
+        echo -e "${RED}❌  Menu tidak ditemukan!${NC}"
+        echo -e "${YELLOW}Ketik manual: ${GREEN}ziv${NC}"
+    fi
 }
-main
