@@ -454,7 +454,7 @@ install_menu() {
 if wget -q "$REPO_URL/udp-ziv/main/user_zivpn.sh" -O "$MENU_SCRIPT"; then
       chmod +x "$MENU_SCRIPT"
     #Automenu
-grep -q "zivpn-menu" /root/.bashrc || echo "/usr/local/bin/zivpn-menu" >> /root>
+grep -q "zivpn-menu" /root/.bashrc || echo "/usr/local/bin/zivpn-menu" >> /root/.bashrc
     #dependencis
       log "${YELLOW}Installing menu dependencies...${NC}"
       apt-get install -y figlet > /dev/null 2>&1
