@@ -559,7 +559,7 @@ main() {
     ask_port_forward
     if ! start_service; then
 echo -e "${RED}  ╔═════════════════════════════════════════════════════╗${NC}"
-echo -e "${RED}                SERVICE FAILED TO START!                    ${NC
+echo -e "${RED}                SERVICE FAILED TO START!                           ${NC}"
 echo -e "${RED}  ╚═════════════════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "${YELLOW}Trying manual repair...${NC}"
@@ -579,16 +579,16 @@ echo "3. Check if port 5667 is already in use"
     show_summary
 echo ""
 echo -e "${BLUE}  ╔═════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}  ║${YELLOW}             ✅  INSTALASI SELESAI!              ${N>
+echo -e "${BLUE}  ║${YELLOW}             ✅  INSTALASI SELESAI!                    ${NC}"
 echo -e "${BLUE}  ╚═════════════════════════════════════════════════════╝${NC}"
 echo -e "${BLUE}  ═══════════════════════════════════════════════════════${NC}"
-echo -e "${WHITE}                Menu akan terbuka dalam 3 detik               >
-echo -e "${WHITE}           Ketik [ziv] jika menu tidak di temukan             >
+echo -e "${WHITE}                Menu akan terbuka dalam 3 detik                   ${NC}"
+echo -e "${WHITE}           Ketik [ziv] jika menu tidak di temukan                 ${NC}"
 echo ""
-echo -e "${WHITE}               Dosa tanggung jawab masing2                   $>
-echo -e "${WHITE}             Gunakan script ini dengan bijak                 $>
-echo -e "${YELLOW}                          AUTOR :                            >
-echo -e "${YELLOW}                PONDOK VPN - @BENDAKEREP                     >
+echo -e "${WHITE}               Dosa tanggung jawab masing2                        ${NC}"
+echo -e "${WHITE}             Gunakan script ini dengan bijak                      ${NC}"  
+echo -e "${YELLOW}                          AUTOR :                                ${NC}"
+echo -e "${YELLOW}                PONDOK VPN - @BENDAKEREP                         ${NC}"
 echo -e "${BLUE}  ═══════════════════════════════════════════════════════${NC}"
     sleep 3
       if [ -f "$MENU_SCRIPT" ]; then
